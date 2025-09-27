@@ -1,7 +1,20 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+'use client'
 
-const NotFound = () => {
+import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+
+type ErrorProps = {
+  error: Error & { digest?: string }
+  reset: () => void
+}
+
+const Error = ({ error, reset }: ErrorProps) => {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error('Application error:', error)
+  }, [error])
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
@@ -39,4 +52,5 @@ const NotFound = () => {
   )
 }
 
-export default NotFound
+
+export default Error

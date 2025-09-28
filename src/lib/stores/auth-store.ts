@@ -1,53 +1,51 @@
- 
+// src/lib/stores/auth-store.ts
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { User } from '@/features/users/types/users'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { apiClient } from '@/lib/api/client'
+import type { User } from '@/features/users/types/users'
 
 type AuthState = {
   user: User | null
   token: string | null
   isAuthenticated: boolean
-  isLoading: boolean
+  isInitialized: boolean
 }
 
 type AuthActions = {
   login: (token: string, user: User) => void
   logout: () => void
   setUser: (user: User) => void
-  setLoading: (loading: boolean) => void
   initialize: () => void
+  setInitialized: (initialized: boolean) => void
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set, get) => ({
+      // Initial state
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: true,
+      isInitialized: false,
 
+      // Actions
       login: (token: string, user: User) => {
         apiClient.setToken(token)
         set({
           user,
           token,
           isAuthenticated: true,
-          isLoading: false
+          isInitialized: true
         })
       },
 
       logout: () => {
         apiClient.setToken(null)
-        // Clear localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage')
-        }
         set({
           user: null,
           token: null,
           isAuthenticated: false,
-          isLoading: false
+          isInitialized: true
         })
       },
 
@@ -55,32 +53,42 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ user })
       },
 
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading })
-      },
-
       initialize: () => {
-        const { token } = get()
+        const { token, isInitialized } = get()
+        
+        // Prevent multiple initializations
+        if (isInitialized) return
+        
         if (token) {
           apiClient.setToken(token)
           set({ 
             isAuthenticated: true,
-            isLoading: false 
+            isInitialized: true 
           })
         } else {
           set({ 
-            isLoading: false 
+            isInitialized: true 
           })
         }
+      },
+
+      setInitialized: (initialized: boolean) => {
+        set({ isInitialized: initialized })
       }
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          apiClient.setToken(state.token)
+        }
+      }
     }
   )
 )

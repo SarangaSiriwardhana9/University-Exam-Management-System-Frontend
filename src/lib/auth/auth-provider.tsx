@@ -1,10 +1,10 @@
  
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { usersService } from '@/features/users/hooks/use-users'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
+ 
 import type { User } from '@/features/users/types/users'
 
 type AuthContextType = {
@@ -13,6 +13,7 @@ type AuthContextType = {
   isLoading: boolean
   login: (token: string, user: User) => void
   logout: () => void
+  refetchUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -26,61 +27,86 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAuthenticated, isLoading, login, logout, setUser, setLoading, initialize } = useAuthStore()
-  const [isMounted, setIsMounted] = useState(false)
+  const store = useAuthStore()
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [isFetchingUser, setIsFetchingUser] = useState(false)
 
+  // Memoized values
+  const isLoading = !store.isInitialized || isFetchingUser
+
+  // useCallback for refetchUser to prevent dependency issues
+  const refetchUser = useCallback(async () => {
+    if (!store.isAuthenticated || !store.token) return
+    
+    setIsFetchingUser(true)
+    try {
+      const response = await usersService.getProfile()
+      store.setUser(response.data)
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error)
+      store.logout()
+    } finally {
+      setIsFetchingUser(false)
+    }
+  }, [store.isAuthenticated, store.token, store.setUser, store.logout])
+
+  // Handle hydration
   useEffect(() => {
-    setIsMounted(true)
+    setIsHydrated(true)
   }, [])
 
+  // Initialize auth state only once after hydration
   useEffect(() => {
-    if (!isMounted) return
+    if (!isHydrated || store.isInitialized) return
 
     const initializeAuth = async () => {
       try {
-        initialize()
+        store.initialize()
         
-        if (isAuthenticated && !user) {
-          // Try to fetch user profile if we have a token but no user data
-          const response = await usersService.getProfile()
-          setUser(response.data)
+        // If we have a token but no user data, fetch user profile
+        if (store.isAuthenticated && !store.user) {
+          await refetchUser()
         }
       } catch (error) {
         console.error('Auth initialization failed:', error)
-        logout()
-      } finally {
-        setLoading(false)
+        store.logout()
       }
     }
 
     initializeAuth()
-  }, [isMounted, isAuthenticated, user, setUser, setLoading, logout, initialize])
+  }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
 
-  // Prevent hydration mismatch
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
+  const contextValue = useMemo(() => ({
+    user: store.user,
+    isAuthenticated: store.isAuthenticated,
+    isLoading,
+    login: store.login,
+    logout: store.logout,
+    refetchUser
+  }), [store.user, store.isAuthenticated, isLoading, store.login, store.logout, refetchUser])
 
-  if (isLoading) {
+  // Show loading screen during hydration or initialization
+  if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <LoadingSpinner size="lg" className="mb-4 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            University Management System
-          </h2>
-          <p className="text-gray-500">Initializing...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse"></div>
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-foreground">University Management System</h2>
+            <p className="text-muted-foreground">Initializing application...</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

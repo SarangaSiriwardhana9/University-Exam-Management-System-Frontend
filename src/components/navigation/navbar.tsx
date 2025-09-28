@@ -1,7 +1,7 @@
-
+ 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -10,16 +10,38 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { MenuIcon, LogOutIcon, UserIcon, SettingsIcon } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { 
+  MenuIcon, 
+  LogOutIcon, 
+  UserIcon, 
+  SettingsIcon, 
+  BellIcon,
+  GraduationCapIcon
+} from 'lucide-react'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLogout } from '@/features/auth/hooks/use-auth-mutations'
 import { NAVIGATION_ITEMS, type NavItem } from '@/constants/navigation'
 import type { UserRole } from '@/constants/roles'
 import { cn } from '@/lib/utils'
+
+// Role-specific styling helper
+const getRoleStyle = (role: UserRole) => {
+  const roleStyles = {
+    admin: 'role-admin',
+    faculty: 'role-faculty', 
+    student: 'role-student',
+    exam_coordinator: 'role-exam-coordinator',
+    invigilator: 'role-invigilator'
+  } as const
+  
+  return roleStyles[role] || 'bg-muted text-muted-foreground'
+}
 
 export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -27,113 +49,138 @@ export const Navbar = () => {
   const logoutMutation = useLogout()
   const pathname = usePathname()
 
-  const handleLogout = () => {
+  const navigationItems: NavItem[] = useMemo(() => {
+    const userRole = user?.role as UserRole
+    return userRole ? NAVIGATION_ITEMS[userRole] || [] : []
+  }, [user?.role])
+
+  const handleLogout = useCallback(() => {
     logoutMutation.mutate()
-  }
+  }, [logoutMutation])
 
-  // Properly type the user role and navigation items
-  const userRole = user?.role as UserRole
-  const navigationItems: NavItem[] = userRole ? NAVIGATION_ITEMS[userRole] || [] : []
-
-  const getUserInitials = (name: string) => {
+  const getUserInitials = useCallback((name: string) => {
     return name
       .split(' ')
       .map(word => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2)
-  }
+  }, [])
 
-  const formatRole = (role: string) => {
+  const formatRole = useCallback((role: string) => {
     return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-  }
+  }, [])
+
+  if (!user) return null
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="text-xl font-bold text-blue-600">UMS</div>
-              <span className="hidden sm:block text-gray-900 font-medium">University Management</span>
-            </Link>
-          </div>
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
+              <GraduationCapIcon className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                University
+              </h1>
+              <p className="text-xs text-muted-foreground -mt-1">Management System</p>
+            </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {navigationItems.map((item: NavItem) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200",
-                  pathname === item.href
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                )}
-              >
-                {item.title}
-              </Link>
-            ))}
+            {navigationItems.map((item: NavItem) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {item.title}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  )}
+                </Link>
+              )
+            })}
           </div>
 
-          {/* User Menu */}
-          <div className="flex items-center space-x-4">
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
+          {/* Right side */}
+          <div className="flex items-center space-x-3">
+            {/* Notifications */}
+            <Button variant="ghost" size="sm" className="relative">
+              <BellIcon className="w-5 h-5" />
+              <Badge className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-destructive hover:bg-destructive">
+                3
+              </Badge>
+            </Button>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user.profileImage} alt={user.fullName} />
+                    <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
+                      {getUserInitials(user.fullName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-72" align="end" forceMount>
+                <DropdownMenuLabel className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-12 w-12">
                       <AvatarImage src={user.profileImage} alt={user.fullName} />
-                      <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                      <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
                         {getUserInitials(user.fullName)}
                       </AvatarFallback>
                     </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.profileImage} alt={user.fullName} />
-                      <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
-                        {getUserInitials(user.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium text-sm">{user.fullName}</p>
-                      <p className="w-[180px] truncate text-xs text-muted-foreground">
-                        {user.email}
-                      </p>
-                      <p className="text-xs text-blue-600 font-medium">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">{user.fullName}</p>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      <Badge 
+                        variant="outline" 
+                        className={cn("mt-1 text-xs", getRoleStyle(user.role))}
+                      >
                         {formatRole(user.role)}
-                      </p>
+                      </Badge>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center">
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="flex items-center">
-                      <SettingsIcon className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    disabled={logoutMutation.isPending}
-                  >
-                    <LogOutIcon className="mr-2 h-4 w-4" />
-                    {logoutMutation.isPending ? 'Logging out...' : 'Log out'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center cursor-pointer">
+                    <UserIcon className="mr-3 h-4 w-4" />
+                    Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center cursor-pointer">
+                    <SettingsIcon className="mr-3 h-4 w-4" />
+                    Preferences
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                  disabled={logoutMutation.isPending}
+                >
+                  <LogOutIcon className="mr-3 h-4 w-4" />
+                  {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Mobile menu trigger */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -143,22 +190,42 @@ export const Navbar = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <div className="flex flex-col space-y-4 mt-4">
-                  {navigationItems.map((item: NavItem) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        "block px-3 py-2 rounded-md text-base font-medium transition-colors",
-                        pathname === item.href
-                          ? "bg-blue-100 text-blue-700"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      )}
-                    >
-                      {item.title}
-                    </Link>
-                  ))}
+                <div className="flex flex-col space-y-6 mt-6">
+                  <div className="flex items-center space-x-3 pb-4 border-b">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={user.profileImage} alt={user.fullName} />
+                      <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
+                        {getUserInitials(user.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">{user.fullName}</p>
+                      <Badge className={cn("text-xs", getRoleStyle(user.role))}>
+                        {formatRole(user.role)}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {navigationItems.map((item: NavItem) => {
+                      const isActive = pathname === item.href
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={cn(
+                            "block px-4 py-3 rounded-lg text-base font-medium transition-colors",
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          {item.title}
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

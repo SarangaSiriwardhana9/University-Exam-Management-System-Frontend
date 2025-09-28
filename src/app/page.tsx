@@ -1,27 +1,65 @@
  
-import { Badge } from "@/components/ui/badge"
- 
+'use client'
 
-export default function Home() {
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth/auth-provider'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
+import { ROUTES } from '@/constants/routes'
+import { USER_ROLES } from '@/constants/roles'
+import type { UserRole } from '@/constants/roles'
+
+const HomePage = () => {
+  const { user, isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+  const [isMounted, setIsMounted] = useState(false)
+
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted || isLoading) return
+
+    if (!isAuthenticated) {
+      router.replace('/login')
+      return
+    }
+
+    if (user?.role) {
+      const dashboardRoutes: Record<UserRole, string> = {
+        [USER_ROLES.ADMIN]: ROUTES.ADMIN.DASHBOARD,
+        [USER_ROLES.FACULTY]: ROUTES.FACULTY.DASHBOARD,
+        [USER_ROLES.STUDENT]: ROUTES.STUDENT.DASHBOARD,
+        [USER_ROLES.EXAM_COORDINATOR]: ROUTES.EXAM_COORDINATOR.DASHBOARD,
+        [USER_ROLES.INVIGILATOR]: ROUTES.INVIGILATOR.DASHBOARD
+      }
+
+      const dashboardRoute = dashboardRoutes[user.role]
+      if (dashboardRoute) {
+        router.replace(dashboardRoute)
+      }
+    }
+  }, [isMounted, isAuthenticated, isLoading, user?.role, router])
+
+
+  if (!isMounted) {
+    return null
+  }
+
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-   
-          
-          {/* Badge Row */}
-          <div className="flex justify-center gap-2 mb-8">
-            <Badge variant="default">⚡ Fast</Badge>
-            <Badge variant="secondary">🎨 Beautiful</Badge>
-            <Badge variant="outline">🚀 Modern</Badge>
-          </div>
-        </div>
-
-        {/* Feature Cards using shadcn Card */}
- 
-
-  
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <LoadingSpinner size="lg" className="mb-4 mx-auto" />
+        <h2 className="text-xl font-semibold text-gray-700 mb-2">
+          University Management System
+        </h2>
+        <p className="text-gray-500">Loading...</p>
       </div>
-
-  );
+    </div>
+  )
 }
+
+export default HomePage

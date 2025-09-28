@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
@@ -8,7 +8,25 @@ import { useAuth } from '@/lib/auth/auth-provider'
 import { ROUTES } from '@/constants/routes'
 import { USER_ROLES } from '@/constants/roles'
 import type { LoginFormData, RegisterFormData } from '../validations/auth-schemas'
+import type { LoginUser } from '../types/auth'
+import type { User } from '@/features/users/types/users'
+import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
+
+ 
+const convertLoginUserToUser = (loginUser: LoginUser): User => {
+  return {
+    _id: loginUser.id,
+    username: loginUser.username,
+    email: loginUser.email,
+    fullName: loginUser.fullName,
+    role: loginUser.role,
+    isActive: loginUser.isActive,
+    profileImage: loginUser.profileImage,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+}
 
 export const useLogin = () => {
   const { login } = useAuth()
@@ -17,9 +35,10 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginFormData) => authService.login(data),
     onSuccess: (response) => {
-      login(response.accessToken, response.user)
+      const user = convertLoginUserToUser(response.user)
+      login(response.accessToken, user)
       
-      // Redirect based on user role
+ 
       const roleRoutes = {
         [USER_ROLES.ADMIN]: ROUTES.ADMIN.DASHBOARD,
         [USER_ROLES.FACULTY]: ROUTES.FACULTY.DASHBOARD,
@@ -29,11 +48,15 @@ export const useLogin = () => {
       } as const
       
       const redirectRoute = roleRoutes[response.user.role as keyof typeof roleRoutes] || ROUTES.HOME
-      router.push(redirectRoute)
       
       toast.success('Welcome back!')
+      
+      // Add a small delay to ensure state is updated
+      setTimeout(() => {
+        router.replace(redirectRoute)
+      }, 100)
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.message || 'Login failed')
     }
   })
@@ -51,7 +74,7 @@ export const useRegister = () => {
       toast.success('Registration successful! Please log in.')
       router.push('/login')
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.message || 'Registration failed')
     }
   })
@@ -65,13 +88,14 @@ export const useLogout = () => {
     mutationFn: () => authService.logout(),
     onSuccess: () => {
       logout()
-      router.push('/login')
       toast.success('Logged out successfully')
+      router.replace('/login')
     },
-    onError: () => {
+    onError: (error: ApiError) => {
       // Even if API call fails, logout locally
       logout()
-      router.push('/login')
+      router.replace('/login')
+      toast.success('Logged out successfully')
     }
   })
 }

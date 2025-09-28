@@ -1,3 +1,4 @@
+ 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User } from '@/features/users/types/users'
@@ -38,6 +39,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       logout: () => {
         apiClient.setToken(null)
+        // Clear localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage')
+        }
         set({
           user: null,
           token: null,
@@ -58,9 +63,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         const { token } = get()
         if (token) {
           apiClient.setToken(token)
-          set({ isLoading: false })
+          set({ 
+            isAuthenticated: true,
+            isLoading: false 
+          })
         } else {
-          set({ isLoading: false })
+          set({ 
+            isLoading: false 
+          })
         }
       }
     }),

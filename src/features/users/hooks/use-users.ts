@@ -5,31 +5,61 @@ import type {
   UpdateUserDto, 
   ChangePasswordDto, 
   UserStats, 
-  GetUsersParams 
+  GetUsersParams,
+  BackendUsersListResponse
 } from '../types/users'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
 export const usersService = {
-  getAll: (params?: GetUsersParams): Promise<PaginatedResponse<User>> =>
-    apiClient.get('/api/v1/users', { params }),
+  getAll: async (params?: GetUsersParams): Promise<PaginatedResponse<User>> => {
+    const response = await apiClient.get<BackendUsersListResponse>('/api/v1/users', { params })
+    return {
+      data: response.users || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1
+    }
+  },
 
-  getById: (id: string): Promise<ApiResponse<User>> =>
-    apiClient.get(`/api/v1/users/${id}`),
+  getById: async (id: string): Promise<ApiResponse<User>> => {
+    const user = await apiClient.get<User>(`/api/v1/users/${id}`)
+    // If backend returns user directly, wrap it
+    return {
+      data: user
+    }
+  },
 
-  getProfile: (): Promise<ApiResponse<User>> =>
-    apiClient.get('/api/v1/users/profile'),
+  getProfile: async (): Promise<ApiResponse<User>> => {
+    const user = await apiClient.get<User>('/api/v1/users/profile')
+    return {
+      data: user
+    }
+  },
 
   getStats: (): Promise<ApiResponse<UserStats>> =>
     apiClient.get('/api/v1/users/stats'),
 
-  create: (data: CreateUserDto): Promise<ApiResponse<User>> =>
-    apiClient.post('/api/v1/users', data),
+  create: async (data: CreateUserDto): Promise<ApiResponse<User>> => {
+    const user = await apiClient.post<User>('/api/v1/users', data)
+    return {
+      data: user
+    }
+  },
 
-  update: (id: string, data: UpdateUserDto): Promise<ApiResponse<User>> =>
-    apiClient.patch(`/api/v1/users/${id}`, data),
+  update: async (id: string, data: UpdateUserDto): Promise<ApiResponse<User>> => {
+    const user = await apiClient.patch<User>(`/api/v1/users/${id}`, data)
+    return {
+      data: user
+    }
+  },
 
-  updateProfile: (data: UpdateUserDto): Promise<ApiResponse<User>> =>
-    apiClient.patch('/api/v1/users/profile', data),
+  updateProfile: async (data: UpdateUserDto): Promise<ApiResponse<User>> => {
+    const user = await apiClient.patch<User>('/api/v1/users/profile', data)
+    return {
+      data: user
+    }
+  },
 
   changePassword: (data: ChangePasswordDto): Promise<ApiResponse<{ message: string }>> =>
     apiClient.patch('/api/v1/users/profile/change-password', data),

@@ -1,5 +1,5 @@
 import { AuthGuard } from '@/lib/auth/auth-guard'
-import { Navbar } from '@/components/navigation/navbar'
+import { Sidebar } from '@/components/navigation/sidebar'
 
 type DashboardLayoutProps = {
   children: React.ReactNode
@@ -8,10 +8,13 @@ type DashboardLayoutProps = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          {children}
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar />
+        
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+            {children}
+          </div>
         </main>
       </div>
     </AuthGuard>

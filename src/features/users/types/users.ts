@@ -64,3 +64,15 @@ export type GetUsersParams = {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
 }
+
+export type BackendUsersListResponse = {
+  users: User[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export type BackendUserResponse = {
+  user: User
+}

@@ -2,7 +2,11 @@ export type Department = {
   _id: string
   departmentCode: string
   departmentName: string
-  headOfDepartment?: string
+  headOfDepartment?: string | {
+    _id: string
+    email: string
+    fullName: string
+  }
   headOfDepartmentName?: string
   description?: string
   isActive: boolean

@@ -10,15 +10,40 @@ import type {
 } from '../types/rooms'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
+ 
+type BackendRoomsListResponse = {
+  rooms: Room[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 export const roomsService = {
-  getAll: (params?: GetRoomsParams): Promise<PaginatedResponse<Room>> =>
-    apiClient.get('/api/v1/rooms', { params }),
+  getAll: async (params?: GetRoomsParams): Promise<PaginatedResponse<Room>> => {
+    const response = await apiClient.get<BackendRoomsListResponse>('/api/v1/rooms', { params })
+    return {
+      data: response.rooms || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1
+    }
+  },
 
-  getById: (id: string): Promise<ApiResponse<Room>> =>
-    apiClient.get(`/api/v1/rooms/${id}`),
+  getById: async (id: string): Promise<ApiResponse<Room>> => {
+    const room = await apiClient.get<Room>(`/api/v1/rooms/${id}`)
+    return {
+      data: room
+    }
+  },
 
-  getByBuilding: (building: string): Promise<ApiResponse<Room[]>> =>
-    apiClient.get(`/api/v1/rooms/building/${encodeURIComponent(building)}`),
+  getByBuilding: async (building: string): Promise<ApiResponse<Room[]>> => {
+    const rooms = await apiClient.get<Room[]>(`/api/v1/rooms/building/${encodeURIComponent(building)}`)
+    return {
+      data: rooms
+    }
+  },
 
   getBuildingsList: (): Promise<ApiResponse<{ buildings: string[] }>> =>
     apiClient.get('/api/v1/rooms/buildings'),
@@ -32,11 +57,19 @@ export const roomsService = {
   checkAvailability: (params: CheckAvailabilityParams): Promise<ApiResponse<RoomAvailability[]>> =>
     apiClient.get('/api/v1/rooms/availability', { params }),
 
-  create: (data: CreateRoomDto): Promise<ApiResponse<Room>> =>
-    apiClient.post('/api/v1/rooms', data),
+  create: async (data: CreateRoomDto): Promise<ApiResponse<Room>> => {
+    const room = await apiClient.post<Room>('/api/v1/rooms', data)
+    return {
+      data: room
+    }
+  },
 
-  update: (id: string, data: UpdateRoomDto): Promise<ApiResponse<Room>> =>
-    apiClient.patch(`/api/v1/rooms/${id}`, data),
+  update: async (id: string, data: UpdateRoomDto): Promise<ApiResponse<Room>> => {
+    const room = await apiClient.patch<Room>(`/api/v1/rooms/${id}`, data)
+    return {
+      data: room
+    }
+  },
 
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/rooms/${id}`)

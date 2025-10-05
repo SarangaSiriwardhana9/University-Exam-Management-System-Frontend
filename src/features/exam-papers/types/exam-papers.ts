@@ -1,3 +1,4 @@
+// src/features/exam-papers/types/exam-papers.ts
 import type { QuestionType, DifficultyLevel } from '@/constants/roles'
 
 export const EXAM_TYPES = {
@@ -101,4 +102,13 @@ export type GetExamPapersParams = {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+}
+
+// Backend response types
+export type BackendExamPapersListResponse = {
+  examPapers: ExamPaper[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
 }

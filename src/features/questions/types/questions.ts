@@ -1,3 +1,4 @@
+ 
 import type { QuestionType, DifficultyLevel, BloomsTaxonomy } from '@/constants/roles'
 
 export type Question = {
@@ -75,4 +76,17 @@ export type GetQuestionsParams = {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+}
+
+// Backend response types
+export type BackendQuestionsListResponse = {
+  questions: Question[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export type BackendQuestionResponse = {
+  question: Question
 }

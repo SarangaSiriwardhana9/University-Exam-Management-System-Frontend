@@ -1175,6 +1175,8 @@ export const ROUTES = {
     ROOMS: '/admin/rooms',
     REPORTS: '/admin/reports',
     CALENDAR: '/admin/calendar'
+        REPORTS: '/admin/reports',
+    GENERATE_REPORT: '/admin/reports/generate',
   },
   
   FACULTY: {

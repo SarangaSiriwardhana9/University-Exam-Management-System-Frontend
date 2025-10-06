@@ -1,1122 +1,75 @@
-
-
-# Directory Structure
-```
-.gitignore
-.repomixignore
-components.json
-eslint.config.mjs
-next.config.ts
-package.json
-postcss.config.mjs
-public/file.svg
-public/globe.svg
-public/next.svg
-public/vercel.svg
-public/window.svg
-README.md
-repomix.config.json
-src/app/(auth)/layout.tsx
-src/app/(auth)/login/page.tsx
-src/app/(auth)/register/page.tsx
-src/app/(dashboard)/admin/dashboard/page.tsx
-src/app/(dashboard)/admin/users/[id]/edit/page.tsx
-src/app/(dashboard)/admin/users/[id]/page.tsx
-src/app/(dashboard)/admin/users/create/page.tsx
-src/app/(dashboard)/admin/users/page.tsx
-src/app/(dashboard)/exam-coordinator/dashboard/page.tsx
-src/app/(dashboard)/faculty/dashboard/page.tsx
-src/app/(dashboard)/invigilator/dashboard/page.tsx
-src/app/(dashboard)/layout.tsx
-src/app/(dashboard)/student/dashboard/page.tsx
-src/app/error.tsx
-src/app/globals.css
-src/app/layout.tsx
-src/app/not-found.tsx
-src/app/page.tsx
-src/components/common/loading-spinner.tsx
-src/components/data-display/data-table.tsx
-src/components/navigation/navbar.tsx
-src/components/navigation/sidebar.tsx
-src/constants/navigation.ts
-src/constants/roles.ts
-src/constants/routes.ts
-src/features/assignments/hooks/use-assignments.ts
-src/features/assignments/types/assignments.ts
-src/features/auth/components/login-form.tsx
-src/features/auth/components/register-form.tsx
-src/features/auth/hooks/use-api.ts
-src/features/auth/hooks/use-auth-mutations.ts
-src/features/auth/types/auth.ts
-src/features/auth/validations/auth-schemas.ts
-src/features/calendar/hooks/use-calendar.ts
-src/features/calendar/types/calendar.ts
-src/features/dashboard/hooks/use-dashboard.ts
-src/features/dashboard/types/dashboard.ts
-src/features/departments/hooks/use-departments.ts
-src/features/departments/types/departments.ts
-src/features/enrollments/hooks/use-enrollments.ts
-src/features/enrollments/types/enrollments.ts
-src/features/exam-papers/hooks/use-exam-papers.ts
-src/features/exam-papers/types/exam-papers.ts
-src/features/exam-sessions/hooks/use-exam-sessions.ts
-src/features/exam-sessions/types/exam-sessions.ts
-src/features/file-uploads/hooks/use-file-uploads.ts
-src/features/file-uploads/types/file-uploads.ts
-src/features/notifications/hooks/use-notifications.ts
-src/features/notifications/types/notifications.ts
-src/features/questions/hooks/use-questions.ts
-src/features/questions/types/questions.ts
-src/features/registrations/hooks/use-registrations.ts
-src/features/registrations/types/registrations.ts
-src/features/reports/hooks/use-reports.ts
-src/features/reports/types/reports.ts
-src/features/results/hooks/use-results.ts
-src/features/results/types/results.ts
-src/features/rooms/hooks/use-rooms.ts
-src/features/rooms/types/rooms.ts
-src/features/subjects/hooks/use-subjects.ts
-src/features/subjects/types/subjects.ts
-src/features/users/components/user-columns.tsx
-src/features/users/components/user-form.tsx
-src/features/users/hooks/use-user-mutations.ts
-src/features/users/hooks/use-users-query.ts
-src/features/users/hooks/use-users.ts
-src/features/users/types/users.ts
-src/features/users/validations/user-schemas.ts
-src/lib/api/client.ts
-src/lib/api/index.ts
-src/lib/auth/auth-guard.tsx
-src/lib/auth/auth-provider.tsx
-src/lib/auth/role-guard.tsx
-src/lib/providers/query-provider.tsx
-src/lib/stores/auth-store.ts
-src/lib/utils.ts
-src/middleware.ts
-src/types/auth.ts
-src/types/common.ts
-tsconfig.json
+ 
 ```
 
+## File: eslint.config.mjs
+```
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+    ],
+  },
+];
+
+export default eslintConfig;
+```
+
+## File: next.config.ts
+```typescript
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+```
+
+## File: postcss.config.mjs
+```
+const config = {
+  plugins: ["@tailwindcss/postcss"],
+};
+
+export default config;
+```
 
 ## File: src/app/(auth)/login/page.tsx
-````typescript
+```typescript
 import { LoginForm } from '@/features/auth/components/login-form'
 
 export default function LoginPage() {
   return <LoginForm />
 }
-````
+```
 
 ## File: src/app/(auth)/register/page.tsx
-````typescript
+```typescript
 import { RegisterForm } from '@/features/auth/components/register-form'
 
 export default function RegisterPage() {
   return <RegisterForm />
 }
-````
-
-## File: src/app/(dashboard)/admin/dashboard/page.tsx
-````typescript
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-export default function AdminDashboard() {
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Welcome to the Admin Dashboard. This is where you can manage the entire university system.</p>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-````
-
-## File: src/app/(dashboard)/admin/users/[id]/edit/page.tsx
-````typescript
-'use client'
-
-import { use } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChevronLeftIcon } from 'lucide-react'
-import { UserForm } from '@/features/users/components/user-form'
-import { useUserQuery } from '@/features/users/hooks/use-users-query'
-import { useUpdateUser } from '@/features/users/hooks/use-user-mutations'
-import type { UpdateUserFormData } from '@/features/users/validations/user-schemas'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-type EditUserPageProps = {
-  params: Promise<{ id: string }>
-}
-
-const EditUserPage = ({ params }: EditUserPageProps) => {
-  const router = useRouter()
-  const { id: userId } = use(params)
-
-  console.log('Edit page - User ID from params:', userId)
-
-  const { data: userResponse, isLoading, error } = useUserQuery(userId)
-  const updateMutation = useUpdateUser()
-
-  const handleUpdate = (data: UpdateUserFormData) => {
-    updateMutation.mutate(
-      { id: userId, data },
-      {
-        onSuccess: () => {
-          router.push('/admin/users')
-        }
-      }
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  if (error) {
-    console.error('Error fetching user:', error)
-  }
-
-  if (!userResponse?.data) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900">User Not Found</h2>
-          <p className="text-muted-foreground">
-            The user you&apos;re looking for doesn&apos;t exist.
-          </p>
-          {error && (
-            <p className="text-sm text-red-500">
-              Error: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          )}
-          <div className="text-sm text-muted-foreground">
-            <p>User ID: {userId}</p>
-            <p>Check console for more details</p>
-          </div>
-          <Button onClick={() => router.push('/admin/users')} className="mt-4">
-            Back to Users
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ChevronLeftIcon className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Edit User</h1>
-            <p className="text-muted-foreground mt-1">
-              Update user information for {userResponse.data.fullName}
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-            <CardDescription>
-              Update the user details below and click save.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UserForm
-              user={userResponse.data}
-              onSubmit={handleUpdate}
-              onCancel={() => router.push('/admin/users')}
-              isLoading={updateMutation.isPending}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </RoleGuard>
-  )
-}
-
-export default EditUserPage
-````
-
-## File: src/app/(dashboard)/admin/users/[id]/page.tsx
-````typescript
-'use client'
-
-import { use } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ChevronLeftIcon, EditIcon, TrashIcon } from 'lucide-react'
-import { useUserQuery } from '@/features/users/hooks/use-users-query'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-import { cn } from '@/lib/utils'
-import type { UserRole } from '@/constants/roles'
-
-const getRoleBadgeClass = (role: UserRole) => {
-  const roleClasses = {
-    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
-  } as const
-
-  return roleClasses[role] || 'bg-muted'
-}
-
-const formatRole = (role: string) => {
-  return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-}
-
-type ViewUserPageProps = {
-  params: Promise<{ id: string }>
-}
-
-const ViewUserPage = ({ params }: ViewUserPageProps) => {
-  const router = useRouter()
-  const { id: userId } = use(params)
-
-  console.log('View page - User ID from params:', userId)
-
-  const { data: userResponse, isLoading, error } = useUserQuery(userId)
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  if (error) {
-    console.error('Error fetching user:', error)
-  }
-
-  if (!userResponse?.data) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900">User Not Found</h2>
-          <p className="text-muted-foreground">
-            The user you&apos;re looking for doesn&lsquo;t exist.
-          </p>
-          {error && (
-            <p className="text-sm text-red-500">
-              Error: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          )}
-          <Button onClick={() => router.push('/admin/users')} className="mt-4">
-            Back to Users
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  const user = userResponse.data
-
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.back()}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Details</h1>
-              <p className="text-muted-foreground mt-1">
-                View information for {user.fullName}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/admin/users/${userId}/edit`)}
-            >
-              <EditIcon className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-            <Button variant="destructive">
-              <TrashIcon className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* User Profile Card */}
-          <Card className="md:col-span-1">
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary">
-                  {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                </div>
-                <h3 className="mt-4 font-semibold text-lg">{user.fullName}</h3>
-                <p className="text-sm text-muted-foreground">@{user.username}</p>
-                <Badge
-                  variant="outline"
-                  className={cn('mt-2', getRoleBadgeClass(user.role))}
-                >
-                  {formatRole(user.role)}
-                </Badge>
-                <Badge variant={user.isActive ? 'default' : 'secondary'} className="mt-2">
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* User Information Cards */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Email</p>
-                    <p className="mt-1">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Username</p>
-                    <p className="mt-1">{user.username}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                    <p className="mt-1">{user.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Role</p>
-                    <p className="mt-1">{formatRole(user.role)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Primary Phone</p>
-                    <p className="mt-1">{user.contactPrimary || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Secondary Phone</p>
-                    <p className="mt-1">{user.contactSecondary || '—'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Address Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Address Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="mt-1">
-                    {[
-                      user.addressLine1,
-                      user.addressLine2,
-                      user.city,
-                      user.state,
-                      user.postalCode,
-                      user.country
-                    ]
-                      .filter(Boolean)
-                      .join(', ') || '—'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metadata */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                    <p className="mt-1">{new Date(user.createdAt).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
-                    <p className="mt-1">{new Date(user.updatedAt).toLocaleString()}</p>
-                  </div>
-                  {user.lastLoginAt && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Last Login</p>
-                      <p className="mt-1">{new Date(user.lastLoginAt).toLocaleString()}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-
-export default ViewUserPage
-````
-
-## File: src/app/(dashboard)/admin/users/create/page.tsx
-````typescript
-'use client'
-
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChevronLeftIcon } from 'lucide-react'
-import { UserForm } from '@/features/users/components/user-form'
-import { useCreateUser } from '@/features/users/hooks/use-user-mutations'
-import type { CreateUserFormData } from '@/features/users/validations/user-schemas'
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-const CreateUserPage = () => {
-  const router = useRouter()
-  const createMutation = useCreateUser()
-
-  const handleCreate = (data: CreateUserFormData) => {
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        router.push('/admin/users')
-      }
-    })
-  }
-
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.back()}
-          >
-            <ChevronLeftIcon className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New User</h1>
-            <p className="text-muted-foreground mt-1">
-              Add a new user to the system
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-            <CardDescription>
-              Fill in the details below to create a new user account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UserForm
-              onSubmit={handleCreate}
-              onCancel={() => router.push('/admin/users')}
-              isLoading={createMutation.isPending}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </RoleGuard>
-  )
-}
-
-export default CreateUserPage
-````
-
-## File: src/app/(dashboard)/admin/users/page.tsx
-````typescript
-'use client'
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { PlusIcon } from 'lucide-react'
-import { DataTable } from '@/components/data-display/data-table'
-import { getUserColumns } from '@/features/users/components/user-columns'
-import { useUsersQuery } from '@/features/users/hooks/use-users-query'
-import { useDeleteUser } from '@/features/users/hooks/use-user-mutations'
-import type { User } from '@/features/users/types/users'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-const UsersPage = () => {
-  const router = useRouter()
-  const [deletingUser, setDeletingUser] = useState<User | null>(null)
-
-  const { data, isLoading } = useUsersQuery()
-  const deleteMutation = useDeleteUser()
-
-  const handleDelete = () => {
-    if (!deletingUser) return
-
-    deleteMutation.mutate(deletingUser._id, {
-      onSuccess: () => {
-        setDeletingUser(null)
-      }
-    })
-  }
-
-  const columns = getUserColumns({
-    onEdit: (user) => router.push(`/admin/users/${user._id}/edit`),
-    onDelete: (user) => setDeletingUser(user),
-    onView: (user) => router.push(`/admin/users/${user._id}`)
-  })
-
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Users Management</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage all users in the system
-            </p>
-          </div>
-          <Button onClick={() => router.push('/admin/users/create')}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={data?.data || []}
-            searchKey="fullName"
-            searchPlaceholder="Search users..."
-          />
-        )}
-
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete <strong>{deletingUser?.fullName}</strong> from the system.
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </RoleGuard>
-  )
-}
-
-export default UsersPage
-````
-
-## File: src/app/(dashboard)/exam-coordinator/dashboard/page.tsx
-````typescript
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-export default function ExamCoordinatorDashboard() {
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.EXAM_COORDINATOR]}>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Exam Coordinator Dashboard</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Welcome to the Exam Coordinator Dashboard. Manage exam sessions and registrations here.</p>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-````
-
-## File: src/app/(dashboard)/faculty/dashboard/page.tsx
-````typescript
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-export default function FacultyDashboard() {
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.FACULTY]}>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Faculty Dashboard</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Welcome to the Faculty Dashboard. Manage your subjects, questions, and exam papers here.</p>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-````
-
-## File: src/app/(dashboard)/invigilator/dashboard/page.tsx
-````typescript
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-export default function InvigilatorDashboard() {
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.INVIGILATOR]}>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Invigilator Dashboard</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Welcome to the Invigilator Dashboard. View your exam assignments here.</p>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-````
-
-## File: src/app/(dashboard)/student/dashboard/page.tsx
-````typescript
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-
-export default function StudentDashboard() {
-  return (
-    <RoleGuard allowedRoles={[USER_ROLES.STUDENT]}>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Student Dashboard</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Welcome to the Student Dashboard. View your enrollments, exams, and results here.</p>
-        </div>
-      </div>
-    </RoleGuard>
-  )
-}
-````
-
-## File: src/app/error.tsx
-````typescript
-'use client'
-
-import { useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-
-type ErrorProps = {
-  error: Error & { digest?: string }
-  reset: () => void
-}
-
-const Error = ({ error, reset }: ErrorProps) => {
-  useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Application error:', error)
-  }, [error])
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
-        <div className="mb-8">
-          <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Page Not Found
-          </h2>
-          <p className="text-gray-600">
-            The page you are looking for doesn&lsquo;t exist or has been moved.
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <Button asChild className="w-full">
-            <Link href="/">
-              Go Back Home
-            </Link>
-          </Button>
-          
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/login">
-              Go to Login
-            </Link>
-          </Button>
-        </div>
-        
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
-            If you believe this is an error, please contact support.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-
-export default Error
-````
-
-## File: src/components/navigation/sidebar.tsx
-````typescript
-'use client'
-
-import { useState, useMemo, useCallback } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger
-} from '@/components/ui/sheet'
-import {
-  GraduationCapIcon,
-  LogOutIcon,
-  UserIcon,
-  SettingsIcon,
-  BellIcon,
-  MenuIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
-} from 'lucide-react'
-import { useAuth } from '@/lib/auth/auth-provider'
-import { useLogout } from '@/features/auth/hooks/use-auth-mutations'
-import { NAVIGATION_ITEMS, type NavItem } from '@/constants/navigation'
-import type { UserRole } from '@/constants/roles'
-import { cn } from '@/lib/utils'
-
-const getRoleStyle = (role: UserRole) => {
-  const roleStyles = {
-    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
-  } as const
-
-  return roleStyles[role] || 'bg-muted text-muted-foreground'
-}
-
-type SidebarContentProps = {
-  isCollapsed?: boolean
-  onNavigate?: () => void
-}
-
-const SidebarContent = ({ isCollapsed = false, onNavigate }: SidebarContentProps) => {
-  const { user } = useAuth()
-  const logoutMutation = useLogout()
-  const pathname = usePathname()
-
-  const navigationItems: NavItem[] = useMemo(() => {
-    const userRole = user?.role as UserRole
-    return userRole ? NAVIGATION_ITEMS[userRole] || [] : []
-  }, [user?.role])
-
-  const handleLogout = useCallback(() => {
-    logoutMutation.mutate()
-  }, [logoutMutation])
-
-  const getUserInitials = useCallback((name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }, [])
-
-  const formatRole = useCallback((role: string) => {
-    return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-  }, [])
-
-  if (!user) return null
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-6 border-b">
-        <Link href="/" className="flex items-center space-x-3 group">
-          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 flex-shrink-0">
-            <GraduationCapIcon className="w-6 h-6 text-primary-foreground" />
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0">
-              <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent truncate">
-                University
-              </h1>
-              <p className="text-xs text-muted-foreground -mt-0.5">Management System</p>
-            </div>
-          )}
-        </Link>
-      </div>
-
-      {/* User Info */}
-      <div className="p-4 border-b">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start p-3 h-auto hover:bg-muted/50 transition-colors",
-                isCollapsed && "justify-center px-2"
-              )}
-            >
-              <Avatar className="h-10 w-10 flex-shrink-0">
-                <AvatarImage src={user.profileImage} alt={user.fullName} />
-                <AvatarFallback className="gradient-primary text-primary-foreground font-semibold text-sm">
-                  {getUserInitials(user.fullName)}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <div className="ml-3 flex-1 text-left min-w-0">
-                  <p className="font-semibold text-sm text-foreground truncate">
-                    {user.fullName}
-                  </p>
-                  <Badge
-                    variant="outline"
-                    className={cn("text-xs mt-1", getRoleStyle(user.role))}
-                  >
-                    {formatRole(user.role)}
-                  </Badge>
-                </div>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64" align="start" forceMount>
-            <DropdownMenuLabel className="p-4">
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={user.profileImage} alt={user.fullName} />
-                  <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
-                    {getUserInitials(user.fullName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{user.fullName}</p>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                  <Badge
-                    variant="outline"
-                    className={cn("mt-1 text-xs", getRoleStyle(user.role))}
-                  >
-                    {formatRole(user.role)}
-                  </Badge>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/profile" className="flex items-center cursor-pointer">
-                <UserIcon className="mr-3 h-4 w-4" />
-                Profile Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center cursor-pointer">
-                <SettingsIcon className="mr-3 h-4 w-4" />
-                Preferences
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
-              disabled={logoutMutation.isPending}
-            >
-              <LogOutIcon className="mr-3 h-4 w-4" />
-              {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-1">
-          {navigationItems.map((item: NavItem) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  isCollapsed && "justify-center px-2"
-                )}
-              >
-                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                  {isActive && <div className="w-2 h-2 bg-current rounded-full" />}
-                  {!isActive && <div className="w-1.5 h-1.5 bg-current/40 rounded-full" />}
-                </div>
-                {!isCollapsed && <span>{item.title}</span>}
-              </Link>
-            )
-          })}
-        </nav>
-      </ScrollArea>
-
-      {/* Footer Actions */}
-      <div className="p-4 border-t space-y-2">
-        <Button
-          variant="ghost"
-          className={cn(
-            "w-full justify-start relative",
-            isCollapsed && "justify-center px-2"
-          )}
-        >
-          <BellIcon className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">Notifications</span>}
-          <Badge className="absolute top-1 right-1 w-5 h-5 text-xs bg-destructive hover:bg-destructive p-0 flex items-center justify-center">
-            3
-          </Badge>
-        </Button>
-
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          disabled={logoutMutation.isPending}
-          className={cn(
-            "w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10",
-            isCollapsed && "justify-center px-2"
-          )}
-        >
-          <LogOutIcon className="h-5 w-5" />
-          {!isCollapsed && (
-            <span className="ml-3">
-              {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
-            </span>
-          )}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-export const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          "hidden lg:flex flex-col border-r bg-card transition-all duration-300 relative",
-          isCollapsed ? "w-20" : "w-72"
-        )}
-      >
-        <SidebarContent isCollapsed={isCollapsed} />
-
-        {/* Collapse Toggle */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute -right-3 top-6 h-6 w-6 rounded-full border shadow-sm z-10"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? (
-            <ChevronRightIcon className="h-4 w-4" />
-          ) : (
-            <ChevronLeftIcon className="h-4 w-4" />
-          )}
-        </Button>
-      </aside>
-
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="shadow-lg">
-              <MenuIcon className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72">
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
-  )
-}
-````
+```
 
 ## File: src/constants/roles.ts
-````typescript
+```typescript
 export const USER_ROLES = {
   ADMIN: 'admin',
   FACULTY: 'faculty', 
@@ -1155,195 +108,10 @@ export const BLOOMS_TAXONOMY = {
 } as const
 
 export type BloomsTaxonomy = typeof BLOOMS_TAXONOMY[keyof typeof BLOOMS_TAXONOMY]
-````
-
-## File: src/constants/routes.ts
-````typescript
-export const ROUTES = {
-  HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  FORGOT_PASSWORD: '/forgot-password',
-  RESET_PASSWORD: '/reset-password',
-  
-  ADMIN: {
-    ROOT: '/admin',
-    DASHBOARD: '/admin/dashboard',
-    USERS: '/admin/users',
-    DEPARTMENTS: '/admin/departments',
-    SUBJECTS: '/admin/subjects',
-    ROOMS: '/admin/rooms',
-    REPORTS: '/admin/reports',
-    CALENDAR: '/admin/calendar'
-        REPORTS: '/admin/reports',
-    GENERATE_REPORT: '/admin/reports/generate',
-  },
-  
-  FACULTY: {
-    ROOT: '/faculty',
-    DASHBOARD: '/faculty/dashboard',
-    SUBJECTS: '/faculty/subjects',
-    QUESTIONS: '/faculty/questions',
-    EXAM_PAPERS: '/faculty/exam-papers',
-    RESULTS: '/faculty/results',
-    ASSIGNMENTS: '/faculty/assignments'
-  },
-  
-  STUDENT: {
-    ROOT: '/student',
-    DASHBOARD: '/student/dashboard',
-    ENROLLMENTS: '/student/enrollments',
-    EXAMS: '/student/exams',
-    RESULTS: '/student/results',
-    NOTIFICATIONS: '/student/notifications'
-  },
-  
-  EXAM_COORDINATOR: {
-    ROOT: '/exam-coordinator',
-    DASHBOARD: '/exam-coordinator/dashboard',
-    EXAM_SESSIONS: '/exam-coordinator/exam-sessions',
-    REGISTRATIONS: '/exam-coordinator/registrations',
-    ROOMS: '/exam-coordinator/rooms',
-    ASSIGNMENTS: '/exam-coordinator/assignments'
-  },
-  
-  INVIGILATOR: {
-    ROOT: '/invigilator',
-    DASHBOARD: '/invigilator/dashboard',
-    ASSIGNMENTS: '/invigilator/assignments'
-  }
-} as const
-````
-
-## File: src/features/assignments/hooks/use-assignments.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  InvigilatorAssignment, 
-  CreateAssignmentDto, 
-  UpdateAssignmentDto, 
-  AssignmentStats, 
-  GetAssignmentsParams 
-} from '../types/assignments'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const invigilatorAssignmentsService = {
-  getAll: (params?: GetAssignmentsParams): Promise<PaginatedResponse<InvigilatorAssignment>> =>
-    apiClient.get('/api/v1/invigilator-assignments', { params }),
-
-  getById: (id: string): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.get(`/api/v1/invigilator-assignments/${id}`),
-
-  getBySession: (sessionId: string): Promise<ApiResponse<InvigilatorAssignment[]>> =>
-    apiClient.get(`/api/v1/invigilator-assignments/session/${sessionId}`),
-
-  getByInvigilator: (invigilatorId: string, params?: { upcoming?: boolean }): Promise<ApiResponse<InvigilatorAssignment[]>> =>
-    apiClient.get(`/api/v1/invigilator-assignments/invigilator/${invigilatorId}`, { params }),
-
-  getStats: (): Promise<ApiResponse<AssignmentStats>> =>
-    apiClient.get('/api/v1/invigilator-assignments/stats'),
-
-  create: (data: CreateAssignmentDto): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.post('/api/v1/invigilator-assignments', data),
-
-  update: (id: string, data: UpdateAssignmentDto): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.patch(`/api/v1/invigilator-assignments/${id}`, data),
-
-  confirm: (id: string): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.patch(`/api/v1/invigilator-assignments/${id}/confirm`),
-
-  decline: (id: string, reason?: string): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.patch(`/api/v1/invigilator-assignments/${id}/decline`, { reason }),
-
-  complete: (id: string, notes?: string): Promise<ApiResponse<InvigilatorAssignment>> =>
-    apiClient.patch(`/api/v1/invigilator-assignments/${id}/complete`, { notes }),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/invigilator-assignments/${id}`)
-}
-````
-
-## File: src/features/assignments/types/assignments.ts
-````typescript
-export const ASSIGNMENT_TYPE = {
-  CHIEF: 'chief',
-  ASSISTANT: 'assistant',
-  SUBSTITUTE: 'substitute'
-} as const
-
-export type AssignmentType = typeof ASSIGNMENT_TYPE[keyof typeof ASSIGNMENT_TYPE]
-
-export const ASSIGNMENT_STATUS = {
-  ASSIGNED: 'assigned',
-  CONFIRMED: 'confirmed',
-  DECLINED: 'declined',
-  COMPLETED: 'completed'
-} as const
-
-export type AssignmentStatus = typeof ASSIGNMENT_STATUS[keyof typeof ASSIGNMENT_STATUS]
-
-export type InvigilatorAssignment = {
-  _id: string
-  sessionId: string
-  examTitle?: string
-  examDateTime?: string
-  roomNumber?: string
-  invigilatorId: string
-  invigilatorName?: string
-  invigilatorEmail?: string
-  assignmentType: AssignmentType
-  assignedBy: string
-  assignedByName?: string
-  assignmentDate: string
-  status: AssignmentStatus
-  confirmedAt?: string
-  declinedAt?: string
-  declineReason?: string
-  completedAt?: string
-  notes?: string
-  specialInstructions?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateAssignmentDto = {
-  sessionId: string
-  invigilatorId: string
-  assignmentType: AssignmentType
-  assignmentDate: string
-  notes?: string
-  specialInstructions?: string
-}
-
-export type UpdateAssignmentDto = Partial<CreateAssignmentDto> & {
-  status?: AssignmentStatus
-  confirmedAt?: string
-  declinedAt?: string
-  declineReason?: string
-  completedAt?: string
-}
-
-export type AssignmentStats = {
-  totalAssignments: number
-  assignmentsByStatus: Record<string, number>
-  assignmentsByType: Record<string, number>
-}
-
-export type GetAssignmentsParams = {
-  sessionId?: string
-  invigilatorId?: string
-  assignmentType?: AssignmentType
-  status?: AssignmentStatus
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
+```
 
 ## File: src/features/auth/hooks/use-api.ts
-````typescript
+```typescript
 import { apiClient } from '@/lib/api/client'
 import type { LoginDto, RegisterDto, LoginResponse } from '../types/auth'
 import { ApiResponse } from '@/types/common'
@@ -1371,1559 +139,10 @@ export const authService = {
     apiClient.setToken(token)
   }
 }
-````
-
-## File: src/features/calendar/hooks/use-calendar.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  AcademicCalendar, 
-  CreateCalendarDto, 
-  UpdateCalendarDto, 
-  CalendarSummary, 
-  GetCalendarParams 
-} from '../types/calendar'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const academicCalendarService = {
-  getAll: (params?: GetCalendarParams): Promise<PaginatedResponse<AcademicCalendar>> =>
-    apiClient.get('/api/v1/academic-calendar', { params }),
-
-  getById: (id: string): Promise<ApiResponse<AcademicCalendar>> =>
-    apiClient.get(`/api/v1/academic-calendar/${id}`),
-
-  getCurrent: (): Promise<ApiResponse<AcademicCalendar | null>> =>
-    apiClient.get('/api/v1/academic-calendar/current'),
-
-  getSummary: (): Promise<ApiResponse<CalendarSummary>> =>
-    apiClient.get('/api/v1/academic-calendar/summary'),
-
-  create: (data: CreateCalendarDto): Promise<ApiResponse<AcademicCalendar>> =>
-    apiClient.post('/api/v1/academic-calendar', data),
-
-  update: (id: string, data: UpdateCalendarDto): Promise<ApiResponse<AcademicCalendar>> =>
-    apiClient.patch(`/api/v1/academic-calendar/${id}`, data),
-
-  setCurrent: (id: string): Promise<ApiResponse<AcademicCalendar>> =>
-    apiClient.patch(`/api/v1/academic-calendar/${id}/set-current`),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/academic-calendar/${id}`)
-}
-````
-
-## File: src/features/calendar/types/calendar.ts
-````typescript
-export type AcademicCalendar = {
-  _id: string
-  academicYear: string
-  semester: number
-  semesterName: string
-  semesterStart: string
-  semesterEnd: string
-  examStart: string
-  examEnd: string
-  resultPublishDate?: string
-  isCurrent: boolean
-  isActive: boolean
-  description?: string
-  examDuration: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateCalendarDto = {
-  academicYear: string
-  semester: number
-  semesterStart: string
-  semesterEnd: string
-  examStart: string
-  examEnd: string
-  resultPublishDate?: string
-  isCurrent?: boolean
-  description?: string
-}
-
-export type UpdateCalendarDto = Partial<CreateCalendarDto> & {
-  isActive?: boolean
-}
-
-export type CalendarSummary = {
-  currentSemester: AcademicCalendar | null
-  upcomingDeadlines: Array<{
-    type: string
-    date: string
-    description: string
-  }>
-}
-
-export type GetCalendarParams = {
-  academicYear?: string
-  semester?: number
-  isCurrent?: boolean
-  isActive?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/dashboard/hooks/use-dashboard.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  AdminDashboard, 
-  FacultyDashboard, 
-  StudentDashboard, 
-  DashboardStats 
-} from '../types/dashboard'
-import type { ApiResponse } from '@/types/common'
-
-export const dashboardService = {
-  getAdminDashboard: (): Promise<ApiResponse<AdminDashboard>> =>
-    apiClient.get('/api/v1/dashboard/admin'),
-
-  getFacultyDashboard: (): Promise<ApiResponse<FacultyDashboard>> =>
-    apiClient.get('/api/v1/dashboard/faculty'),
-
-  getStudentDashboard: (): Promise<ApiResponse<StudentDashboard>> =>
-    apiClient.get('/api/v1/dashboard/student'),
-
-  getDashboard: (): Promise<ApiResponse<DashboardStats>> =>
-    apiClient.get('/api/v1/dashboard'),
-
-  getSystemHealth: (): Promise<ApiResponse<Record<string, boolean>>> =>
-    apiClient.get('/api/v1/dashboard/system-health'),
-
-  getRecentActivity: (params?: { limit?: number }): Promise<ApiResponse<DashboardStats['recentActivity']>> =>
-    apiClient.get('/api/v1/dashboard/recent-activity', { params })
-}
-````
-
-## File: src/features/dashboard/types/dashboard.ts
-````typescript
-export type DashboardActivity = {
-  id: string
-  type: string
-  description: string
-  timestamp: string
-  userId: string
-  userName: string
-}
-
-export type DashboardStats = {
-  totalUsers: number
-  totalDepartments: number
-  totalSubjects: number
-  totalExamSessions: number
-  upcomingExams: number
-  recentActivity: DashboardActivity[]
-}
-
-export type AdminDashboard = DashboardStats & {
-  usersByRole: Record<string, number>
-  examsByStatus: Record<string, number>
-  systemHealth: {
-    database: boolean
-    storage: boolean
-    notifications: boolean
-  }
-}
-
-export type FacultyDashboard = {
-  mySubjects: number
-  myQuestions: number
-  myExamPapers: number
-  upcomingExams: Array<{
-    id: string
-    title: string
-    date: string
-    room: string
-  }>
-  pendingGrading: number
-  recentActivity: DashboardActivity[]
-}
-
-export type StudentDashboard = {
-  enrolledSubjects: number
-  upcomingExams: Array<{
-    id: string
-    title: string
-    date: string
-    room: string
-  }>
-  completedExams: number
-  pendingResults: number
-  recentGrades: Array<{
-    id: string
-    subject: string
-    marks: number
-    grade: string
-  }>
-  notifications: Array<{
-    id: string
-    title: string
-    message: string
-    time: string
-  }>
-}
-````
-
-## File: src/features/departments/hooks/use-departments.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Department, 
-  CreateDepartmentDto, 
-  UpdateDepartmentDto, 
-  DepartmentStats, 
-  GetDepartmentsParams 
-} from '../types/departments'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const departmentsService = {
-  getAll: (params?: GetDepartmentsParams): Promise<PaginatedResponse<Department>> =>
-    apiClient.get('/api/v1/departments', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Department>> =>
-    apiClient.get(`/api/v1/departments/${id}`),
-
-  getStats: (): Promise<ApiResponse<DepartmentStats>> =>
-    apiClient.get('/api/v1/departments/stats'),
-
-  create: (data: CreateDepartmentDto): Promise<ApiResponse<Department>> =>
-    apiClient.post('/api/v1/departments', data),
-
-  update: (id: string, data: UpdateDepartmentDto): Promise<ApiResponse<Department>> =>
-    apiClient.patch(`/api/v1/departments/${id}`, data),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/departments/${id}`)
-}
-````
-
-## File: src/features/departments/types/departments.ts
-````typescript
-export type Department = {
-  _id: string
-  departmentCode: string
-  departmentName: string
-  headOfDepartment?: string
-  headOfDepartmentName?: string
-  description?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateDepartmentDto = {
-  departmentCode: string
-  departmentName: string
-  headOfDepartment?: string
-  description?: string
-}
-
-export type UpdateDepartmentDto = Partial<Omit<CreateDepartmentDto, 'departmentCode'>> & {
-  isActive?: boolean
-}
-
-export type DepartmentStats = {
-  totalDepartments: number
-  activeDepartments: number
-  departmentsByFaculty: Record<string, number>
-}
-
-export type GetDepartmentsParams = {
-  isActive?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/enrollments/hooks/use-enrollments.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  StudentEnrollment, 
-  CreateEnrollmentDto, 
-  UpdateEnrollmentDto, 
-  EnrollmentStats, 
-  GetEnrollmentsParams 
-} from '../types/enrollments'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const studentEnrollmentsService = {
-  getAll: (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> =>
-    apiClient.get('/api/v1/student-enrollments', { params }),
-
-  getById: (id: string): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.get(`/api/v1/student-enrollments/${id}`),
-
-  getByStudent: (studentId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> =>
-    apiClient.get(`/api/v1/student-enrollments/student/${studentId}`, { params }),
-
-  getBySubject: (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> =>
-    apiClient.get(`/api/v1/student-enrollments/subject/${subjectId}`, { params }),
-
-  getStats: (): Promise<ApiResponse<EnrollmentStats>> =>
-    apiClient.get('/api/v1/student-enrollments/stats'),
-
-  create: (data: CreateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.post('/api/v1/student-enrollments', data),
-
-  update: (id: string, data: UpdateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.patch(`/api/v1/student-enrollments/${id}`, data),
-
-  withdraw: (id: string, reason?: string): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.patch(`/api/v1/student-enrollments/${id}/withdraw`, { reason }),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/student-enrollments/${id}`)
-}
-````
-
-## File: src/features/enrollments/types/enrollments.ts
-````typescript
-export const ENROLLMENT_STATUS = {
-  ACTIVE: 'active',
-  WITHDRAWN: 'withdrawn',
-  COMPLETED: 'completed'
-} as const
-
-export type EnrollmentStatus = typeof ENROLLMENT_STATUS[keyof typeof ENROLLMENT_STATUS]
-
-export type StudentEnrollment = {
-  _id: string
-  studentId: string
-  studentName?: string
-  studentEmail?: string
-  subjectId: string
-  subjectCode?: string
-  subjectName?: string
-  subjectCredits?: number
-  academicYear: string
-  semester: number
-  enrollmentDate: string
-  status: EnrollmentStatus
-  withdrawnDate?: string
-  withdrawnReason?: string
-  enrolledBy: string
-  enrolledByName?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateEnrollmentDto = {
-  studentId: string
-  subjectId: string
-  academicYear: string
-  semester: number
-  enrollmentDate: string
-}
-
-export type UpdateEnrollmentDto = Partial<CreateEnrollmentDto> & {
-  status?: EnrollmentStatus
-  withdrawnDate?: string
-  withdrawnReason?: string
-}
-
-export type EnrollmentStats = {
-  totalEnrollments: number
-  enrollmentsByStatus: Record<string, number>
-  enrollmentsBySubject: Record<string, number>
-}
-
-export type GetEnrollmentsParams = {
-  studentId?: string
-  subjectId?: string
-  academicYear?: string
-  semester?: number
-  status?: EnrollmentStatus
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/exam-papers/hooks/use-exam-papers.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  ExamPaper, 
-  CreateExamPaperDto, 
-  UpdateExamPaperDto, 
-  GeneratePaperDto,
-  ExamPaperStats, 
-  GetExamPapersParams 
-} from '../types/exam-papers'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const examPapersService = {
-  getAll: (params?: GetExamPapersParams): Promise<PaginatedResponse<ExamPaper>> =>
-    apiClient.get('/api/v1/exam-papers', { params }),
-
-  getById: (id: string, params?: { includeQuestions?: boolean }): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.get(`/api/v1/exam-papers/${id}`, { params }),
-
-  getStats: (): Promise<ApiResponse<ExamPaperStats>> =>
-    apiClient.get('/api/v1/exam-papers/stats'),
-
-  create: (data: CreateExamPaperDto): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.post('/api/v1/exam-papers', data),
-
-  generate: (data: GeneratePaperDto): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.post('/api/v1/exam-papers/generate', data),
-
-  update: (id: string, data: UpdateExamPaperDto): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.patch(`/api/v1/exam-papers/${id}`, data),
-
-  duplicate: (id: string): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.post(`/api/v1/exam-papers/${id}/duplicate`),
-
-  finalize: (id: string): Promise<ApiResponse<ExamPaper>> =>
-    apiClient.patch(`/api/v1/exam-papers/${id}/finalize`),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/exam-papers/${id}`)
-}
-````
-
-## File: src/features/exam-papers/types/exam-papers.ts
-````typescript
-import type { QuestionType, DifficultyLevel } from '@/constants/roles'
-
-export const EXAM_TYPES = {
-  MIDTERM: 'midterm',
-  FINAL: 'final',
-  QUIZ: 'quiz',
-  ASSIGNMENT: 'assignment'
-} as const
-
-export type ExamType = typeof EXAM_TYPES[keyof typeof EXAM_TYPES]
-
-export type ExamPaper = {
-  _id: string
-  subjectId: string
-  subjectCode?: string
-  subjectName?: string
-  paperTitle: string
-  paperType: ExamType
-  totalMarks: number
-  durationMinutes: number
-  formattedDuration: string
-  instructions?: string
-  createdBy: string
-  createdByName?: string
-  isFinalized: boolean
-  finalizedAt?: string
-  finalizedBy?: string
-  versionNumber: number
-  parentPaperId?: string
-  isActive: boolean
-  questions?: PaperQuestion[]
-  questionCount?: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type PaperQuestion = {
-  _id: string
-  questionId: string
-  questionText: string
-  questionType: string
-  difficultyLevel: string
-  questionOrder: number
-  marksAllocated: number
-  section: string
-  isOptional: boolean
-  createdAt: string
-}
-
-export type CreateExamPaperDto = {
-  subjectId: string
-  paperTitle: string
-  paperType: ExamType
-  totalMarks: number
-  durationMinutes: number
-  instructions?: string
-  questions: Array<{
-    questionId: string
-    questionOrder: number
-    marksAllocated: number
-    section?: string
-    isOptional?: boolean
-  }>
-}
-
-export type UpdateExamPaperDto = Partial<CreateExamPaperDto> & {
-  isActive?: boolean
-}
-
-export type GeneratePaperDto = {
-  subjectId: string
-  paperTitle: string
-  paperType: ExamType
-  durationMinutes: number
-  instructions?: string
-  questionCriteria: Array<{
-    topic?: string
-    difficultyLevel?: DifficultyLevel
-    questionType?: QuestionType
-    count: number
-    marksPerQuestion: number
-    section?: string
-  }>
-}
-
-export type ExamPaperStats = {
-  totalPapers: number
-  papersByType: Record<string, number>
-  papersBySubject: Record<string, number>
-  finalizedPapers: number
-}
-
-export type GetExamPapersParams = {
-  subjectId?: string
-  paperType?: ExamType
-  isFinalized?: boolean
-  isActive?: boolean
-  myPapers?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/exam-sessions/hooks/use-exam-sessions.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  ExamSession, 
-  CreateExamSessionDto, 
-  UpdateExamSessionDto, 
-  ExamSessionStats, 
-  GetExamSessionsParams 
-} from '../types/exam-sessions'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const examSessionsService = {
-  getAll: (params?: GetExamSessionsParams): Promise<PaginatedResponse<ExamSession>> =>
-    apiClient.get('/api/v1/exam-sessions', { params }),
-
-  getById: (id: string): Promise<ApiResponse<ExamSession>> =>
-    apiClient.get(`/api/v1/exam-sessions/${id}`),
-
-  getUpcoming: (params?: { limit?: number }): Promise<ApiResponse<ExamSession[]>> =>
-    apiClient.get('/api/v1/exam-sessions/upcoming', { params }),
-
-  getStats: (): Promise<ApiResponse<ExamSessionStats>> =>
-    apiClient.get('/api/v1/exam-sessions/stats'),
-
-  create: (data: CreateExamSessionDto): Promise<ApiResponse<ExamSession>> =>
-    apiClient.post('/api/v1/exam-sessions', data),
-
-  update: (id: string, data: UpdateExamSessionDto): Promise<ApiResponse<ExamSession>> =>
-    apiClient.patch(`/api/v1/exam-sessions/${id}`, data),
-
-  cancel: (id: string, reason?: string): Promise<ApiResponse<ExamSession>> =>
-    apiClient.patch(`/api/v1/exam-sessions/${id}/cancel`, { reason }),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/exam-sessions/${id}`)
-}
-````
-
-## File: src/features/exam-sessions/types/exam-sessions.ts
-````typescript
-export const EXAM_SESSION_STATUS = {
-  SCHEDULED: 'scheduled',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
-} as const
-
-export type ExamSessionStatus = typeof EXAM_SESSION_STATUS[keyof typeof EXAM_SESSION_STATUS]
-
-export type ExamSession = {
-  _id: string
-  paperId: string
-  paperTitle?: string
-  subjectCode?: string
-  subjectName?: string
-  examTitle: string
-  examDateTime: string
-  durationMinutes: number
-  formattedDuration: string
-  roomId: string
-  roomNumber?: string
-  building?: string
-  maxStudents: number
-  currentStudents: number
-  instructions?: string
-  status: ExamSessionStatus
-  createdBy: string
-  createdByName?: string
-  academicYear: string
-  semester: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateExamSessionDto = {
-  paperId: string
-  examTitle: string
-  examDateTime: string
-  durationMinutes: number
-  roomId: string
-  maxStudents: number
-  instructions?: string
-  academicYear: string
-  semester: number
-}
-
-export type UpdateExamSessionDto = Partial<CreateExamSessionDto> & {
-  status?: ExamSessionStatus
-}
-
-export type ExamSessionStats = {
-  totalSessions: number
-  sessionsByStatus: Record<string, number>
-  upcomingSessions: number
-  completedSessions: number
-}
-
-export type GetExamSessionsParams = {
-  paperId?: string
-  roomId?: string
-  status?: ExamSessionStatus
-  academicYear?: string
-  semester?: number
-  dateFrom?: string
-  dateTo?: string
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/file-uploads/hooks/use-file-uploads.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  FileUpload, 
-  FileUploadStats, 
-  GetFileUploadsParams 
-} from '../types/file-uploads'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const fileUploadsService = {
-  uploadSingle: (file: File, relatedTable?: string, relatedId?: string, description?: string): Promise<ApiResponse<FileUpload>> => {
-    const formData = new FormData()
-    formData.append('file', file)
-    if (relatedTable) formData.append('relatedTable', relatedTable)
-    if (relatedId) formData.append('relatedId', relatedId)
-    if (description) formData.append('description', description)
-    
-    return apiClient.upload('/api/v1/file-uploads/single', formData)
-  },
-
-  uploadMultiple: (files: File[], relatedTable?: string, relatedId?: string): Promise<ApiResponse<FileUpload[]>> => {
-    const formData = new FormData()
-    files.forEach(file => formData.append('files', file))
-    if (relatedTable) formData.append('relatedTable', relatedTable)
-    if (relatedId) formData.append('relatedId', relatedId)
-    
-    return apiClient.upload('/api/v1/file-uploads/multiple', formData)
-  },
-
-  getAll: (params?: GetFileUploadsParams): Promise<PaginatedResponse<FileUpload>> => 
-    apiClient.get('/api/v1/file-uploads', { params }),
-
-  getById: (id: string): Promise<ApiResponse<FileUpload>> =>
-    apiClient.get(`/api/v1/file-uploads/${id}`),
-
-  getByRelated: (relatedTable: string, relatedId: string): Promise<ApiResponse<FileUpload[]>> =>
-    apiClient.get(`/api/v1/file-uploads/related/${relatedTable}/${relatedId}`),
-
-  getStats: (): Promise<ApiResponse<FileUploadStats>> =>
-    apiClient.get('/api/v1/file-uploads/stats'),
-
-  download: (id: string): Promise<Blob> =>
-    apiClient.get(`/api/v1/file-uploads/${id}/download`),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/file-uploads/${id}`)
-}
-````
-
-## File: src/features/file-uploads/types/file-uploads.ts
-````typescript
-export type FileUpload = {
-  _id: string
-  originalName: string
-  fileName: string
-  filePath: string
-  mimeType: string
-  fileSize: number
-  relatedTable?: string
-  relatedId?: string
-  description?: string
-  uploadedBy: string
-  uploadedByName?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateFileUploadDto = {
-  file: File
-  relatedTable?: string
-  relatedId?: string
-  description?: string
-}
-
-export type FileUploadStats = {
-  totalFiles: number
-  totalSize: number
-  filesByType: Record<string, number>
-}
-
-export type GetFileUploadsParams = {
-  relatedTable?: string
-  relatedId?: string
-  mimeType?: string
-  uploadedBy?: string
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/notifications/hooks/use-notifications.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Notification, 
-  CreateNotificationDto, 
-  UpdateNotificationDto, 
-  NotificationStats, 
-  GetNotificationsParams 
-} from '../types/notifications'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const notificationsService = {
-  getAll: (params?: GetNotificationsParams): Promise<PaginatedResponse<Notification>> =>
-    apiClient.get('/api/v1/notifications', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Notification>> =>
-    apiClient.get(`/api/v1/notifications/${id}`),
-
-  getUnread: (params?: { limit?: number }): Promise<ApiResponse<Notification[]>> =>
-    apiClient.get('/api/v1/notifications/unread', { params }),
-
-  getStats: (): Promise<ApiResponse<NotificationStats>> =>
-    apiClient.get('/api/v1/notifications/stats'),
-
-  create: (data: CreateNotificationDto): Promise<ApiResponse<Notification>> =>
-    apiClient.post('/api/v1/notifications', data),
-
-  createBulk: (data: CreateNotificationDto[]): Promise<ApiResponse<Notification[]>> =>
-    apiClient.post('/api/v1/notifications/bulk', { notifications: data }),
-
-  update: (id: string, data: UpdateNotificationDto): Promise<ApiResponse<Notification>> =>
-    apiClient.patch(`/api/v1/notifications/${id}`, data),
-
-  markAsRead: (id: string): Promise<ApiResponse<Notification>> =>
-    apiClient.patch(`/api/v1/notifications/${id}/mark-read`),
-
-  markAllAsRead: (): Promise<ApiResponse<{ message: string; count: number }>> =>
-    apiClient.patch('/api/v1/notifications/mark-all-read'),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/notifications/${id}`),
-
-  deleteAll: (): Promise<ApiResponse<{ message: string; count: number }>> =>
-    apiClient.delete('/api/v1/notifications/all')
-}
-````
-
-## File: src/features/notifications/types/notifications.ts
-````typescript
-export const NOTIFICATION_TYPE = {
-  EXAM_SCHEDULE: 'exam_schedule',
-  RESULT: 'result',
-  ANNOUNCEMENT: 'announcement',
-  REMINDER: 'reminder',
-  ALERT: 'alert'
-} as const
-
-export type NotificationType = typeof NOTIFICATION_TYPE[keyof typeof NOTIFICATION_TYPE]
-
-export const NOTIFICATION_PRIORITY = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high'
-} as const
-
-export type NotificationPriority = typeof NOTIFICATION_PRIORITY[keyof typeof NOTIFICATION_PRIORITY]
-
-export type Notification = {
-  _id: string
-  recipientId: string
-  recipientName?: string
-  senderId?: string
-  senderName?: string
-  title: string
-  message: string
-  notificationType: NotificationType
-  isRead: boolean
-  priority: NotificationPriority
-  relatedTable?: string
-  relatedId?: string
-  scheduledAt?: string
-  sentAt?: string
-  readAt?: string
-  createdAt: string
-}
-
-export type CreateNotificationDto = {
-  recipientId: string
-  title: string
-  message: string
-  notificationType: NotificationType
-  priority?: NotificationPriority
-  relatedTable?: string
-  relatedId?: string
-  scheduledAt?: string
-}
-
-export type UpdateNotificationDto = Partial<CreateNotificationDto> & {
-  isRead?: boolean
-  readAt?: string
-  sentAt?: string
-}
-
-export type NotificationStats = {
-  totalNotifications: number
-  unreadCount: number
-  notificationsByType: Record<string, number>
-}
-
-export type GetNotificationsParams = {
-  recipientId?: string
-  notificationType?: NotificationType
-  isRead?: boolean
-  priority?: NotificationPriority
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/questions/hooks/use-questions.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Question, 
-  CreateQuestionDto, 
-  UpdateQuestionDto, 
-  QuestionStats, 
-  GetQuestionsParams 
-} from '../types/questions'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const questionsService = {
-  getAll: (params?: GetQuestionsParams): Promise<PaginatedResponse<Question>> =>
-    apiClient.get('/api/v1/questions', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Question>> =>
-    apiClient.get(`/api/v1/questions/${id}`),
-
-  getBySubject: (subjectId: string, params?: { includePrivate?: boolean }): Promise<ApiResponse<Question[]>> =>
-    apiClient.get(`/api/v1/questions/subject/${subjectId}`, { params }),
-
-  getStats: (): Promise<ApiResponse<QuestionStats>> =>
-    apiClient.get('/api/v1/questions/stats'),
-
-  create: (data: CreateQuestionDto): Promise<ApiResponse<Question>> =>
-    apiClient.post('/api/v1/questions', data),
-
-  update: (id: string, data: UpdateQuestionDto): Promise<ApiResponse<Question>> =>
-    apiClient.patch(`/api/v1/questions/${id}`, data),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/questions/${id}`)
-}
-````
-
-## File: src/features/questions/types/questions.ts
-````typescript
-import type { QuestionType, DifficultyLevel, BloomsTaxonomy } from '@/constants/roles'
-
-export type Question = {
-  _id: string
-  subjectId: string
-  subjectCode?: string
-  subjectName?: string
-  questionText: string
-  questionDescription?: string
-  questionType: QuestionType
-  difficultyLevel: DifficultyLevel
-  marks: number
-  topic?: string
-  subtopic?: string
-  bloomsTaxonomy?: BloomsTaxonomy
-  keywords?: string
-  usageCount: number
-  isPublic: boolean
-  createdBy: string
-  createdByName?: string
-  isActive: boolean
-  options?: QuestionOption[]
-  createdAt: string
-  updatedAt: string
-}
-
-export type QuestionOption = {
-  _id: string
-  optionText: string
-  isCorrect: boolean
-  optionOrder: number
-  createdAt: string
-}
-
-export type CreateQuestionDto = {
-  subjectId: string
-  questionText: string
-  questionDescription?: string
-  questionType: QuestionType
-  difficultyLevel: DifficultyLevel
-  marks: number
-  topic?: string
-  subtopic?: string
-  bloomsTaxonomy?: BloomsTaxonomy
-  keywords?: string
-  isPublic?: boolean
-  options?: Array<{
-    optionText: string
-    isCorrect: boolean
-    optionOrder: number
-  }>
-}
-
-export type UpdateQuestionDto = Partial<CreateQuestionDto> & {
-  isActive?: boolean
-}
-
-export type QuestionStats = {
-  totalQuestions: number
-  questionsByType: Record<string, number>
-  questionsByDifficulty: Record<string, number>
-  questionsBySubject: Record<string, number>
-}
-
-export type GetQuestionsParams = {
-  subjectId?: string
-  questionType?: QuestionType
-  difficultyLevel?: DifficultyLevel
-  topic?: string
-  isPublic?: boolean
-  isActive?: boolean
-  myQuestions?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/registrations/hooks/use-registrations.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  ExamRegistration, 
-  CreateRegistrationDto, 
-  UpdateRegistrationDto, 
-  RegistrationStats, 
-  GetRegistrationsParams 
-} from '../types/registrations'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const examRegistrationsService = {
-  getAll: (params?: GetRegistrationsParams): Promise<PaginatedResponse<ExamRegistration>> =>
-    apiClient.get('/api/v1/exam-registrations', { params }),
-
-  getById: (id: string): Promise<ApiResponse<ExamRegistration>> =>
-    apiClient.get(`/api/v1/exam-registrations/${id}`),
-
-  getBySession: (sessionId: string): Promise<ApiResponse<ExamRegistration[]>> =>
-    apiClient.get(`/api/v1/exam-registrations/session/${sessionId}`),
-
-  getByStudent: (studentId: string, params?: { upcoming?: boolean }): Promise<ApiResponse<ExamRegistration[]>> =>
-    apiClient.get(`/api/v1/exam-registrations/student/${studentId}`, { params }),
-
-  getStats: (): Promise<ApiResponse<RegistrationStats>> =>
-    apiClient.get('/api/v1/exam-registrations/stats'),
-
-  create: (data: CreateRegistrationDto): Promise<ApiResponse<ExamRegistration>> =>
-    apiClient.post('/api/v1/exam-registrations', data),
-
-  update: (id: string, data: UpdateRegistrationDto): Promise<ApiResponse<ExamRegistration>> =>
-    apiClient.patch(`/api/v1/exam-registrations/${id}`, data),
-
-  cancel: (id: string, reason?: string): Promise<ApiResponse<ExamRegistration>> =>
-    apiClient.patch(`/api/v1/exam-registrations/${id}/cancel`, { reason }),
-
-  markAttendance: (id: string, status: string): Promise<ApiResponse<ExamRegistration>> =>
-    apiClient.patch(`/api/v1/exam-registrations/${id}/attendance`, { status }),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/exam-registrations/${id}`)
-}
-````
-
-## File: src/features/registrations/types/registrations.ts
-````typescript
-export const ATTENDANCE_STATUS = {
-  PRESENT: 'present',
-  ABSENT: 'absent',
-  LATE: 'late'
-} as const
-
-export type AttendanceStatus = typeof ATTENDANCE_STATUS[keyof typeof ATTENDANCE_STATUS]
-
-export const REGISTRATION_STATUS = {
-  REGISTERED: 'registered',
-  CONFIRMED: 'confirmed',
-  CANCELLED: 'cancelled'
-} as const
-
-export type RegistrationStatus = typeof REGISTRATION_STATUS[keyof typeof REGISTRATION_STATUS]
-
-export type ExamRegistration = {
-  _id: string
-  sessionId: string
-  examTitle?: string
-  examDateTime?: string
-  roomNumber?: string
-  studentId: string
-  studentName?: string
-  studentEmail?: string
-  registrationDate: string
-  seatNumber?: string
-  attendanceStatus?: AttendanceStatus
-  specialRequirements?: string
-  status: RegistrationStatus
-  registeredBy: string
-  registeredByName?: string
-  cancelledAt?: string
-  cancellationReason?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateRegistrationDto = {
-  sessionId: string
-  studentId: string
-  registrationDate: string
-  seatNumber?: string
-  specialRequirements?: string
-}
-
-export type UpdateRegistrationDto = Partial<CreateRegistrationDto> & {
-  status?: RegistrationStatus
-  attendanceStatus?: AttendanceStatus
-  cancelledAt?: string
-  cancellationReason?: string
-}
-
-export type RegistrationStats = {
-  totalRegistrations: number
-  registrationsByStatus: Record<string, number>
-  attendanceStats: Record<string, number>
-}
-
-export type GetRegistrationsParams = {
-  sessionId?: string
-  studentId?: string
-  status?: RegistrationStatus
-  attendanceStatus?: AttendanceStatus
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/reports/hooks/use-reports.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  ReportConfig, 
-  ReportResult, 
-  ReportType 
-} from '../types/reports'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const reportsService = {
-  generate: (data: ReportConfig): Promise<ApiResponse<ReportResult>> =>
-    apiClient.post('/api/v1/reports/generate', data),
-
-  getReportTypes: (): Promise<ApiResponse<ReportType[]>> =>
-    apiClient.get('/api/v1/reports/types'),
-
-  getReportHistory: (params?: { limit?: number; page?: number }): Promise<PaginatedResponse<ReportResult>> =>
-    apiClient.get('/api/v1/reports/history', { params }),
-
-  download: (reportId: string): Promise<Blob> =>
-    apiClient.get(`/api/v1/reports/${reportId}/download`),
-
-  delete: (reportId: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/reports/${reportId}`)
-}
-````
-
-## File: src/features/reports/types/reports.ts
-````typescript
-export const REPORT_FORMAT = {
-  PDF: 'pdf',
-  EXCEL: 'excel',
-  CSV: 'csv',
-  JSON: 'json'
-} as const
-
-export type ReportFormat = typeof REPORT_FORMAT[keyof typeof REPORT_FORMAT]
-
-export type ReportConfig = {
-  reportType: string
-  title: string
-  description: string
-  parameters: Record<string, unknown>
-  filters: Record<string, unknown>
-  format: ReportFormat
-}
-
-export type ReportResult = {
-  reportId: string
-  title: string
-  generatedAt: string
-  generatedBy: string
-  format: ReportFormat
-  filePath?: string
-  data?: Record<string, unknown>
-}
-
-export type ReportType = {
-  id: string
-  name: string
-  description: string
-  category: string
-  parameters: Array<{
-    name: string
-    type: string
-    required: boolean
-    options?: string[]
-  }>
-}
-````
-
-## File: src/features/results/hooks/use-results.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Result, 
-  CreateResultDto, 
-  UpdateResultDto, 
-  ResultStats, 
-  GetResultsParams 
-} from '../types/results'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const resultsService = {
-  getAll: (params?: GetResultsParams): Promise<PaginatedResponse<Result>> =>
-    apiClient.get('/api/v1/results', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Result>> =>
-    apiClient.get(`/api/v1/results/${id}`),
-
-  getBySession: (sessionId: string): Promise<ApiResponse<Result[]>> =>
-    apiClient.get(`/api/v1/results/session/${sessionId}`),
-
-  getByStudent: (studentId: string, params?: { published?: boolean }): Promise<ApiResponse<Result[]>> =>
-    apiClient.get(`/api/v1/results/student/${studentId}`, { params }),
-
-  getStats: (params?: { sessionId?: string; subjectId?: string }): Promise<ApiResponse<ResultStats>> =>
-    apiClient.get('/api/v1/results/stats', { params }),
-
-  create: (data: CreateResultDto): Promise<ApiResponse<Result>> =>
-    apiClient.post('/api/v1/results', data),
-
-  createBulk: (data: CreateResultDto[]): Promise<ApiResponse<Result[]>> =>
-    apiClient.post('/api/v1/results/bulk', { results: data }),
-
-  update: (id: string, data: UpdateResultDto): Promise<ApiResponse<Result>> =>
-    apiClient.patch(`/api/v1/results/${id}`, data),
-
-  verify: (id: string): Promise<ApiResponse<Result>> =>
-    apiClient.patch(`/api/v1/results/${id}/verify`),
-
-  publish: (id: string): Promise<ApiResponse<Result>> =>
-    apiClient.patch(`/api/v1/results/${id}/publish`),
-
-  publishBulk: (sessionId: string): Promise<ApiResponse<Result[]>> =>
-    apiClient.patch(`/api/v1/results/session/${sessionId}/publish`),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/results/${id}`)
-}
-````
-
-## File: src/features/results/types/results.ts
-````typescript
-export type Result = {
-  _id: string
-  sessionId: string
-  examTitle?: string
-  subjectCode?: string
-  subjectName?: string
-  examDate?: string
-  studentId: string
-  studentName?: string
-  studentEmail?: string
-  marksObtained: number
-  totalMarks: number
-  percentage: number
-  grade?: string
-  gradePoints?: number
-  isPass: boolean
-  remarks?: string
-  enteredBy: string
-  enteredByName?: string
-  verifiedBy?: string
-  verifiedByName?: string
-  verifiedAt?: string
-  isPublished: boolean
-  publishedAt?: string
-  publishedBy?: string
-  enteredAt: string
-  updatedAt: string
-}
-
-export type CreateResultDto = {
-  sessionId: string
-  studentId: string
-  marksObtained: number
-  totalMarks: number
-  grade?: string
-  gradePoints?: number
-  remarks?: string
-}
-
-export type UpdateResultDto = Partial<CreateResultDto> & {
-  verifiedBy?: string
-  verifiedAt?: string
-  isPublished?: boolean
-  publishedAt?: string
-  publishedBy?: string
-}
-
-export type ResultStats = {
-  totalResults: number
-  averagePercentage: number
-  gradeDistribution: Record<string, number>
-  passRate: number
-}
-
-export type GetResultsParams = {
-  sessionId?: string
-  studentId?: string
-  subjectId?: string
-  academicYear?: string
-  semester?: number
-  isPublished?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/rooms/hooks/use-rooms.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Room, 
-  CreateRoomDto, 
-  UpdateRoomDto, 
-  RoomStats, 
-  CheckAvailabilityParams,
-  RoomAvailability,
-  GetRoomsParams 
-} from '../types/rooms'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const roomsService = {
-  getAll: (params?: GetRoomsParams): Promise<PaginatedResponse<Room>> =>
-    apiClient.get('/api/v1/rooms', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Room>> =>
-    apiClient.get(`/api/v1/rooms/${id}`),
-
-  getByBuilding: (building: string): Promise<ApiResponse<Room[]>> =>
-    apiClient.get(`/api/v1/rooms/building/${encodeURIComponent(building)}`),
-
-  getBuildingsList: (): Promise<ApiResponse<{ buildings: string[] }>> =>
-    apiClient.get('/api/v1/rooms/buildings'),
-
-  getStats: (): Promise<ApiResponse<RoomStats>> =>
-    apiClient.get('/api/v1/rooms/stats'),
-
-  getCapacityDistribution: (): Promise<ApiResponse<Record<string, number>>> =>
-    apiClient.get('/api/v1/rooms/capacity-distribution'),
-
-  checkAvailability: (params: CheckAvailabilityParams): Promise<ApiResponse<RoomAvailability[]>> =>
-    apiClient.get('/api/v1/rooms/availability', { params }),
-
-  create: (data: CreateRoomDto): Promise<ApiResponse<Room>> =>
-    apiClient.post('/api/v1/rooms', data),
-
-  update: (id: string, data: UpdateRoomDto): Promise<ApiResponse<Room>> =>
-    apiClient.patch(`/api/v1/rooms/${id}`, data),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/rooms/${id}`)
-}
-````
-
-## File: src/features/rooms/types/rooms.ts
-````typescript
-export type Room = {
-  _id: string
-  roomNumber: string
-  building?: string
-  fullRoomNumber: string
-  floorNumber?: number
-  capacity: number
-  examCapacity: number
-  capacityRatio: number
-  facilities?: RoomFacilities
-  equipment?: RoomEquipment
-  isAccessible: boolean
-  isActive: boolean
-  description?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type RoomFacilities = {
-  airConditioned?: boolean
-  projector?: boolean
-  whiteboard?: boolean
-  smartBoard?: boolean
-  soundSystem?: boolean
-  wifi?: boolean
-  powerOutlets?: number
-}
-
-export type RoomEquipment = {
-  tables?: number
-  chairs?: number
-  computers?: number
-  printers?: number
-}
-
-export type CreateRoomDto = {
-  roomNumber: string
-  building?: string
-  floorNumber?: number
-  capacity: number
-  examCapacity: number
-  facilities?: RoomFacilities
-  equipment?: RoomEquipment
-  isAccessible?: boolean
-  description?: string
-}
-
-export type UpdateRoomDto = Partial<CreateRoomDto> & {
-  isActive?: boolean
-}
-
-export type RoomStats = {
-  totalRooms: number
-  roomsByBuilding: Record<string, number>
-  averageCapacity: number
-  accessibleRooms: number
-}
-
-export type CheckAvailabilityParams = {
-  date: string
-  startTime: string
-  endTime: string
-  minCapacity?: number
-  excludeRoomId?: string
-}
-
-export type RoomAvailability = {
-  roomId: string
-  roomNumber: string
-  building?: string
-  capacity: number
-  isAvailable: boolean
-  conflictingSessions?: Array<{
-    id: string
-    title: string
-    startTime: string
-    endTime: string
-  }>
-}
-
-export type GetRoomsParams = {
-  building?: string
-  minCapacity?: number
-  maxCapacity?: number
-  isAccessible?: boolean
-  isActive?: boolean
-  hasFacility?: string
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
-
-## File: src/features/subjects/hooks/use-subjects.ts
-````typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Subject, 
-  CreateSubjectDto, 
-  UpdateSubjectDto, 
-  AssignFacultyDto,
-  FacultyAssignment,
-  SubjectStats, 
-  GetSubjectsParams 
-} from '../types/subjects'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const subjectsService = {
-  getAll: (params?: GetSubjectsParams): Promise<PaginatedResponse<Subject>> =>
-    apiClient.get('/api/v1/subjects', { params }),
-
-  getById: (id: string): Promise<ApiResponse<Subject>> =>
-    apiClient.get(`/api/v1/subjects/${id}`),
-
-  getByDepartment: (departmentId: string): Promise<ApiResponse<Subject[]>> =>
-    apiClient.get(`/api/v1/subjects/department/${departmentId}`),
-
-  getStats: (): Promise<ApiResponse<SubjectStats>> =>
-    apiClient.get('/api/v1/subjects/stats'),
-
-  create: (data: CreateSubjectDto): Promise<ApiResponse<Subject>> =>
-    apiClient.post('/api/v1/subjects', data),
-
-  update: (id: string, data: UpdateSubjectDto): Promise<ApiResponse<Subject>> =>
-    apiClient.patch(`/api/v1/subjects/${id}`, data),
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/subjects/${id}`),
-
-  assignFaculty: (id: string, data: AssignFacultyDto): Promise<ApiResponse<FacultyAssignment>> =>
-    apiClient.post(`/api/v1/subjects/${id}/assign-faculty`, data),
-
-  getFacultyAssignments: (id: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
-    apiClient.get(`/api/v1/subjects/${id}/faculty`, { params }),
-
-  removeFacultyAssignment: (assignmentId: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/subjects/faculty-assignment/${assignmentId}`)
-}
-````
-
-## File: src/features/subjects/types/subjects.ts
-````typescript
-export type Subject = {
-  _id: string
-  subjectCode: string
-  subjectName: string
-  departmentId: string
-  departmentName?: string
-  year: number
-  credits: number
-  description?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateSubjectDto = {
-  subjectCode: string
-  subjectName: string
-  departmentId: string
-  year: number
-  credits?: number
-  description?: string
-}
-
-export type UpdateSubjectDto = Partial<Omit<CreateSubjectDto, 'subjectCode'>> & {
-  isActive?: boolean
-}
-
-export type AssignFacultyDto = {
-  facultyId: string
-  academicYear: string
-  semester: number
-  isCoordinator: boolean
-  assignedDate: string
-}
-
-export type FacultyAssignment = {
-  _id: string
-  facultyId: string
-  facultyName: string
-  academicYear: string
-  semester: number
-  isCoordinator: boolean
-  assignedDate: string
-}
-
-export type SubjectStats = {
-  totalSubjects: number
-  subjectsByDepartment: Record<string, number>
-  subjectsByYear: Record<string, number>
-}
-
-export type GetSubjectsParams = {
-  departmentId?: string
-  year?: number
-  isActive?: boolean
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-````
+```
 
 ## File: src/features/users/components/user-columns.tsx
-````typescript
+```typescript
 'use client'
 
 import { type ColumnDef } from '@tanstack/react-table'
@@ -3061,10 +280,11 @@ export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): 
     },
   },
 ]
-````
+```
 
 ## File: src/features/users/components/user-form.tsx
-````typescript
+```typescript
+// src/features/users/components/user-form.tsx
 'use client'
 
 import { useEffect } from 'react'
@@ -3077,6 +297,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -3127,7 +348,8 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
       state: '',
       postalCode: '',
       country: '',
-      departmentId: ''
+      departmentId: '',
+      year: undefined  // NEW: Add year field
     }
   })
 
@@ -3146,19 +368,29 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         state: user.state || '',
         postalCode: user.postalCode || '',
         country: user.country || '',
-        departmentId: user.departmentId || ''
+        departmentId: user.departmentId || '',
+        year: user.year  // NEW: Add year to reset
       })
     }
   }, [user, form])
 
-  const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
-    if (isEditMode) {
-      // Type assertion is safe here because we know user exists in edit mode
-      (onSubmit as (data: UpdateUserFormData) => void)(data as UpdateUserFormData)
-    } else {
-      (onSubmit as (data: CreateUserFormData) => void)(data as CreateUserFormData)
-    }
+const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
+  // Remove year if user is not a student
+  const submissionData = { ...data };
+  if (submissionData.role !== USER_ROLES.STUDENT) {
+    delete submissionData.year;
   }
+  
+  if (isEditMode) {
+    (onSubmit as (data: UpdateUserFormData) => void)(submissionData as UpdateUserFormData)
+  } else {
+    (onSubmit as (data: CreateUserFormData) => void)(submissionData as CreateUserFormData)
+  }
+}
+
+  // Watch the role field to conditionally show year field
+  const selectedRole = form.watch('role')
+  const isStudent = selectedRole === USER_ROLES.STUDENT
 
   return (
     <Form {...form}>
@@ -3241,6 +473,39 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               )}
             />
           </div>
+
+          {/* NEW: Academic Year Field - Show only for students */}
+          {isStudent && (
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Academic Year</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                    value={field.value?.toString() || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select academic year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">Year 1</SelectItem>
+                      <SelectItem value="2">Year 2</SelectItem>
+                      <SelectItem value="3">Year 3</SelectItem>
+                      <SelectItem value="4">Year 4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the student&lsquo;s current academic year (required for enrollment)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {!isEditMode && (
             <FormField
@@ -3402,10 +667,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
     </Form>
   )
 }
-````
+```
 
 ## File: src/features/users/hooks/use-user-mutations.ts
-````typescript
+```typescript
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -3471,10 +736,10 @@ export const useDeleteUser = () => {
     }
   })
 }
-````
+```
 
 ## File: src/features/users/hooks/use-users-query.ts
-````typescript
+```typescript
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
@@ -3503,23 +768,28 @@ export const useUserQuery = (id: string | undefined) => {
     retry: 1,
   })
 }
-````
+```
 
 ## File: src/features/users/validations/user-schemas.ts
-````typescript
+```typescript
+// src/features/users/validations/user-schemas.ts
 import { z } from 'zod'
 import { USER_ROLES } from '@/constants/roles'
 
 export const createUserSchema = z.object({
   username: z.string()
     .min(3, 'Username must be at least 3 characters')
-    .max(20, 'Username must be less than 20 characters')
+    .max(50, 'Username must be less than 50 characters')
     .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-  email: z.string().email('Invalid email format'),
   password: z.string()
     .min(6, 'Password must be at least 6 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    .max(100, 'Password must be less than 100 characters'),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be less than 100 characters'),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100, 'Full name must be less than 100 characters'),
   role: z.enum([
     USER_ROLES.ADMIN,
     USER_ROLES.FACULTY,
@@ -3527,25 +797,53 @@ export const createUserSchema = z.object({
     USER_ROLES.EXAM_COORDINATOR,
     USER_ROLES.INVIGILATOR
   ]),
-  contactPrimary: z.string().optional(),
-  contactSecondary: z.string().optional(),
-  addressLine1: z.string().optional(),
-  addressLine2: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-  departmentId: z.string().optional()
+  contactPrimary: z.string().max(15).optional(),
+  contactSecondary: z.string().max(15).optional(),
+  addressLine1: z.string().max(255).optional(),
+  addressLine2: z.string().max(255).optional(),
+  city: z.string().max(50).optional(),
+  state: z.string().max(50).optional(),
+  postalCode: z.string().max(10).optional(),
+  country: z.string().max(50).optional(),
+  departmentId: z.string().optional(),
+  year: z.number().int().min(1).max(4).optional()  // NEW: Year field
 })
 
-export const updateUserSchema = createUserSchema.partial().omit({ password: true })
+export const updateUserSchema = z.object({
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be less than 100 characters')
+    .optional(),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100, 'Full name must be less than 100 characters')
+    .optional(),
+  role: z.enum([
+    USER_ROLES.ADMIN,
+    USER_ROLES.FACULTY,
+    USER_ROLES.STUDENT,
+    USER_ROLES.EXAM_COORDINATOR,
+    USER_ROLES.INVIGILATOR
+  ]).optional(),
+  contactPrimary: z.string().max(15).optional(),
+  contactSecondary: z.string().max(15).optional(),
+  addressLine1: z.string().max(255).optional(),
+  addressLine2: z.string().max(255).optional(),
+  city: z.string().max(50).optional(),
+  state: z.string().max(50).optional(),
+  postalCode: z.string().max(10).optional(),
+  country: z.string().max(50).optional(),
+  departmentId: z.string().optional(),
+  isActive: z.boolean().optional(),
+  year: z.number().int().min(1).max(4).optional()  // NEW: Year field
+})
 
 export type CreateUserFormData = z.infer<typeof createUserSchema>
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>
-````
+```
 
 ## File: src/lib/api/client.ts
-````typescript
+```typescript
 import type { ApiError } from '@/types/common'
 
 type RequestConfig = {
@@ -3718,10 +1016,10 @@ if (typeof window !== 'undefined') {
     apiClient.setToken(token)
   }
 }
-````
+```
 
 ## File: src/lib/api/index.ts
-````typescript
+```typescript
 import { invigilatorAssignmentsService } from '@/features/assignments/hooks/use-assignments'
 import { authService } from '@/features/auth/hooks/use-api'
 import { academicCalendarService } from '@/features/calendar/hooks/use-calendar'
@@ -3767,10 +1065,10 @@ export const api = {
 }
 
 export default api
-````
+```
 
 ## File: src/lib/providers/query-provider.tsx
-````typescript
+```typescript
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -3801,20 +1099,20 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
     </QueryClientProvider>
   )
 }
-````
+```
 
 ## File: src/lib/utils.ts
-````typescript
+```typescript
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
-````
+```
 
 ## File: src/types/auth.ts
-````typescript
+```typescript
 import type { UserRole } from '@/constants/roles'
 
 export type LoginDto = {
@@ -3856,10 +1154,10 @@ export type ResetPasswordDto = {
   password: string
   confirmPassword: string
 }
-````
+```
 
 ## File: src/types/common.ts
-````typescript
+```typescript
 export type PaginatedResponse<T> = {
   data: T[]
   total: number
@@ -3886,10 +1184,10 @@ export type BaseQueryParams = {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
 }
-````
+```
 
 ## File: tsconfig.json
-````json
+```json
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -3917,10 +1215,10 @@ export type BaseQueryParams = {
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
-````
+```
 
 ## File: src/app/(auth)/layout.tsx
-````typescript
+```typescript
 type AuthLayoutProps = {
   children: React.ReactNode
 }
@@ -3934,36 +1232,10 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   )
 }
-````
-
-## File: src/app/(dashboard)/layout.tsx
-````typescript
-import { AuthGuard } from '@/lib/auth/auth-guard'
-import { Sidebar } from '@/components/navigation/sidebar'
-
-type DashboardLayoutProps = {
-  children: React.ReactNode
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  return (
-    <AuthGuard>
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
-        
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-            {children}
-          </div>
-        </main>
-      </div>
-    </AuthGuard>
-  )
-}
-````
+```
 
 ## File: src/app/globals.css
-````css
+```css
 @import "tailwindcss";
 
  
@@ -4085,350 +1357,10 @@ body {
   color: hsl(var(--foreground));
   font-family: Arial, Helvetica, sans-serif;
 }
-````
-
-## File: src/app/not-found.tsx
-````typescript
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-
-const NotFound = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
-        <div className="mb-8">
-          <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Page Not Found
-          </h2>
-          <p className="text-gray-600">
-            The page you are looking for doesn&lsquo;t exist or has been moved.
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <Button asChild className="w-full">
-            <Link href="/">
-              Go Back Home
-            </Link>
-          </Button>
-          
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/login">
-              Go to Login
-            </Link>
-          </Button>
-        </div>
-        
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
-            If you believe this is an error, please contact support.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default NotFound
-````
-
-## File: src/components/data-display/data-table.tsx
-````typescript
-'use client'
-
-import { useState } from 'react'
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  type ColumnDef,
-  type SortingState,
-  type ColumnFiltersState,
-  type VisibilityState,
-} from '@tanstack/react-table'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  ColumnsIcon,
-  SearchIcon,
-} from 'lucide-react'
-
-type DataTableProps<TData, TValue> = {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  searchKey?: string
-  searchPlaceholder?: string
-  showColumnVisibility?: boolean
-}
-
-export const DataTable = <TData, TValue>({
-  columns,
-  data,
-  searchKey,
-  searchPlaceholder = 'Search...',
-  showColumnVisibility = true,
-}: DataTableProps<TData, TValue>) => {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-  })
-
-  return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        {searchKey && (
-          <div className="relative flex-1 max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
-              className="pl-10"
-            />
-          </div>
-        )}
-
-        {showColumnVisibility && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                <ColumnsIcon className="mr-2 h-4 w-4" />
-                Columns
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
-            <select
-              className="h-8 w-[70px] rounded-md border border-input bg-transparent px-2 text-sm"
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => {
-                table.setPageSize(Number(e.target.value))
-              }}
-            >
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-````
-
-## File: src/constants/navigation.ts
-````typescript
-import { ROUTES } from './routes'
-import { USER_ROLES } from './roles'
-import type { UserRole } from './roles'
-
-export type NavItem = {
-  title: string
-  href: string
-  icon?: string
-  description?: string
-}
-
-export const NAVIGATION_ITEMS: Record<UserRole, NavItem[]> = {
-  [USER_ROLES.ADMIN]: [
-    { title: 'Dashboard', href: ROUTES.ADMIN.DASHBOARD, icon: 'dashboard' },
-    { title: 'Users', href: ROUTES.ADMIN.USERS, icon: 'users' },
-    { title: 'Departments', href: ROUTES.ADMIN.DEPARTMENTS, icon: 'building' },
-    { title: 'Subjects', href: ROUTES.ADMIN.SUBJECTS, icon: 'book' },
-    { title: 'Rooms', href: ROUTES.ADMIN.ROOMS, icon: 'map' },
-    { title: 'Reports', href: ROUTES.ADMIN.REPORTS, icon: 'chart' },
-    { title: 'Calendar', href: ROUTES.ADMIN.CALENDAR, icon: 'calendar' }
-  ],
-  [USER_ROLES.FACULTY]: [
-    { title: 'Dashboard', href: ROUTES.FACULTY.DASHBOARD, icon: 'dashboard' },
-    { title: 'Subjects', href: ROUTES.FACULTY.SUBJECTS, icon: 'book' },
-    { title: 'Questions', href: ROUTES.FACULTY.QUESTIONS, icon: 'help-circle' },
-    { title: 'Exam Papers', href: ROUTES.FACULTY.EXAM_PAPERS, icon: 'file-text' },
-    { title: 'Results', href: ROUTES.FACULTY.RESULTS, icon: 'award' },
-    { title: 'Assignments', href: ROUTES.FACULTY.ASSIGNMENTS, icon: 'clipboard' }
-  ],
-  [USER_ROLES.STUDENT]: [
-    { title: 'Dashboard', href: ROUTES.STUDENT.DASHBOARD, icon: 'dashboard' },
-    { title: 'Enrollments', href: ROUTES.STUDENT.ENROLLMENTS, icon: 'user-plus' },
-    { title: 'Exams', href: ROUTES.STUDENT.EXAMS, icon: 'clock' },
-    { title: 'Results', href: ROUTES.STUDENT.RESULTS, icon: 'award' },
-    { title: 'Notifications', href: ROUTES.STUDENT.NOTIFICATIONS, icon: 'bell' }
-  ],
-  [USER_ROLES.EXAM_COORDINATOR]: [
-    { title: 'Dashboard', href: ROUTES.EXAM_COORDINATOR.DASHBOARD, icon: 'dashboard' },
-    { title: 'Exam Sessions', href: ROUTES.EXAM_COORDINATOR.EXAM_SESSIONS, icon: 'calendar' },
-    { title: 'Registrations', href: ROUTES.EXAM_COORDINATOR.REGISTRATIONS, icon: 'user-check' },
-    { title: 'Rooms', href: ROUTES.EXAM_COORDINATOR.ROOMS, icon: 'map' },
-    { title: 'Assignments', href: ROUTES.EXAM_COORDINATOR.ASSIGNMENTS, icon: 'clipboard' }
-  ],
-  [USER_ROLES.INVIGILATOR]: [
-    { title: 'Dashboard', href: ROUTES.INVIGILATOR.DASHBOARD, icon: 'dashboard' },
-    { title: 'Assignments', href: ROUTES.INVIGILATOR.ASSIGNMENTS, icon: 'clipboard' }
-  ]
-}
-````
+```
 
 ## File: src/features/auth/components/login-form.tsx
-````typescript
+```typescript
 'use client'
 
 import { useState } from 'react'
@@ -4581,10 +1513,10 @@ export const LoginForm = () => {
     </div>
   )
 }
-````
+```
 
 ## File: src/features/auth/components/register-form.tsx
-````typescript
+```typescript
 'use client'
 
 import { useState } from 'react'
@@ -4594,8 +1526,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
 import { useRegister } from '../hooks/use-auth-mutations'
 import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
@@ -4618,7 +1551,8 @@ export const RegisterForm = () => {
       addressLine2: '',
       city: '',
       state: '',
-      postalCode: ''
+      postalCode: '',
+      year: undefined
     }
   })
 
@@ -4628,7 +1562,7 @@ export const RegisterForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
-      <div className="  max-w-2xl">
+      <div className="max-w-2xl w-full">
         <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6 pt-8">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-student to-student/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -4780,26 +1714,61 @@ export const RegisterForm = () => {
                   />
                 </div>
 
-                {/* Phone Number */}
-                <FormField
-                  control={form.control}
-                  name="contactPrimary"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter phone number"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Phone Number & Academic Year Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="contactPrimary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter phone number"
+                            className="h-11 focus:ring-primary"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* NEW: Academic Year Selection */}
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Academic Year <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select year" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Year 1</SelectItem>
+                            <SelectItem value="2">Year 2</SelectItem>
+                            <SelectItem value="3">Year 3</SelectItem>
+                            <SelectItem value="4">Year 4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Select your current academic year if you&lsquo;re a student
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* Address Fields - Optional */}
                 <div className="space-y-4 pt-2">
@@ -4912,10 +1881,10 @@ export const RegisterForm = () => {
     </div>
   )
 }
-````
+```
 
 ## File: src/features/auth/types/auth.ts
-````typescript
+```typescript
 import type { UserRole } from '@/constants/roles'
 
 export type LoginDto = {
@@ -4934,6 +1903,7 @@ export type RegisterDto = {
   city?: string
   state?: string
   postalCode?: string
+  year?: number 
 }
 
 export type LoginUser = {
@@ -4944,6 +1914,7 @@ export type LoginUser = {
   role: UserRole
   isActive: boolean
   profileImage?: string
+  year?: number   
 }
 
 export type LoginResponse = {
@@ -4960,10 +1931,10 @@ export type ResetPasswordDto = {
   password: string
   confirmPassword: string
 }
-````
+```
 
 ## File: src/features/auth/validations/auth-schemas.ts
-````typescript
+```typescript
 import { z } from 'zod'
 
 export const loginSchema = z.object({
@@ -4971,6 +1942,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required')
 })
 
+// Alternative simpler approach
 export const registerSchema = z.object({
   username: z.string()
     .min(3, 'Username must be at least 3 characters')
@@ -4986,27 +1958,27 @@ export const registerSchema = z.object({
   fullName: z.string()
     .min(2, 'Full name must be at least 2 characters')
     .max(50, 'Full name must be less than 50 characters'),
-  contactPrimary: z.string()
-    .optional()
-    .refine((val) => !val || /^[\d\s\-\+\(\)]+$/.test(val), 'Please enter a valid phone number'),
+  contactPrimary: z.string().optional(),
   addressLine1: z.string().optional(),
   addressLine2: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-  postalCode: z.string()
-    .optional()
-    .refine((val) => !val || /^\d{5}(-\d{4})?$/.test(val), 'Please enter a valid postal code')
+  postalCode: z.string().optional(),
+  // FIX: Define as union type explicitly
+  year: z.union([
+    z.number().int().min(1).max(4),
+    z.undefined()
+  ]).optional()
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
 })
-
 export type LoginFormData = z.infer<typeof loginSchema>
 export type RegisterFormData = z.infer<typeof registerSchema>
-````
+```
 
 ## File: src/features/users/hooks/use-users.ts
-````typescript
+```typescript
 import { apiClient } from '@/lib/api/client'
 import type { 
   User, 
@@ -5076,10 +2048,10 @@ export const usersService = {
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/users/${id}`)
 }
-````
+```
 
 ## File: src/features/users/types/users.ts
-````typescript
+```typescript
 import type { UserRole } from '@/constants/roles'
 
 export type User = {
@@ -5099,6 +2071,7 @@ export type User = {
   country?: string
   profileImage?: string
   departmentId?: string
+  year?: number   
   createdAt: string
   updatedAt: string
   lastLoginAt?: string
@@ -5119,6 +2092,7 @@ export type CreateUserDto = {
   postalCode?: string
   country?: string
   departmentId?: string
+  year?: number 
 }
 
 export type UpdateUserDto = Partial<Omit<CreateUserDto, 'username' | 'password'>> & {
@@ -5140,6 +2114,7 @@ export type GetUsersParams = {
   role?: UserRole
   isActive?: boolean
   departmentId?: string
+  year?: number   
   limit?: number
   page?: number
   search?: string
@@ -5158,10 +2133,10 @@ export type BackendUsersListResponse = {
 export type BackendUserResponse = {
   user: User
 }
-````
+```
 
 ## File: src/lib/auth/auth-guard.tsx
-````typescript
+```typescript
 'use client'
 
 import { useEffect } from 'react'
@@ -5198,10 +2173,10 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   return <>{children}</>
 }
-````
+```
 
 ## File: src/lib/auth/role-guard.tsx
-````typescript
+```typescript
 'use client'
 
 import { useAuth } from './auth-provider'
@@ -5229,47 +2204,10 @@ export const RoleGuard = ({ allowedRoles, children, fallback }: RoleGuardProps) 
 
   return <>{children}</>
 }
-````
-
-## File: src/middleware.ts
-````typescript
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-export const middleware = (request: NextRequest) => {
-  const token = request.cookies.get('auth_token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '')
-
-  const { pathname } = request.nextUrl
-
-  // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/']
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-
-  // If accessing protected route without token, redirect to login
-  if (!isPublicRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // If accessing auth routes with token, redirect to appropriate dashboard
-  if (isPublicRoute && token && pathname !== '/') {
-    // You might want to decode the token to get user role and redirect accordingly
-    // For now, redirect to a default route
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url))
-  }
-
-  return NextResponse.next()
-}
-
-export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-}
-````
+```
 
 ## File: src/app/layout.tsx
-````typescript
+```typescript
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -5315,279 +2253,69 @@ export default function RootLayout({
     </html>
   );
 }
-````
+```
 
-## File: src/components/common/loading-spinner.tsx
-````typescript
-import { cn } from '@/lib/utils'
-
-type LoadingSpinnerProps = {
-  className?: string
-  size?: 'sm' | 'md' | 'lg'
-}
-
-export const LoadingSpinner = ({ className, size = 'md' }: LoadingSpinnerProps) => {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12'
-  }
-
-  return (
-    <div 
-      className={cn(
-        'animate-spin rounded-full border-2 border-gray-300 border-t-blue-600', 
-        sizeClasses[size], 
-        className
-      )} 
-      aria-label="Loading"
-    />
-  )
-}
-````
-
-## File: src/components/navigation/navbar.tsx
-````typescript
-'use client'
-
-import { useState, useMemo, useCallback } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Badge } from '@/components/ui/badge'
-import { 
-  MenuIcon, 
-  LogOutIcon, 
-  UserIcon, 
-  SettingsIcon, 
-  BellIcon,
-  GraduationCapIcon
-} from 'lucide-react'
-import { useAuth } from '@/lib/auth/auth-provider'
-import { useLogout } from '@/features/auth/hooks/use-auth-mutations'
-import { NAVIGATION_ITEMS, type NavItem } from '@/constants/navigation'
-import type { UserRole } from '@/constants/roles'
-import { cn } from '@/lib/utils'
-
-// Role-specific styling helper
-const getRoleStyle = (role: UserRole) => {
-  const roleStyles = {
-    admin: 'role-admin',
-    faculty: 'role-faculty', 
-    student: 'role-student',
-    exam_coordinator: 'role-exam-coordinator',
-    invigilator: 'role-invigilator'
-  } as const
+## File: src/constants/routes.ts
+```typescript
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   
-  return roleStyles[role] || 'bg-muted text-muted-foreground'
-}
+  ADMIN: {
+    ROOT: '/admin',
+    DASHBOARD: '/admin/dashboard',
+    USERS: '/admin/users',
+    DEPARTMENTS: '/admin/departments',
+    SUBJECTS: '/admin/subjects',
+    ROOMS: '/admin/rooms',
+    REPORTS: '/admin/reports',
+    CALENDAR: '/admin/calendar',
+    ENROLLMENTS: '/admin/enrollments',
 
-export const Navbar = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { user } = useAuth()
-  const logoutMutation = useLogout()
-  const pathname = usePathname()
-
-  const navigationItems: NavItem[] = useMemo(() => {
-    const userRole = user?.role as UserRole
-    return userRole ? NAVIGATION_ITEMS[userRole] || [] : []
-  }, [user?.role])
-
-  const handleLogout = useCallback(() => {
-    logoutMutation.mutate()
-  }, [logoutMutation])
-
-  const getUserInitials = useCallback((name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }, [])
-
-  const formatRole = useCallback((role: string) => {
-    return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-  }, [])
-
-  if (!user) return null
-
-  return (
-    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
-              <GraduationCapIcon className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                University
-              </h1>
-              <p className="text-xs text-muted-foreground -mt-1">Management System</p>
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navigationItems.map((item: NavItem) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-primary/10 text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  {item.title}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
-                  )}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Right side */}
-          <div className="flex items-center space-x-3">
-            {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <BellIcon className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-destructive hover:bg-destructive">
-                3
-              </Badge>
-            </Button>
-
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.profileImage} alt={user.fullName} />
-                    <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
-                      {getUserInitials(user.fullName)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-72" align="end" forceMount>
-                <DropdownMenuLabel className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.profileImage} alt={user.fullName} />
-                      <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
-                        {getUserInitials(user.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{user.fullName}</p>
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                      <Badge 
-                        variant="outline" 
-                        className={cn("mt-1 text-xs", getRoleStyle(user.role))}
-                      >
-                        {formatRole(user.role)}
-                      </Badge>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center cursor-pointer">
-                    <UserIcon className="mr-3 h-4 w-4" />
-                    Profile Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center cursor-pointer">
-                    <SettingsIcon className="mr-3 h-4 w-4" />
-                    Preferences
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
-                  disabled={logoutMutation.isPending}
-                >
-                  <LogOutIcon className="mr-3 h-4 w-4" />
-                  {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Mobile menu trigger */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden">
-                  <MenuIcon className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <div className="flex flex-col space-y-6 mt-6">
-                  <div className="flex items-center space-x-3 pb-4 border-b">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.profileImage} alt={user.fullName} />
-                      <AvatarFallback className="gradient-primary text-primary-foreground font-semibold">
-                        {getUserInitials(user.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">{user.fullName}</p>
-                      <Badge className={cn("text-xs", getRoleStyle(user.role))}>
-                        {formatRole(user.role)}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {navigationItems.map((item: NavItem) => {
-                      const isActive = pathname === item.href
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={cn(
-                            "block px-4 py-3 rounded-lg text-base font-medium transition-colors",
-                            isActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          )}
-                        >
-                          {item.title}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </div>
-    </nav>
-  )
-}
-````
+    GENERATE_REPORT: '/admin/reports/generate',
+  },
+  
+  FACULTY: {
+    ROOT: '/faculty',
+    DASHBOARD: '/faculty/dashboard',
+    SUBJECTS: '/faculty/subjects',
+    QUESTIONS: '/faculty/questions',
+    EXAM_PAPERS: '/faculty/exam-papers',
+    RESULTS: '/faculty/results',
+    ASSIGNMENTS: '/faculty/assignments'
+  },
+  
+  STUDENT: {
+    ROOT: '/student',
+    DASHBOARD: '/student/dashboard',
+    ENROLLMENTS: '/student/enrollments',
+    EXAMS: '/student/exams',
+    RESULTS: '/student/results',
+    NOTIFICATIONS: '/student/notifications'
+  },
+  
+  EXAM_COORDINATOR: {
+    ROOT: '/exam-coordinator',
+    DASHBOARD: '/exam-coordinator/dashboard',
+    EXAM_SESSIONS: '/exam-coordinator/exam-sessions',
+    REGISTRATIONS: '/exam-coordinator/registrations',
+    ROOMS: '/exam-coordinator/rooms',
+    ASSIGNMENTS: '/exam-coordinator/assignments'
+  },
+  
+  INVIGILATOR: {
+    ROOT: '/invigilator',
+    DASHBOARD: '/invigilator/dashboard',
+    ASSIGNMENTS: '/invigilator/assignments'
+  }
+} as const
+```
 
 ## File: src/features/auth/hooks/use-auth-mutations.ts
-````typescript
+```typescript
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -5610,6 +2338,7 @@ const convertLoginUserToUser = (loginUser: LoginUser): User => ({
   role: loginUser.role,
   isActive: loginUser.isActive,
   profileImage: loginUser.profileImage,
+  year: loginUser.year,  // NEW: Include year
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 })
@@ -5636,7 +2365,6 @@ export const useLogin = () => {
       const user = convertLoginUserToUser(response.user)
       login(response.accessToken, user)
       
-      // Clear any cached data
       queryClient.clear()
       
       const redirectRoute = DASHBOARD_ROUTES[response.user.role as keyof typeof DASHBOARD_ROUTES] || ROUTES.HOME
@@ -5645,7 +2373,6 @@ export const useLogin = () => {
         description: 'You have been successfully logged in.'
       })
       
-      // Small delay to ensure state is updated
       setTimeout(() => {
         router.replace(redirectRoute)
       }, 100)
@@ -5698,7 +2425,6 @@ export const useLogout = () => {
       router.replace('/login')
     },
     onError: () => {
-      // Even if API call fails, logout locally
       logout()
       queryClient.clear()
       router.replace('/login')
@@ -5708,10 +2434,10 @@ export const useLogout = () => {
     }
   })
 }
-````
+```
 
 ## File: src/lib/auth/auth-provider.tsx
-````typescript
+```typescript
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
@@ -5824,10 +2550,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   )
 }
-````
+```
 
 ## File: src/lib/stores/auth-store.ts
-````typescript
+```typescript
 // src/lib/stores/auth-store.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
@@ -5922,52 +2648,80 @@ export const useAuthStore = create<AuthState & AuthActions>()(
     }
   )
 )
-````
+```
 
-## File: src/app/page.tsx
-````typescript
-'use client'
-
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth/auth-provider'
-import { ROUTES } from '@/constants/routes'
-import { USER_ROLES } from '@/constants/roles'
-import type { UserRole } from '@/constants/roles'
-
-const DASHBOARD_ROUTES: Record<UserRole, string> = {
-  [USER_ROLES.ADMIN]: ROUTES.ADMIN.DASHBOARD,
-  [USER_ROLES.FACULTY]: ROUTES.FACULTY.DASHBOARD,
-  [USER_ROLES.STUDENT]: ROUTES.STUDENT.DASHBOARD,
-  [USER_ROLES.EXAM_COORDINATOR]: ROUTES.EXAM_COORDINATOR.DASHBOARD,
-  [USER_ROLES.INVIGILATOR]: ROUTES.INVIGILATOR.DASHBOARD
-} as const
-
-const HomePage = () => {
-  const { user, isAuthenticated, isLoading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (isLoading) return
-
-    if (!isAuthenticated) {
-      router.replace('/login')
-      return
-    }
-
-    if (user?.role) {
-      const dashboardRoute = DASHBOARD_ROUTES[user.role]
-      if (dashboardRoute) {
-        router.replace(dashboardRoute)
-      }
-    }
-  }, [isAuthenticated, isLoading, user?.role, router])
-
- 
-  return null
+## File: package.json
+```json
+{
+  "name": "university-exam-frontend-new",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-aspect-ratio": "^1.1.7",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-context-menu": "^2.2.16",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-hover-card": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-menubar": "^1.1.16",
+    "@radix-ui/react-navigation-menu": "^1.2.14",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-radio-group": "^1.3.8",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slider": "^1.3.6",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-toggle": "^1.1.10",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tanstack/react-query": "^5.90.2",
+    "@tanstack/react-query-devtools": "^5.90.2",
+    "@tanstack/react-table": "^8.21.3",
+    "axios": "^1.12.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.544.0",
+    "next": "15.5.4",
+    "next-themes": "^0.4.6",
+    "nuqs": "^2.6.0",
+    "react": "19.1.0",
+    "react-day-picker": "^9.11.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.63.0",
+    "react-resizable-panels": "^3.0.6",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.11",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/axios": "^0.9.36",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
 }
-
-export default HomePage
-````
-
- 
+```

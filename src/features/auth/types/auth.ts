@@ -17,6 +17,7 @@ export type RegisterDto = {
   city?: string
   state?: string
   postalCode?: string
+  year?: number 
 }
 
 export type LoginUser = {
@@ -27,6 +28,7 @@ export type LoginUser = {
   role: UserRole
   isActive: boolean
   profileImage?: string
+  year?: number   
 }
 
 export type LoginResponse = {

@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect } from 'react'
@@ -10,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -24,7 +26,7 @@ import { USER_ROLES } from '@/constants/roles'
 import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
 import type { User } from '../types/users'
 
-// Use discriminated union for props
+
 type CreateUserFormProps = {
   user?: never
   onSubmit: (data: CreateUserFormData) => void
@@ -60,13 +62,15 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
       state: '',
       postalCode: '',
       country: '',
-      departmentId: ''
+      departmentId: '',
+      year: undefined
     }
   })
 
   useEffect(() => {
     if (user) {
-      form.reset({
+
+      const resetData = {
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -79,19 +83,31 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         state: user.state || '',
         postalCode: user.postalCode || '',
         country: user.country || '',
-        departmentId: user.departmentId || ''
-      })
+        departmentId: user.departmentId || '',
+
+        year: user.role === USER_ROLES.STUDENT ? user.year : undefined
+      }
+      form.reset(resetData)
     }
   }, [user, form])
 
   const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
+
+    const submissionData = { ...data };
+    if (submissionData.role !== USER_ROLES.STUDENT) {
+      delete submissionData.year;
+    }
+    
     if (isEditMode) {
-      // Type assertion is safe here because we know user exists in edit mode
-      (onSubmit as (data: UpdateUserFormData) => void)(data as UpdateUserFormData)
+      (onSubmit as (data: UpdateUserFormData) => void)(submissionData as UpdateUserFormData)
     } else {
-      (onSubmit as (data: CreateUserFormData) => void)(data as CreateUserFormData)
+      (onSubmit as (data: CreateUserFormData) => void)(submissionData as CreateUserFormData)
     }
   }
+
+
+  const selectedRole = form.watch('role')
+  const isStudent = selectedRole === USER_ROLES.STUDENT
 
   return (
     <Form {...form}>
@@ -155,7 +171,11 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
@@ -174,6 +194,41 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               )}
             />
           </div>
+
+
+          {isStudent && (
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Academic Year {isStudent && '*'}</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                    value={field.value?.toString() || ''}
+
+                    defaultValue={field.value?.toString() || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select academic year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">Year 1</SelectItem>
+                      <SelectItem value="2">Year 2</SelectItem>
+                      <SelectItem value="3">Year 3</SelectItem>
+                      <SelectItem value="4">Year 4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the student&apos;s current academic year (required for enrollment)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {!isEditMode && (
             <FormField
@@ -196,6 +251,7 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
           )}
         </div>
 
+        {/* Rest of the form remains the same... */}
         {/* Contact Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Contact Information</h3>

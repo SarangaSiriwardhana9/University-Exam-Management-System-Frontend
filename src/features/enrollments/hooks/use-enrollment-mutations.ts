@@ -3,7 +3,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentEnrollmentsService } from './use-enrollments'
-import type { CreateEnrollmentDto, UpdateEnrollmentDto } from '../types/enrollments'
+import type { CreateEnrollmentDto, UpdateEnrollmentDto, SelfEnrollmentDto } from '../types/enrollments'
 import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
 
@@ -21,6 +21,26 @@ export const useCreateEnrollment = () => {
     onError: (error: ApiError) => {
       toast.error('Failed to Create Enrollment', {
         description: error.message || 'An error occurred while creating the enrollment.'
+      })
+    }
+  })
+}
+
+ 
+export const useSelfEnrollment = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: SelfEnrollmentDto) => studentEnrollmentsService.selfEnroll(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrolled Successfully', {
+        description: 'You have been enrolled in the subject.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Enroll', {
+        description: error.message || 'An error occurred while enrolling.'
       })
     }
   })

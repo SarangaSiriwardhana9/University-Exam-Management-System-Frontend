@@ -1,0 +1,60 @@
+# Ignore everything by default
+**
+
+# --- Allow key root files ---
+!package.json
+!tsconfig.json
+!next.config.ts
+!postcss.config.mjs
+!eslint.config.mjs
+!components.json
+
+# --- Unignore src folder structure (important!) ---
+!src/
+!src/app/
+!src/features/
+!src/lib/
+!src/constants/
+!src/types/
+
+# --- Include layouts and global styles ---
+!src/app/layout.tsx
+!src/app/globals.css
+
+# --- Include auth pages ---
+!src/app/(auth)/
+!src/app/(auth)/**
+!src/app/(dashboard)/admin/users/
+!src/app/(dashboard)/admin/users/**
+
+# --- Include auth + users features ---
+!src/features/auth/
+!src/features/auth/**
+!src/features/users/
+!src/features/users/**
+
+# --- Include shared libraries used by auth/users ---
+!src/lib/api/
+!src/lib/api/**
+!src/lib/auth/
+!src/lib/auth/**
+!src/lib/stores/
+!src/lib/stores/**
+!src/lib/providers/
+!src/lib/providers/**
+!src/lib/utils.ts
+
+# --- Include constants and types used globally ---
+!src/constants/roles.ts
+!src/constants/routes.ts
+!src/types/auth.ts
+!src/types/common.ts
+
+# --- Ignore everything else ---
+node_modules/
+dist/
+.next/
+out/
+public/
+.env
+.DS_Store

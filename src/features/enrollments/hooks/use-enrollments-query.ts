@@ -26,14 +26,15 @@ export const useEnrollmentQuery = (id: string | undefined) => {
   })
 }
 
-export const useMyEnrollmentsQuery = () => {
+
+export const useMyEnrollmentsQuery = (params?: { academicYear?: string; semester?: number; status?: string }) => {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ['enrollments', 'my-enrollments', user?._id],
+    queryKey: ['enrollments', 'my-enrollments', user?._id, params],
     queryFn: async () => {
       if (!user?._id) throw new Error('User not authenticated')
-      return await studentEnrollmentsService.getByStudent(user._id)
+      return await studentEnrollmentsService.getMyEnrollments(params)
     },
     enabled: !!user?._id,
     staleTime: 30000,
@@ -57,5 +58,20 @@ export const useEnrollmentStatsQuery = () => {
     queryKey: ['enrollments', 'stats'],
     queryFn: () => studentEnrollmentsService.getStats(),
     staleTime: 60000,
+  })
+}
+
+
+export const useAvailableSubjectsQuery = (academicYear: string, semester: number) => {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ['enrollments', 'available-subjects', academicYear, semester, user?._id],
+    queryFn: async () => {
+      if (!academicYear || !semester) throw new Error('Academic year and semester are required')
+      return await studentEnrollmentsService.getAvailableSubjects(academicYear, semester)
+    },
+    enabled: !!academicYear && !!semester && !!user?._id,
+    staleTime: 30000,
   })
 }

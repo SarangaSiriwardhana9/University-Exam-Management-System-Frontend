@@ -1,41 +1,66 @@
  
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PlusIcon, BookOpenIcon, GraduationCapIcon } from 'lucide-react'
 import { DataTable } from '@/components/data-display/data-table'
 import { getStudentEnrollmentColumns } from '@/features/enrollments/components/student-enrollment-columns'
-import { useAuth } from '@/lib/auth/auth-provider'
 import { useMyEnrollmentsQuery } from '@/features/enrollments/hooks/use-enrollments-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { RoleGuard } from '@/lib/auth/role-guard'
 import { USER_ROLES } from '@/constants/roles'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpenIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ENROLLMENT_STATUS } from '@/features/enrollments/types/enrollments'
+import type { EnrollmentStatus } from '@/features/enrollments/types/enrollments'
 
 const StudentEnrollmentsPage = () => {
   const router = useRouter()
-  const { user } = useAuth()
+  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'all'>('all')
+  
+  const queryParams = {
+    ...(statusFilter !== 'all' && { status: statusFilter as EnrollmentStatus }),
+  }
 
-  const { data, isLoading } = useMyEnrollmentsQuery()
+  const { data, isLoading } = useMyEnrollmentsQuery(queryParams)
 
   const columns = getStudentEnrollmentColumns({
     onView: (enrollment) => router.push(`/student/enrollments/${enrollment._id}`)
   })
 
   // Calculate stats
-  const totalEnrollments = data?.data?.length || 0
-  const activeEnrollments = data?.data?.filter(e => e.status === ENROLLMENT_STATUS.ACTIVE).length || 0
-  const completedEnrollments = data?.data?.filter(e => e.status === ENROLLMENT_STATUS.COMPLETED).length || 0
+  const enrollments = data?.data || []
+  const totalEnrollments = enrollments.length
+  const activeEnrollments = enrollments.filter(e => e.status === ENROLLMENT_STATUS.ACTIVE).length
+  const totalCredits = enrollments
+    .filter(e => e.status === ENROLLMENT_STATUS.ACTIVE)
+    .reduce((sum, e) => sum + (e.subjectCredits || 0), 0)
 
   return (
     <RoleGuard allowedRoles={[USER_ROLES.STUDENT]}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Enrollments</h1>
-          <p className="text-muted-foreground mt-1">
-            View your enrolled subjects and academic progress
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Enrollments</h1>
+            <p className="text-muted-foreground mt-1">
+              View and manage your course enrollments
+            </p>
+          </div>
+          <Button 
+            onClick={() => router.push('/student/enrollments/enroll')}
+            className="bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70"
+          >
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Enroll in Subject
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -47,52 +72,87 @@ const StudentEnrollmentsPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalEnrollments}</div>
-              <p className="text-xs text-muted-foreground">All subjects</p>
+              <p className="text-xs text-muted-foreground">All enrollments</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Enrollments</CardTitle>
-              <CheckCircleIcon className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium">Active Subjects</CardTitle>
+              <GraduationCapIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeEnrollments}</div>
-              <p className="text-xs text-muted-foreground">Currently studying</p>
+              <p className="text-xs text-muted-foreground">Currently enrolled</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <XCircleIcon className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+              <BookOpenIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completedEnrollments}</div>
-              <p className="text-xs text-muted-foreground">Finished courses</p>
+              <div className="text-2xl font-bold">{totalCredits}</div>
+              <p className="text-xs text-muted-foreground">Active subjects</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filters</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Status</label>
+                <Select 
+                  value={statusFilter} 
+                  onValueChange={(value) => setStatusFilter(value as EnrollmentStatus | 'all')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value={ENROLLMENT_STATUS.ACTIVE}>Active</SelectItem>
+                    <SelectItem value={ENROLLMENT_STATUS.WITHDRAWN}>Withdrawn</SelectItem>
+                    <SelectItem value={ENROLLMENT_STATUS.COMPLETED}>Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Enrollments Table */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner size="lg" />
           </div>
-        ) : (
+        ) : enrollments.length === 0 ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Your Enrollments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                columns={columns}
-                data={data?.data || []}
-                searchKey="subjectName"
-                searchPlaceholder="Search subjects..."
-              />
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <BookOpenIcon className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Enrollments Yet</h3>
+              <p className="text-muted-foreground text-center mb-6">
+                You haven&lsquo;t enrolled in any subjects. Start by enrolling in available subjects.
+              </p>
+              <Button onClick={() => router.push('/student/enrollments/enroll')}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Enroll in Subject
+              </Button>
             </CardContent>
           </Card>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={enrollments}
+            searchKey="subjectName"
+            searchPlaceholder="Search by subject name..."
+          />
         )}
       </div>
     </RoleGuard>

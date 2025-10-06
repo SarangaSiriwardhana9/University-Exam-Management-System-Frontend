@@ -8,8 +8,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
 import { useRegister } from '../hooks/use-auth-mutations'
 import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
@@ -32,7 +33,8 @@ export const RegisterForm = () => {
       addressLine2: '',
       city: '',
       state: '',
-      postalCode: ''
+      postalCode: '',
+      year: undefined
     }
   })
 
@@ -42,7 +44,7 @@ export const RegisterForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
-      <div className="  max-w-2xl">
+      <div className="max-w-2xl w-full">
         <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6 pt-8">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-student to-student/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -194,26 +196,61 @@ export const RegisterForm = () => {
                   />
                 </div>
 
-                {/* Phone Number */}
-                <FormField
-                  control={form.control}
-                  name="contactPrimary"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter phone number"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Phone Number & Academic Year Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="contactPrimary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter phone number"
+                            className="h-11 focus:ring-primary"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* NEW: Academic Year Selection */}
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Academic Year <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select year" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Year 1</SelectItem>
+                            <SelectItem value="2">Year 2</SelectItem>
+                            <SelectItem value="3">Year 3</SelectItem>
+                            <SelectItem value="4">Year 4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Select your current academic year if you&lsquo;re a student
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* Address Fields - Optional */}
                 <div className="space-y-4 pt-2">

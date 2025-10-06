@@ -5,7 +5,9 @@ import type {
   CreateEnrollmentDto, 
   UpdateEnrollmentDto, 
   EnrollmentStats, 
-  GetEnrollmentsParams 
+  GetEnrollmentsParams,
+  AvailableSubject,
+  SelfEnrollmentDto
 } from '../types/enrollments'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
@@ -43,6 +45,14 @@ export const studentEnrollmentsService = {
     }
   },
 
+
+  getMyEnrollments: async (params?: { academicYear?: string; semester?: number; status?: string }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>('/api/v1/student-enrollments/my-enrollments', { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
+
   getBySubject: async (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
     const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/subject/${subjectId}`, { params })
     return {
@@ -53,8 +63,26 @@ export const studentEnrollmentsService = {
   getStats: (): Promise<ApiResponse<EnrollmentStats>> =>
     apiClient.get('/api/v1/student-enrollments/stats'),
 
+
+  getAvailableSubjects: async (academicYear: string, semester: number): Promise<ApiResponse<AvailableSubject[]>> => {
+    const subjects = await apiClient.get<AvailableSubject[]>('/api/v1/student-enrollments/available-subjects', {
+      params: { academicYear, semester }
+    })
+    return {
+      data: Array.isArray(subjects) ? subjects : []
+    }
+  },
+
   create: async (data: CreateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
     const enrollment = await apiClient.post<StudentEnrollment>('/api/v1/student-enrollments', data)
+    return {
+      data: enrollment
+    }
+  },
+
+
+  selfEnroll: async (data: SelfEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.post<StudentEnrollment>('/api/v1/student-enrollments/self-enroll', data)
     return {
       data: enrollment
     }

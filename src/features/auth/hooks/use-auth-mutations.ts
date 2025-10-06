@@ -21,6 +21,7 @@ const convertLoginUserToUser = (loginUser: LoginUser): User => ({
   role: loginUser.role,
   isActive: loginUser.isActive,
   profileImage: loginUser.profileImage,
+  year: loginUser.year,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 })
@@ -47,7 +48,6 @@ export const useLogin = () => {
       const user = convertLoginUserToUser(response.user)
       login(response.accessToken, user)
       
-      // Clear any cached data
       queryClient.clear()
       
       const redirectRoute = DASHBOARD_ROUTES[response.user.role as keyof typeof DASHBOARD_ROUTES] || ROUTES.HOME
@@ -56,7 +56,6 @@ export const useLogin = () => {
         description: 'You have been successfully logged in.'
       })
       
-      // Small delay to ensure state is updated
       setTimeout(() => {
         router.replace(redirectRoute)
       }, 100)
@@ -109,7 +108,6 @@ export const useLogout = () => {
       router.replace('/login')
     },
     onError: () => {
-      // Even if API call fails, logout locally
       logout()
       queryClient.clear()
       router.replace('/login')

@@ -11,7 +11,6 @@ export type AcademicCalendar = {
   isCurrent: boolean
   isActive: boolean
   description?: string
-  examDuration: number
   createdAt: string
   updatedAt: string
 }
@@ -51,4 +50,12 @@ export type GetCalendarParams = {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+}
+
+export type BackendCalendarsListResponse = {
+  calendars: AcademicCalendar[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
 }

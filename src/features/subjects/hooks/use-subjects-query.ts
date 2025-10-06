@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { subjectsService } from './use-subjects'
 import type { GetSubjectsParams } from '../types/subjects'
+import { useAuth } from '@/lib/auth/auth-provider'
 
 export const useSubjectsQuery = (params?: GetSubjectsParams) => {
   return useQuery({
@@ -40,6 +41,22 @@ export const useSubjectsByDepartmentQuery = (departmentId: string | undefined) =
       return await subjectsService.getByDepartment(departmentId)
     },
     enabled: !!departmentId && departmentId !== 'undefined',
+    staleTime: 30000,
+  })
+}
+
+export const useMySubjectsQuery = () => {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ['subjects', 'my-subjects', user?._id],
+    queryFn: async () => {
+      if (!user?._id) throw new Error('User not authenticated')
+      // Since backend doesn't support facultyId filter,
+      // we'll get all active subjects and let faculty manage any they're assigned to
+      return await subjectsService.getAll({ isActive: true })
+    },
+    enabled: !!user?._id,
     staleTime: 30000,
   })
 }

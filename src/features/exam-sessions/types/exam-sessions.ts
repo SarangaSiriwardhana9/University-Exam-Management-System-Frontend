@@ -69,3 +69,11 @@ export type GetExamSessionsParams = {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
 }
+
+export type BackendExamSessionsListResponse = {
+  examSessions: ExamSession[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}

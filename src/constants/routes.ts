@@ -14,7 +14,8 @@ export const ROUTES = {
     ROOMS: '/admin/rooms',
     REPORTS: '/admin/reports',
     CALENDAR: '/admin/calendar',
- 
+    ENROLLMENTS: '/admin/enrollments',
+
     GENERATE_REPORT: '/admin/reports/generate',
   },
   

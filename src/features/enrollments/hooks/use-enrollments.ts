@@ -1,3 +1,4 @@
+ 
 import { apiClient } from '@/lib/api/client'
 import type { 
   StudentEnrollment, 
@@ -8,30 +9,70 @@ import type {
 } from '../types/enrollments'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
+type BackendEnrollmentsListResponse = {
+  enrollments: StudentEnrollment[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 export const studentEnrollmentsService = {
-  getAll: (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> =>
-    apiClient.get('/api/v1/student-enrollments', { params }),
+  getAll: async (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> => {
+    const response = await apiClient.get<BackendEnrollmentsListResponse>('/api/v1/student-enrollments', { params })
+    return {
+      data: response.enrollments || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1
+    }
+  },
 
-  getById: (id: string): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.get(`/api/v1/student-enrollments/${id}`),
+  getById: async (id: string): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.get<StudentEnrollment>(`/api/v1/student-enrollments/${id}`)
+    return {
+      data: enrollment
+    }
+  },
 
-  getByStudent: (studentId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> =>
-    apiClient.get(`/api/v1/student-enrollments/student/${studentId}`, { params }),
+  getByStudent: async (studentId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/student/${studentId}`, { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
 
-  getBySubject: (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> =>
-    apiClient.get(`/api/v1/student-enrollments/subject/${subjectId}`, { params }),
+  getBySubject: async (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/subject/${subjectId}`, { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
 
   getStats: (): Promise<ApiResponse<EnrollmentStats>> =>
     apiClient.get('/api/v1/student-enrollments/stats'),
 
-  create: (data: CreateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.post('/api/v1/student-enrollments', data),
+  create: async (data: CreateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.post<StudentEnrollment>('/api/v1/student-enrollments', data)
+    return {
+      data: enrollment
+    }
+  },
 
-  update: (id: string, data: UpdateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.patch(`/api/v1/student-enrollments/${id}`, data),
+  update: async (id: string, data: UpdateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.patch<StudentEnrollment>(`/api/v1/student-enrollments/${id}`, data)
+    return {
+      data: enrollment
+    }
+  },
 
-  withdraw: (id: string, reason?: string): Promise<ApiResponse<StudentEnrollment>> =>
-    apiClient.patch(`/api/v1/student-enrollments/${id}/withdraw`, { reason }),
+  withdraw: async (id: string, reason?: string): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.patch<StudentEnrollment>(`/api/v1/student-enrollments/${id}/withdraw`, { reason })
+    return {
+      data: enrollment
+    }
+  },
 
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/student-enrollments/${id}`)

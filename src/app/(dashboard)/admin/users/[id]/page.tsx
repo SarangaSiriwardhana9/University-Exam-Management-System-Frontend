@@ -45,7 +45,7 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
 
   const { data: userResponse, isLoading, error } = useUserQuery(userId)
   
-  // Fetch department info if user has departmentId
+ 
   const user = userResponse?.data
   const { data: departmentResponse, isLoading: isDepartmentLoading } = useDepartmentQuery(
     user?.departmentId

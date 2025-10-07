@@ -47,10 +47,10 @@ type UserFormProps = CreateUserFormProps | UpdateUserFormProps
 export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
   const isEditMode = !!user
 
-  // Fetch departments
+ 
   const { data: departmentsResponse, isLoading: isDepartmentsLoading } = useDepartmentsQuery({
     page: 1,
-    limit: 100, // Get all departments
+    limit: 100,  
   })
 
   const form = useForm<CreateUserFormData | UpdateUserFormData>({

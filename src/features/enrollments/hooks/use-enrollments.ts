@@ -46,13 +46,19 @@ export const studentEnrollmentsService = {
   },
 
 
-  getMyEnrollments: async (params?: { academicYear?: string; semester?: number; status?: string }): Promise<ApiResponse<StudentEnrollment[]>> => {
-    const enrollments = await apiClient.get<StudentEnrollment[]>('/api/v1/student-enrollments/my-enrollments', { params })
-    return {
-      data: Array.isArray(enrollments) ? enrollments : []
-    }
-  },
-
+getMyEnrollments: async (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> => {
+  const response = await apiClient.get<BackendEnrollmentsListResponse>(
+    '/api/v1/student-enrollments/my-enrollments',
+    { params }
+  );
+  return {
+    data: response.enrollments || [],
+    total: response.total || 0,
+    page: response.page || 1,
+    limit: response.limit || 10,
+    totalPages: response.totalPages || 1,
+  };
+},
   getBySubject: async (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
     const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/subject/${subjectId}`, { params })
     return {

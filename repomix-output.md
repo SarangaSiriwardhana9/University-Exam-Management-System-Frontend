@@ -1,42 +1,6 @@
  
 
-## File: next.config.ts
-```typescript
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
-```
-
-## File: postcss.config.mjs
-```
-const config = {
-  plugins: ["@tailwindcss/postcss"],
-};
-
-export default config;
-```
-
-## File: src/app/(auth)/login/page.tsx
-```typescript
-import { LoginForm } from '@/features/auth/components/login-form'
-
-export default function LoginPage() {
-  return <LoginForm />
-}
-```
-
-## File: src/app/(auth)/register/page.tsx
-```typescript
-import { RegisterForm } from '@/features/auth/components/register-form'
-
-export default function RegisterPage() {
-  return <RegisterForm />
-}
-```
+# Files
 
 ## File: src/constants/roles.ts
 ```typescript
@@ -80,38 +44,7 @@ export const BLOOMS_TAXONOMY = {
 export type BloomsTaxonomy = typeof BLOOMS_TAXONOMY[keyof typeof BLOOMS_TAXONOMY]
 ```
 
-## File: src/features/auth/hooks/use-api.ts
-```typescript
-import { apiClient } from '@/lib/api/client'
-import type { LoginDto, RegisterDto, LoginResponse } from '../types/auth'
-import { ApiResponse } from '@/types/common'
-
-export const authService = {
-  login: (data: LoginDto): Promise<LoginResponse> =>   
-    apiClient.post('/api/v1/auth/login', data),
-
-  register: (data: RegisterDto): Promise<LoginResponse> =>
-    apiClient.post('/api/v1/auth/register', data),
-
-  logout: (): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.post('/api/v1/auth/logout'),
-
-  refreshToken: (): Promise<ApiResponse<{ accessToken: string }>> =>
-    apiClient.post('/api/v1/auth/refresh'),
-
-  forgotPassword: (email: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.post('/api/v1/auth/forgot-password', { email }),
-
-  resetPassword: (token: string, password: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.post('/api/v1/auth/reset-password', { token, password }),
-
-  setToken: (token: string | null): void => {
-    apiClient.setToken(token)
-  }
-}
-```
-
-## File: src/features/users/components/user-columns.tsx
+## File: src/features/enrollments/components/enrollment-columns.tsx
 ```typescript
 'use client'
 
@@ -127,71 +60,781 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon } from 'lucide-react'
-import type { User } from '../types/users'
+import type { StudentEnrollment, EnrollmentStatus } from '../types/enrollments'
 import { cn } from '@/lib/utils'
-import type { UserRole } from '@/constants/roles'
 
-const getRoleBadgeClass = (role: UserRole) => {
-  const roleClasses = {
-    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
+const getStatusBadgeClass = (status: EnrollmentStatus) => {
+  const statusClasses = {
+    active: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+    withdrawn: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+    completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
   } as const
 
-  return roleClasses[role] || 'bg-muted'
+  return statusClasses[status] || 'bg-muted'
 }
 
-const formatRole = (role: string) => {
-  return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+const formatStatus = (status: string) => {
+  return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
-type UserColumnsProps = {
-  onEdit: (user: User) => void
-  onDelete: (user: User) => void
-  onView: (user: User) => void
+type EnrollmentColumnsProps = {
+  onEdit: (enrollment: StudentEnrollment) => void
+  onDelete: (enrollment: StudentEnrollment) => void
+  onView: (enrollment: StudentEnrollment) => void
 }
 
-export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): ColumnDef<User>[] => [
+export const getEnrollmentColumns = ({ 
+  onEdit, 
+  onDelete, 
+  onView 
+}: EnrollmentColumnsProps): ColumnDef<StudentEnrollment>[] => [
   {
-    accessorKey: 'fullName',
-    header: 'Full Name',
-    cell: ({ row }) => {
-      const user = row.original
-      return (
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-            {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-          </div>
-          <div>
-            <div className="font-medium">{user.fullName}</div>
-            <div className="text-sm text-muted-foreground">@{user.username}</div>
-          </div>
-        </div>
-      )
-    },
+    accessorKey: 'studentName',
+    header: 'Student',
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.studentName}</div>
+        <div className="text-sm text-muted-foreground">{row.original.studentEmail}</div>
+      </div>
+    ),
   },
   {
-    accessorKey: 'email',
-    header: 'Email',
+    accessorKey: 'subjectCode',
+    header: 'Subject Code',
+    cell: ({ row }) => (
+      <div className="font-mono font-semibold text-primary">
+        {row.original.subjectCode}
+      </div>
+    ),
   },
   {
-    accessorKey: 'role',
-    header: 'Role',
+    accessorKey: 'subjectName',
+    header: 'Subject Name',
+    cell: ({ row }) => (
+      <div className="max-w-xs truncate">{row.original.subjectName}</div>
+    ),
+  },
+  {
+    accessorKey: 'academicYear',
+    header: 'Academic Year',
+    cell: ({ row }) => (
+      <div className="font-medium">{row.original.academicYear}</div>
+    ),
+  },
+  {
+    accessorKey: 'semester',
+    header: 'Semester',
+    cell: ({ row }) => (
+      <Badge variant="outline">
+        Semester {row.original.semester}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
     cell: ({ row }) => {
-      const role = row.original.role
+      const status = row.original.status
       return (
-        <Badge variant="outline" className={cn('font-medium', getRoleBadgeClass(role))}>
-          {formatRole(role)}
+        <Badge variant="outline" className={cn(getStatusBadgeClass(status))}>
+          {formatStatus(status)}
         </Badge>
       )
     },
   },
   {
-    accessorKey: 'contactPrimary',
-    header: 'Phone',
-    cell: ({ row }) => row.original.contactPrimary || '—',
+    accessorKey: 'enrollmentDate',
+    header: 'Enrolled',
+    cell: ({ row }) => {
+      const date = new Date(row.original.enrollmentDate)
+      return date.toLocaleDateString()
+    },
+  },
+  {
+    id: 'actions',
+    cell: ({ row }) => {
+      const enrollment = row.original
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontalIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onView(enrollment)}>
+              <EyeIcon className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(enrollment)}>
+              <EditIcon className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onDelete(enrollment)}
+              className="text-destructive focus:text-destructive"
+            >
+              <TrashIcon className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+]
+```
+
+## File: src/features/enrollments/components/enrollment-form.tsx
+```typescript
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client'
+
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { 
+  createEnrollmentSchema, 
+  updateEnrollmentSchema, 
+  type CreateEnrollmentFormData, 
+  type UpdateEnrollmentFormData 
+} from '../validations/enrollment-schemas'
+import type { StudentEnrollment } from '../types/enrollments'
+import { useUsersQuery } from '@/features/users/hooks/use-users-query'
+import { useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
+import { USER_ROLES } from '@/constants/roles'
+import { ENROLLMENT_STATUS } from '../types/enrollments'
+
+type CreateEnrollmentFormProps = {
+  enrollment?: never
+  onSubmit: (data: CreateEnrollmentFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type UpdateEnrollmentFormProps = {
+  enrollment: StudentEnrollment
+  onSubmit: (data: UpdateEnrollmentFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type EnrollmentFormProps = CreateEnrollmentFormProps | UpdateEnrollmentFormProps
+
+export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: EnrollmentFormProps) => {
+  const isEditMode = !!enrollment
+
+  // Fetch students and subjects for dropdowns
+  const { data: studentsData } = useUsersQuery({ role: USER_ROLES.STUDENT, isActive: true })
+  const { data: subjectsData } = useSubjectsQuery({ isActive: true })
+
+  const form = useForm<CreateEnrollmentFormData | UpdateEnrollmentFormData>({
+    resolver: zodResolver(isEditMode ? updateEnrollmentSchema : createEnrollmentSchema) as any,
+    defaultValues: isEditMode ? {
+      academicYear: '',
+      semester: 1,
+      enrollmentDate: new Date().toISOString().split('T')[0],
+    } : {
+      studentId: '',
+      subjectId: '',
+      academicYear: '',
+      semester: 1,
+      enrollmentDate: new Date().toISOString().split('T')[0],
+    }
+  })
+
+  useEffect(() => {
+    if (enrollment) {
+      form.reset({
+        academicYear: enrollment.academicYear,
+        semester: enrollment.semester,
+        enrollmentDate: new Date(enrollment.enrollmentDate).toISOString().split('T')[0],
+        status: enrollment.status,
+      })
+    }
+  }, [enrollment, form])
+
+  const handleSubmit = (data: CreateEnrollmentFormData | UpdateEnrollmentFormData) => {
+    if (isEditMode) {
+      (onSubmit as (data: UpdateEnrollmentFormData) => void)(data as UpdateEnrollmentFormData)
+    } else {
+      (onSubmit as (data: CreateEnrollmentFormData) => void)(data as CreateEnrollmentFormData)
+    }
+  }
+
+  // Get current academic year
+  const currentYear = new Date().getFullYear()
+  const academicYears = [
+    `${currentYear}-${currentYear + 1}`,
+    `${currentYear - 1}-${currentYear}`,
+    `${currentYear + 1}-${currentYear + 2}`,
+  ]
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Enrollment Information</h3>
+          
+          {!isEditMode && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="studentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Student *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select student" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {studentsData?.data && studentsData.data.length > 0 ? (
+                          studentsData.data.map((student) => (
+                            <SelectItem key={student._id} value={student._id}>
+                              {student.fullName} ({student.email})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No students available
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the student to enroll
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="subjectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {subjectsData?.data && subjectsData.data.length > 0 ? (
+                          subjectsData.data.map((subject) => (
+                            <SelectItem key={subject._id} value={subject._id}>
+                              {subject.subjectCode} - {subject.subjectName}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No subjects available
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the subject to enroll in
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="academicYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Academic Year *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {academicYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Academic year for enrollment
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="semester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Semester *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[1, 2].map((sem) => (
+                        <SelectItem key={sem} value={sem.toString()}>
+                          Semester {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Semester for enrollment
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="enrollmentDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Enrollment Date *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Date of enrollment
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {isEditMode && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={ENROLLMENT_STATUS.ACTIVE}>Active</SelectItem>
+                      <SelectItem value={ENROLLMENT_STATUS.WITHDRAWN}>Withdrawn</SelectItem>
+                      <SelectItem value={ENROLLMENT_STATUS.COMPLETED}>Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Update enrollment status
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+
+        <div className="flex items-center justify-end space-x-4 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : isEditMode ? 'Update Enrollment' : 'Create Enrollment'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+```
+
+## File: src/features/enrollments/components/student-enrollment-columns.tsx
+```typescript
+'use client'
+
+import { type ColumnDef } from '@tanstack/react-table'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { EyeIcon } from 'lucide-react'
+import type { StudentEnrollment, EnrollmentStatus } from '../types/enrollments'
+import { cn } from '@/lib/utils'
+
+const getStatusBadgeClass = (status: EnrollmentStatus) => {
+  const statusClasses = {
+    active: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+    withdrawn: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+    completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+  } as const
+
+  return statusClasses[status] || 'bg-muted'
+}
+
+const formatStatus = (status: string) => {
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
+type StudentEnrollmentColumnsProps = {
+  onView: (enrollment: StudentEnrollment) => void
+}
+
+export const getStudentEnrollmentColumns = ({ 
+  onView 
+}: StudentEnrollmentColumnsProps): ColumnDef<StudentEnrollment>[] => [
+  {
+    accessorKey: 'subjectCode',
+    header: 'Subject Code',
+    cell: ({ row }) => (
+      <div className="font-mono font-semibold text-primary">
+        {row.original.subjectCode}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'subjectName',
+    header: 'Subject Name',
+    cell: ({ row }) => (
+      <div className="font-medium">{row.original.subjectName}</div>
+    ),
+  },
+  {
+    accessorKey: 'subjectCredits',
+    header: 'Credits',
+    cell: ({ row }) => (
+      <div className="text-center">{row.original.subjectCredits || '—'}</div>
+    ),
+  },
+  {
+    accessorKey: 'academicYear',
+    header: 'Academic Year',
+    cell: ({ row }) => (
+      <div className="font-medium">{row.original.academicYear}</div>
+    ),
+  },
+  {
+    accessorKey: 'semester',
+    header: 'Semester',
+    cell: ({ row }) => (
+      <Badge variant="outline">
+        Semester {row.original.semester}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const status = row.original.status
+      return (
+        <Badge variant="outline" className={cn(getStatusBadgeClass(status))}>
+          {formatStatus(status)}
+        </Badge>
+      )
+    },
+  },
+  {
+    accessorKey: 'enrollmentDate',
+    header: 'Enrolled Date',
+    cell: ({ row }) => {
+      const date = new Date(row.original.enrollmentDate)
+      return date.toLocaleDateString()
+    },
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const enrollment = row.original
+
+      return (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onView(enrollment)}
+        >
+          <EyeIcon className="mr-2 h-4 w-4" />
+          View
+        </Button>
+      )
+    },
+  },
+]
+```
+
+## File: src/features/enrollments/validations/enrollment-schemas.ts
+```typescript
+import { z } from 'zod'
+import { ENROLLMENT_STATUS } from '../types/enrollments'
+
+export const createEnrollmentSchema = z.object({
+  studentId: z.string().min(1, 'Student is required'),
+  subjectId: z.string().min(1, 'Subject is required'),
+  academicYear: z.string().min(1, 'Academic year is required'),
+  semester: z.coerce.number()
+    .int('Semester must be an integer')
+    .min(1, 'Semester must be at least 1')
+    .max(2, 'Semester must be at most 2'),
+  enrollmentDate: z.string().min(1, 'Enrollment date is required'),
+})
+
+export const updateEnrollmentSchema = z.object({
+  academicYear: z.string().optional(),
+  semester: z.coerce.number()
+    .int('Semester must be an integer')
+    .min(1, 'Semester must be at least 1')
+    .max(2, 'Semester must be at most 2')
+    .optional(),
+  enrollmentDate: z.string().optional(),
+  status: z.enum([
+    ENROLLMENT_STATUS.ACTIVE,
+    ENROLLMENT_STATUS.WITHDRAWN,
+    ENROLLMENT_STATUS.COMPLETED
+  ]).optional(),
+})
+
+export type CreateEnrollmentFormData = z.infer<typeof createEnrollmentSchema>
+export type UpdateEnrollmentFormData = z.infer<typeof updateEnrollmentSchema>
+```
+
+## File: src/features/subjects/components/faculty-subject-columns.tsx
+```typescript
+'use client'
+
+import { type ColumnDef } from '@tanstack/react-table'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontalIcon, EyeIcon, HelpCircleIcon, FileTextIcon, UsersIcon } from 'lucide-react'
+import type { Subject } from '../types/subjects'
+
+type FacultySubjectColumnsProps = {
+  onView: (subject: Subject) => void
+  onManageQuestions: (subject: Subject) => void
+  onManagePapers: (subject: Subject) => void
+}
+
+export const getFacultySubjectColumns = ({ 
+  onView, 
+  onManageQuestions, 
+  onManagePapers 
+}: FacultySubjectColumnsProps): ColumnDef<Subject>[] => [
+  {
+    accessorKey: 'subjectCode',
+    header: 'Code',
+    cell: ({ row }) => (
+      <div className="font-mono font-semibold text-primary">
+        {row.original.subjectCode}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'subjectName',
+    header: 'Subject Name',
+    cell: ({ row }) => (
+      <div className="font-medium max-w-xs truncate">{row.original.subjectName}</div>
+    ),
+  },
+  {
+    accessorKey: 'departmentName',
+    header: 'Department',
+    cell: ({ row }) => (
+      <div className="text-muted-foreground">
+        {row.original.departmentName || '—'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'year',
+    header: 'Year',
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-mono">
+        Year {row.original.year}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: 'credits',
+    header: 'Credits',
+    cell: ({ row }) => (
+      <div className="text-center font-medium">
+        {row.original.credits}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'isActive',
+    header: 'Status',
+    cell: ({ row }) => {
+      const isActive = row.original.isActive
+      return (
+        <Badge variant={isActive ? 'default' : 'secondary'}>
+          {isActive ? 'Active' : 'Inactive'}
+        </Badge>
+      )
+    },
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const subject = row.original
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontalIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onView(subject)}>
+              <EyeIcon className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onManageQuestions(subject)}>
+              <HelpCircleIcon className="mr-2 h-4 w-4" />
+              Manage Questions
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onManagePapers(subject)}>
+              <FileTextIcon className="mr-2 h-4 w-4" />
+              Manage Exam Papers
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => window.open(`/faculty/subjects/${subject._id}/students`, '_blank')}
+            >
+              <UsersIcon className="mr-2 h-4 w-4" />
+              View Students
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+]
+```
+
+## File: src/features/subjects/components/subject-columns.tsx
+```typescript
+'use client'
+
+import { type ColumnDef } from '@tanstack/react-table'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon } from 'lucide-react'
+import type { Subject } from '../types/subjects'
+
+type SubjectColumnsProps = {
+  onEdit: (subject: Subject) => void
+  onDelete: (subject: Subject) => void
+  onView: (subject: Subject) => void
+}
+
+export const getSubjectColumns = ({ onEdit, onDelete, onView }: SubjectColumnsProps): ColumnDef<Subject>[] => [
+  {
+    accessorKey: 'subjectCode',
+    header: 'Code',
+    cell: ({ row }) => (
+      <div className="font-mono font-semibold text-primary">
+        {row.original.subjectCode}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'subjectName',
+    header: 'Subject Name',
+    cell: ({ row }) => (
+      <div className="font-medium max-w-xs truncate">{row.original.subjectName}</div>
+    ),
+  },
+  {
+    accessorKey: 'departmentName',
+    header: 'Department',
+    cell: ({ row }) => (
+      <div className="text-muted-foreground">
+        {row.original.departmentName || '—'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'year',
+    header: 'Year',
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-mono">
+        Year {row.original.year}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: 'credits',
+    header: 'Credits',
+    cell: ({ row }) => (
+      <div className="text-center font-medium">
+        {row.original.credits}
+      </div>
+    ),
   },
   {
     accessorKey: 'isActive',
@@ -216,7 +859,7 @@ export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): 
   {
     id: 'actions',
     cell: ({ row }) => {
-      const user = row.original
+      const subject = row.original
 
       return (
         <DropdownMenu>
@@ -228,17 +871,17 @@ export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): 
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onView(user)}>
+            <DropdownMenuItem onClick={() => onView(subject)}>
               <EyeIcon className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(user)}>
+            <DropdownMenuItem onClick={() => onEdit(subject)}>
               <EditIcon className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => onDelete(user)}
+              onClick={() => onDelete(subject)}
               className="text-destructive focus:text-destructive"
             >
               <TrashIcon className="mr-2 h-4 w-4" />
@@ -252,105 +895,438 @@ export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): 
 ]
 ```
 
-## File: src/features/users/hooks/use-user-mutations.ts
+## File: src/features/subjects/components/subject-form.tsx
+```typescript
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client'
+
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { createSubjectSchema, updateSubjectSchema, type CreateSubjectFormData, type UpdateSubjectFormData } from '../validations/subject-schemas'
+import type { Subject } from '../types/subjects'
+import { useDepartmentsQuery } from '@/features/departments/hooks/use-departments-query'
+
+type CreateSubjectFormProps = {
+  subject?: never
+  onSubmit: (data: CreateSubjectFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type UpdateSubjectFormProps = {
+  subject: Subject
+  onSubmit: (data: UpdateSubjectFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type SubjectFormProps = CreateSubjectFormProps | UpdateSubjectFormProps
+
+export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectFormProps) => {
+  const isEditMode = !!subject
+
+  // Fetch departments for dropdown
+  const { data: departmentsData } = useDepartmentsQuery({ isActive: true })
+
+  const form = useForm<CreateSubjectFormData | UpdateSubjectFormData>({
+    resolver: zodResolver(isEditMode ? updateSubjectSchema : createSubjectSchema) as any,
+    defaultValues: isEditMode ? {
+      subjectName: '',
+      departmentId: '',
+      year: 1,
+      credits: 3,
+      description: ''
+    } : {
+      subjectCode: '',
+      subjectName: '',
+      departmentId: '',
+      year: 1,
+      credits: 3,
+      description: ''
+    }
+  })
+
+  useEffect(() => {
+    if (subject) {
+      form.reset({
+        subjectName: subject.subjectName,
+        departmentId: subject.departmentId,
+        year: subject.year,
+        credits: subject.credits,
+        description: subject.description || ''
+      })
+    }
+  }, [subject, form])
+
+  const handleSubmit = (data: CreateSubjectFormData | UpdateSubjectFormData) => {
+    if (isEditMode) {
+      (onSubmit as (data: UpdateSubjectFormData) => void)(data as UpdateSubjectFormData)
+    } else {
+      (onSubmit as (data: CreateSubjectFormData) => void)(data as CreateSubjectFormData)
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Subject Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!isEditMode && (
+              <FormField
+                control={form.control}
+                name="subjectCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject Code *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., CS101, MATH201" 
+                        {...field} 
+                        className="font-mono uppercase"
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Unique code for the subject (uppercase)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="subjectName"
+              render={({ field }) => (
+                <FormItem className={!isEditMode ? '' : 'md:col-span-2'}>
+                  <FormLabel>Subject Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Data Structures and Algorithms" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="departmentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Department *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {departmentsData?.data && departmentsData.data.length > 0 ? (
+                      departmentsData.data.map((department) => (
+                        <SelectItem key={department._id} value={department._id}>
+                          {department.departmentCode} - {department.departmentName}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        No departments available
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Select the department this subject belongs to
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Academic Year *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    value={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          Year {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Which year is this subject offered in
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="credits"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Credits *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="3" 
+                      min="0" 
+                      max="10" 
+                      step="0.5"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Credit hours for this subject
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Enter subject description (optional)" 
+                    className="resize-none"
+                    rows={4}
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  Brief description of the subject content and objectives
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex items-center justify-end space-x-4 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : isEditMode ? 'Update Subject' : 'Create Subject'}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+```
+
+## File: src/features/subjects/hooks/use-subject-mutations.ts
 ```typescript
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { usersService } from './use-users'
-import type { CreateUserDto, UpdateUserDto } from '../types/users'
+import { subjectsService } from './use-subjects'
+import type { CreateSubjectDto, UpdateSubjectDto } from '../types/subjects'
 import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
 
-export const useCreateUser = () => {
+export const useCreateSubject = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateUserDto) => usersService.create(data),
+    mutationFn: (data: CreateSubjectDto) => subjectsService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Created', {
-        description: 'User has been created successfully.'
+      queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Subject Created', {
+        description: 'Subject has been created successfully.'
       })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Create User', {
-        description: error.message || 'An error occurred while creating the user.'
+      toast.error('Failed to Create Subject', {
+        description: error.message || 'An error occurred while creating the subject.'
       })
     }
   })
 }
 
-export const useUpdateUser = () => {
+export const useUpdateSubject = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) =>
-      usersService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateSubjectDto }) =>
+      subjectsService.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Updated', {
-        description: 'User has been updated successfully.'
+      queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Subject Updated', {
+        description: 'Subject has been updated successfully.'
       })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Update User', {
-        description: error.message || 'An error occurred while updating the user.'
+      toast.error('Failed to Update Subject', {
+        description: error.message || 'An error occurred while updating the subject.'
       })
     }
   })
 }
 
-export const useDeleteUser = () => {
+export const useDeleteSubject = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => usersService.delete(id),
+    mutationFn: (id: string) => subjectsService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Deleted', {
-        description: 'User has been deleted successfully.'
+      queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Subject Deleted', {
+        description: 'Subject has been deleted successfully.'
       })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Delete User', {
-        description: error.message || 'An error occurred while deleting the user.'
+      toast.error('Failed to Delete Subject', {
+        description: error.message || 'An error occurred while deleting the subject.'
       })
     }
   })
 }
 ```
 
-## File: src/features/users/hooks/use-users-query.ts
+## File: src/features/subjects/types/subjects.ts
 ```typescript
-'use client'
-
-import { useQuery } from '@tanstack/react-query'
-import { usersService } from './use-users'
-import type { GetUsersParams } from '../types/users'
-
-export const useUsersQuery = (params?: GetUsersParams) => {
-  return useQuery({
-    queryKey: ['users', params],
-    queryFn: () => usersService.getAll(params),
-    staleTime: 30000,  
-  })
+export type Subject = {
+  _id: string
+  subjectCode: string
+  subjectName: string
+  departmentId: string
+  departmentName?: string
+  year: number
+  credits: number
+  description?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export const useUserQuery = (id: string | undefined) => {
-  return useQuery({
-    queryKey: ['users', id],
-    queryFn: async () => {
-      if (!id) throw new Error('User ID is required')
-      console.log('Fetching user with ID:', id)
-      const result = await usersService.getById(id)
-      console.log('User fetch result:', result)
-      return result
-    },
-    enabled: !!id && id !== 'undefined',
-    retry: 1,
-  })
+export type CreateSubjectDto = {
+  subjectCode: string
+  subjectName: string
+  departmentId: string
+  year: number
+  credits?: number
+  description?: string
 }
+
+export type UpdateSubjectDto = Partial<Omit<CreateSubjectDto, 'subjectCode'>> & {
+  isActive?: boolean
+}
+
+export type AssignFacultyDto = {
+  facultyId: string
+  academicYear: string
+  semester: number
+  isCoordinator: boolean
+  assignedDate: string
+}
+
+export type FacultyAssignment = {
+  _id: string
+  facultyId: string
+  facultyName: string
+  academicYear: string
+  semester: number
+  isCoordinator: boolean
+  assignedDate: string
+}
+
+export type SubjectStats = {
+  totalSubjects: number
+  subjectsByDepartment: Record<string, number>
+  subjectsByYear: Record<string, number>
+}
+
+export type GetSubjectsParams = {
+  departmentId?: string
+  year?: number
+  isActive?: boolean
+  limit?: number
+  page?: number
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+```
+
+## File: src/features/subjects/validations/subject-schemas.ts
+```typescript
+import { z } from 'zod'
+
+export const createSubjectSchema = z.object({
+  subjectCode: z.string()
+    .min(2, 'Subject code must be at least 2 characters')
+    .max(20, 'Subject code must be less than 20 characters')
+    .regex(/^[A-Z0-9\-]+$/, 'Subject code must contain only uppercase letters, numbers, and hyphens'),
+  subjectName: z.string()
+    .min(3, 'Subject name must be at least 3 characters')
+    .max(200, 'Subject name must be less than 200 characters'),
+  departmentId: z.string()
+    .min(1, 'Department is required'),
+  year: z.coerce.number()
+    .int('Year must be an integer')
+    .min(1, 'Year must be at least 1')
+    .max(6, 'Year must be at most 6'),
+  credits: z.coerce.number()
+    .min(0, 'Credits must be at least 0')
+    .max(10, 'Credits must be at most 10')
+    .optional()
+    .default(3),
+  description: z.string().optional()
+})
+
+export const updateSubjectSchema = createSubjectSchema.partial().omit({ subjectCode: true }).extend({
+  isActive: z.boolean().optional()
+})
+
+export type CreateSubjectFormData = z.infer<typeof createSubjectSchema>
+export type UpdateSubjectFormData = z.infer<typeof updateSubjectSchema>
 ```
 
 ## File: src/lib/api/client.ts
@@ -697,54 +1673,6 @@ export type BaseQueryParams = {
 }
 ```
 
-## File: tsconfig.json
-```json
-{
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
-}
-```
-
-## File: src/app/(auth)/layout.tsx
-```typescript
-type AuthLayoutProps = {
-  children: React.ReactNode
-}
-
-export default function AuthLayout({ children }: AuthLayoutProps) {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="  w-full space-y-8">
-        {children}
-      </div>
-    </div>
-  )
-}
-```
-
 ## File: src/app/globals.css
 ```css
 @import "tailwindcss";
@@ -870,577 +1798,448 @@ body {
 }
 ```
 
-## File: src/features/auth/components/login-form.tsx
+## File: src/features/enrollments/hooks/use-enrollment-mutations.ts
 ```typescript
 'use client'
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { EyeIcon, EyeOffIcon, LogInIcon, AlertCircleIcon } from 'lucide-react'
-import { useLogin } from '../hooks/use-auth-mutations'
-import { loginSchema, type LoginFormData } from '../validations/auth-schemas'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { studentEnrollmentsService } from './use-enrollments'
+import type { CreateEnrollmentDto, UpdateEnrollmentDto, SelfEnrollmentDto } from '../types/enrollments'
+import type { ApiError } from '@/types/common'
+import { toast } from 'sonner'
 
-export const LoginForm = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const loginMutation = useLogin()
+export const useCreateEnrollment = () => {
+  const queryClient = useQueryClient()
 
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      usernameOrEmail: '',
-      password: ''
+  return useMutation({
+    mutationFn: (data: CreateEnrollmentDto) => studentEnrollmentsService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrollment Created', {
+        description: 'Student has been enrolled successfully.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Create Enrollment', {
+        description: error.message || 'An error occurred while creating the enrollment.'
+      })
     }
   })
+}
 
-  const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data)
-  }
+ 
+export const useSelfEnrollment = () => {
+  const queryClient = useQueryClient()
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <div className="w-full max-w-md">
-        <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8 pt-8">
-            <div className="mx-auto w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <LogInIcon className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Welcome Back
-            </h1>
-            <p className="text-muted-foreground mt-2">Sign in to your university account</p>
-          </CardHeader>
+  return useMutation({
+    mutationFn: (data: SelfEnrollmentDto) => studentEnrollmentsService.selfEnroll(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrolled Successfully', {
+        description: 'You have been enrolled in the subject.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Enroll', {
+        description: error.message || 'An error occurred while enrolling.'
+      })
+    }
+  })
+}
 
-          <CardContent className="px-8 pb-8">
-            {loginMutation.isError && (
-              <Alert className="mb-6 border-destructive/20 bg-destructive/5">
-                <AlertCircleIcon className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive">
-                  {loginMutation.error?.message || 'Login failed. Please try again.'}
-                </AlertDescription>
-              </Alert>
-            )}
+export const useUpdateEnrollment = () => {
+  const queryClient = useQueryClient()
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="usernameOrEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Username or Email
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your username or email"
-                          className="h-12 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateEnrollmentDto }) =>
+      studentEnrollmentsService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrollment Updated', {
+        description: 'Enrollment has been updated successfully.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Update Enrollment', {
+        description: error.message || 'An error occurred while updating the enrollment.'
+      })
+    }
+  })
+}
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Enter your password"
-                            className="h-12 pr-12 focus:ring-primary"
-                            {...field}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {showPassword ? (
-                              <EyeOffIcon className="w-5 h-5" />
-                            ) : (
-                              <EyeIcon className="w-5 h-5" />
-                            )}
-                          </button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+export const useWithdrawEnrollment = () => {
+  const queryClient = useQueryClient()
 
-                <div className="flex items-center justify-between">
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      studentEnrollmentsService.withdraw(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrollment Withdrawn', {
+        description: 'Student has been withdrawn from the subject.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Withdraw Enrollment', {
+        description: error.message || 'An error occurred while withdrawing the enrollment.'
+      })
+    }
+  })
+}
 
-                <Button
-                  type="submit"
-                  className="w-full h-12 gradient-primary text-primary-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                  disabled={loginMutation.isPending}
-                >
-                  {loginMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      <span>Signing in...</span>
-                    </div>
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-              </form>
-            </Form>
+export const useDeleteEnrollment = () => {
+  const queryClient = useQueryClient()
 
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground">
-                Don&apos;t have an account?{' '}
-                <Link 
-                  href="/register" 
-                  className="text-primary hover:text-primary/80 font-medium hover:underline transition-colors"
-                >
-                  Sign up here
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+  return useMutation({
+    mutationFn: (id: string) => studentEnrollmentsService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+      toast.success('Enrollment Deleted', {
+        description: 'Enrollment has been deleted successfully.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Delete Enrollment', {
+        description: error.message || 'An error occurred while deleting the enrollment.'
+      })
+    }
+  })
 }
 ```
 
-## File: src/features/users/components/user-form.tsx
+## File: src/features/enrollments/hooks/use-enrollments-query.ts
 ```typescript
 'use client'
 
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { USER_ROLES } from '@/constants/roles'
-import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
-import type { User } from '../types/users'
+import { useQuery } from '@tanstack/react-query'
+import { studentEnrollmentsService } from './use-enrollments'
+import type { GetEnrollmentsParams } from '../types/enrollments'
+import { useAuth } from '@/lib/auth/auth-provider'
 
-
-type CreateUserFormProps = {
-  user?: never
-  onSubmit: (data: CreateUserFormData) => void
-  onCancel: () => void
-  isLoading?: boolean
-}
-
-type UpdateUserFormProps = {
-  user: User
-  onSubmit: (data: UpdateUserFormData) => void
-  onCancel: () => void
-  isLoading?: boolean
-}
-
-type UserFormProps = CreateUserFormProps | UpdateUserFormProps
-
-export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
-  const isEditMode = !!user
-
-  const form = useForm<CreateUserFormData | UpdateUserFormData>({
-    resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      fullName: '',
-      role: USER_ROLES.STUDENT,
-      contactPrimary: '',
-      contactSecondary: '',
-      addressLine1: '',
-      addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
-      departmentId: '',
-      year: undefined
-    }
+export const useEnrollmentsQuery = (params?: GetEnrollmentsParams) => {
+  return useQuery({
+    queryKey: ['enrollments', params],
+    queryFn: () => studentEnrollmentsService.getAll(params),
+    staleTime: 30000,
   })
+}
 
-  useEffect(() => {
-    if (user) {
-
-      const resetData = {
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        contactPrimary: user.contactPrimary || '',
-        contactSecondary: user.contactSecondary || '',
-        addressLine1: user.addressLine1 || '',
-        addressLine2: user.addressLine2 || '',
-        city: user.city || '',
-        state: user.state || '',
-        postalCode: user.postalCode || '',
-        country: user.country || '',
-        departmentId: user.departmentId || '',
-
-        year: user.role === USER_ROLES.STUDENT ? user.year : undefined
-      }
-      form.reset(resetData)
-    }
-  }, [user, form])
-
-  const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
-
-    const submissionData = { ...data };
-    if (submissionData.role !== USER_ROLES.STUDENT) {
-      delete submissionData.year;
-    }
-    
-    if (isEditMode) {
-      (onSubmit as (data: UpdateUserFormData) => void)(submissionData as UpdateUserFormData)
-    } else {
-      (onSubmit as (data: CreateUserFormData) => void)(submissionData as CreateUserFormData)
-    }
-  }
+export const useEnrollmentQuery = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['enrollments', id],
+    queryFn: async () => {
+      if (!id) throw new Error('Enrollment ID is required')
+      return await studentEnrollmentsService.getById(id)
+    },
+    enabled: !!id && id !== 'undefined',
+    retry: 1,
+  })
+}
 
 
-  const selectedRole = form.watch('role')
-  const isStudent = selectedRole === USER_ROLES.STUDENT
+export const useMyEnrollmentsQuery = (params?: { academicYear?: string; semester?: number; status?: string }) => {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ['enrollments', 'my-enrollments', user?._id, params],
+    queryFn: async () => {
+      if (!user?._id) throw new Error('User not authenticated')
+      return await studentEnrollmentsService.getMyEnrollments(params)
+    },
+    enabled: !!user?._id,
+    staleTime: 30000,
+  })
+}
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Basic Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Basic Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+export const useEnrollmentsBySubjectQuery = (subjectId: string | undefined) => {
+  return useQuery({
+    queryKey: ['enrollments', 'subject', subjectId],
+    queryFn: async () => {
+      if (!subjectId) throw new Error('Subject ID is required')
+      return await studentEnrollmentsService.getBySubject(subjectId)
+    },
+    enabled: !!subjectId && subjectId !== 'undefined',
+    staleTime: 30000,
+  })
+}
 
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter username" 
-                      {...field} 
-                      disabled={isEditMode}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email *</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role *</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
-                      <SelectItem value={USER_ROLES.FACULTY}>Faculty</SelectItem>
-                      <SelectItem value={USER_ROLES.STUDENT}>Student</SelectItem>
-                      <SelectItem value={USER_ROLES.EXAM_COORDINATOR}>Exam Coordinator</SelectItem>
-                      <SelectItem value={USER_ROLES.INVIGILATOR}>Invigilator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+export const useEnrollmentStatsQuery = () => {
+  return useQuery({
+    queryKey: ['enrollments', 'stats'],
+    queryFn: () => studentEnrollmentsService.getStats(),
+    staleTime: 60000,
+  })
+}
 
 
-          {isStudent && (
-            <FormField
-              control={form.control}
-              name="year"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Academic Year {isStudent && '*'}</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
-                    value={field.value?.toString() || ''}
-
-                    defaultValue={field.value?.toString() || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select academic year" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="1">Year 1</SelectItem>
-                      <SelectItem value="2">Year 2</SelectItem>
-                      <SelectItem value="3">Year 3</SelectItem>
-                      <SelectItem value="4">Year 4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the student&apos;s current academic year (required for enrollment)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {!isEditMode && (
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter password" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-        </div>
-
-        {/* Rest of the form remains the same... */}
-        {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="contactPrimary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Primary Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter primary phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contactSecondary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secondary Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter secondary phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Address Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Address Information</h3>
-          
-          <FormField
-            control={form.control}
-            name="addressLine1"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
-                <FormControl>
-                  <Input placeholder="Street address" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="addressLine2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
-                <FormControl>
-                  <Input placeholder="Apartment, suite, etc." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State</FormLabel>
-                  <FormControl>
-                    <Input placeholder="State" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="postalCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Postal Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ZIP" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input placeholder="Country" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  )
+export const useAvailableSubjectsQuery = (academicYear: string, semester: number) => {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ['enrollments', 'available-subjects', academicYear, semester, user?._id],
+    queryFn: async () => {
+      if (!academicYear || !semester) throw new Error('Academic year and semester are required')
+      return await studentEnrollmentsService.getAvailableSubjects(academicYear, semester)
+    },
+    enabled: !!academicYear && !!semester && !!user?._id,
+    staleTime: 30000,
+  })
 }
 ```
 
-## File: src/features/users/hooks/use-users.ts
+## File: src/features/enrollments/types/enrollments.ts
+```typescript
+export const ENROLLMENT_STATUS = {
+  ACTIVE: 'active',
+  WITHDRAWN: 'withdrawn',
+  COMPLETED: 'completed'
+} as const
+
+export type EnrollmentStatus = typeof ENROLLMENT_STATUS[keyof typeof ENROLLMENT_STATUS]
+
+export type StudentEnrollment = {
+  _id: string
+  studentId: string
+  studentName?: string
+  studentEmail?: string
+  subjectId: string
+  subjectCode?: string
+  subjectName?: string
+  subjectCredits?: number
+  academicYear: string
+  semester: number
+  enrollmentDate: string
+  status: EnrollmentStatus
+  withdrawnDate?: string
+  withdrawnReason?: string
+  enrolledBy?: string
+  enrolledByName?: string
+  createdAt: string
+  updatedAt: string
+}
+
+
+export type AvailableSubject = {
+  _id: string
+  subjectCode: string
+  subjectName: string
+  year: number
+  credits: number
+  description?: string
+  departmentId: string
+  departmentName?: string
+  isEnrolled: boolean
+  enrolledStudentsCount?: number
+}
+
+export type CreateEnrollmentDto = {
+  studentId: string
+  subjectId: string
+  academicYear: string
+  semester: number
+  enrollmentDate?: string
+}
+
+
+export type SelfEnrollmentDto = {
+  subjectId: string
+  academicYear: string
+  semester: number
+}
+
+export type UpdateEnrollmentDto = {
+  academicYear?: string
+  semester?: number
+  enrollmentDate?: string
+  status?: EnrollmentStatus
+  withdrawnReason?: string
+  withdrawnDate?: string
+}
+
+export type EnrollmentStats = {
+  totalEnrollments: number
+  activeEnrollments: number
+  withdrawnEnrollments: number
+  completedEnrollments: number
+  averageEnrollmentsPerSubject: number
+  averageEnrollmentsPerStudent: number
+}
+
+export type GetEnrollmentsParams = {
+  studentId?: string
+  subjectId?: string
+  academicYear?: string
+  semester?: number
+  status?: EnrollmentStatus
+  page?: number
+  limit?: number
+  search?: string
+}
+```
+
+## File: src/features/subjects/hooks/use-subjects-query.ts
+```typescript
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { subjectsService } from './use-subjects'
+import type { GetSubjectsParams } from '../types/subjects'
+import { useAuth } from '@/lib/auth/auth-provider'
+
+export const useSubjectsQuery = (params?: GetSubjectsParams) => {
+  return useQuery({
+    queryKey: ['subjects', params],
+    queryFn: () => subjectsService.getAll(params),
+    staleTime: 30000,
+  })
+}
+
+export const useSubjectQuery = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['subjects', id],
+    queryFn: async () => {
+      if (!id) throw new Error('Subject ID is required')
+      return await subjectsService.getById(id)
+    },
+    enabled: !!id && id !== 'undefined',
+    retry: 1,
+  })
+}
+
+export const useSubjectStatsQuery = () => {
+  return useQuery({
+    queryKey: ['subjects', 'stats'],
+    queryFn: () => subjectsService.getStats(),
+    staleTime: 60000,
+  })
+}
+
+export const useSubjectsByDepartmentQuery = (departmentId: string | undefined) => {
+  return useQuery({
+    queryKey: ['subjects', 'department', departmentId],
+    queryFn: async () => {
+      if (!departmentId) throw new Error('Department ID is required')
+      return await subjectsService.getByDepartment(departmentId)
+    },
+    enabled: !!departmentId && departmentId !== 'undefined',
+    staleTime: 30000,
+  })
+}
+
+export const useMySubjectsQuery = () => {
+  const { user } = useAuth()
+  
+  return useQuery({
+    queryKey: ['subjects', 'my-subjects', user?._id],
+    queryFn: async () => {
+      if (!user?._id) throw new Error('User not authenticated')
+      // Since backend doesn't support facultyId filter,
+      // we'll get all active subjects and let faculty manage any they're assigned to
+      return await subjectsService.getAll({ isActive: true })
+    },
+    enabled: !!user?._id,
+    staleTime: 30000,
+  })
+}
+```
+
+## File: src/features/subjects/hooks/use-subjects.ts
 ```typescript
 import { apiClient } from '@/lib/api/client'
 import type { 
-  User, 
-  CreateUserDto, 
-  UpdateUserDto, 
-  ChangePasswordDto, 
-  UserStats, 
-  GetUsersParams,
-  BackendUsersListResponse
-} from '../types/users'
+  Subject, 
+  CreateSubjectDto, 
+  UpdateSubjectDto, 
+  AssignFacultyDto,
+  FacultyAssignment,
+  SubjectStats, 
+  GetSubjectsParams 
+} from '../types/subjects'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
-export const usersService = {
-  getAll: async (params?: GetUsersParams): Promise<PaginatedResponse<User>> => {
-    const response = await apiClient.get<BackendUsersListResponse>('/api/v1/users', { params })
+type BackendSubjectsListResponse = {
+  subjects: Subject[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+type RawSubject = Omit<Subject, 'departmentId' | 'departmentName'> & {
+  departmentId: string | { _id: string; departmentCode: string; departmentName: string }
+}
+
+// Helper function to extract department name
+const extractDepartmentName = (departmentId: RawSubject['departmentId']): string | undefined => {
+  if (!departmentId) return undefined
+  
+  // If it's already an object
+  if (typeof departmentId === 'object' && '_id' in departmentId) {
+    return departmentId.departmentName
+  }
+  
+  // If it's a stringified object (malformed backend response)
+  if (typeof departmentId === 'string' && departmentId.includes('departmentName')) {
+    try {
+      // Try to extract the departmentName from the string
+      const match = departmentId.match(/departmentName:\s*'([^']+)'/)
+      if (match && match[1]) {
+        return match[1]
+      }
+    } catch (error) {
+      console.error('Failed to parse departmentId:', error)
+    }
+  }
+  
+  return undefined
+}
+
+// Helper function to extract department ID
+const extractDepartmentId = (departmentId: RawSubject['departmentId']): string | undefined => {
+  if (!departmentId) return undefined
+  
+  // If it's a string ID
+  if (typeof departmentId === 'string' && !departmentId.includes('{')) {
+    return departmentId
+  }
+  
+  // If it's an object
+  if (typeof departmentId === 'object' && '_id' in departmentId) {
+    return departmentId._id
+  }
+  
+  // If it's a stringified object
+  if (typeof departmentId === 'string' && departmentId.includes('ObjectId')) {
+    try {
+      const match = departmentId.match(/ObjectId\('([^']+)'\)/)
+      if (match && match[1]) {
+        return match[1]
+      }
+    } catch (error) {
+      console.error('Failed to parse departmentId:', error)
+    }
+  }
+  
+  return undefined
+}
+
+// Transform subject to normalize the data
+const transformSubject = (subj: RawSubject): Subject => {
+  const departmentId = extractDepartmentId(subj.departmentId)
+  const departmentName = extractDepartmentName(subj.departmentId)
+  
+  return {
+    ...subj,
+    departmentId: departmentId || '',
+    departmentName: departmentName
+  }
+}
+
+export const subjectsService = {
+  getAll: async (params?: GetSubjectsParams): Promise<PaginatedResponse<Subject>> => {
+    const response = await apiClient.get<BackendSubjectsListResponse>('/api/v1/subjects', { params })
     return {
-      data: response.users || [],
+      data: (response.subjects || []).map(transformSubject),
       total: response.total || 0,
       page: response.page || 1,
       limit: response.limit || 10,
@@ -1448,216 +2247,48 @@ export const usersService = {
     }
   },
 
-  getById: async (id: string): Promise<ApiResponse<User>> => {
-    const user = await apiClient.get<User>(`/api/v1/users/${id}`)
-    // If backend returns user directly, wrap it
+  getById: async (id: string): Promise<ApiResponse<Subject>> => {
+    const subject = await apiClient.get<RawSubject>(`/api/v1/subjects/${id}`)
     return {
-      data: user
+      data: transformSubject(subject)
     }
   },
 
-  getProfile: async (): Promise<ApiResponse<User>> => {
-    const user = await apiClient.get<User>('/api/v1/users/profile')
+  getByDepartment: async (departmentId: string): Promise<ApiResponse<Subject[]>> => {
+    const subjects = await apiClient.get<RawSubject[]>(`/api/v1/subjects/department/${departmentId}`)
     return {
-      data: user
+      data: Array.isArray(subjects) ? subjects.map(transformSubject) : []
     }
   },
 
-  getStats: (): Promise<ApiResponse<UserStats>> =>
-    apiClient.get('/api/v1/users/stats'),
+  getStats: (): Promise<ApiResponse<SubjectStats>> =>
+    apiClient.get('/api/v1/subjects/stats'),
 
-  create: async (data: CreateUserDto): Promise<ApiResponse<User>> => {
-    const user = await apiClient.post<User>('/api/v1/users', data)
+  create: async (data: CreateSubjectDto): Promise<ApiResponse<Subject>> => {
+    const subject = await apiClient.post<RawSubject>('/api/v1/subjects', data)
     return {
-      data: user
+      data: transformSubject(subject)
     }
   },
 
-  update: async (id: string, data: UpdateUserDto): Promise<ApiResponse<User>> => {
-    const user = await apiClient.patch<User>(`/api/v1/users/${id}`, data)
+  update: async (id: string, data: UpdateSubjectDto): Promise<ApiResponse<Subject>> => {
+    const subject = await apiClient.patch<RawSubject>(`/api/v1/subjects/${id}`, data)
     return {
-      data: user
+      data: transformSubject(subject)
     }
   },
-
-  updateProfile: async (data: UpdateUserDto): Promise<ApiResponse<User>> => {
-    const user = await apiClient.patch<User>('/api/v1/users/profile', data)
-    return {
-      data: user
-    }
-  },
-
-  changePassword: (data: ChangePasswordDto): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.patch('/api/v1/users/profile/change-password', data),
 
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/users/${id}`)
-}
-```
+    apiClient.delete(`/api/v1/subjects/${id}`),
 
-## File: src/features/users/validations/user-schemas.ts
-```typescript
-import { z } from 'zod'
-import { USER_ROLES } from '@/constants/roles'
+  assignFaculty: (id: string, data: AssignFacultyDto): Promise<ApiResponse<FacultyAssignment>> =>
+    apiClient.post(`/api/v1/subjects/${id}/assign-faculty`, data),
 
-export const createUserSchema = z.object({
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(100, 'Password must be less than 100 characters'),
-  email: z.string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email must be less than 100 characters'),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(100, 'Full name must be less than 100 characters'),
-  role: z.enum([
-    USER_ROLES.ADMIN,
-    USER_ROLES.FACULTY,
-    USER_ROLES.STUDENT,
-    USER_ROLES.EXAM_COORDINATOR,
-    USER_ROLES.INVIGILATOR
-  ]),
-  contactPrimary: z.string().max(15).optional().or(z.literal('')),
-  contactSecondary: z.string().max(15).optional().or(z.literal('')),
-  addressLine1: z.string().max(255).optional().or(z.literal('')),
-  addressLine2: z.string().max(255).optional().or(z.literal('')),
-  city: z.string().max(50).optional().or(z.literal('')),
-  state: z.string().max(50).optional().or(z.literal('')),
-  postalCode: z.string().max(10).optional().or(z.literal('')),
-  country: z.string().max(50).optional().or(z.literal('')),
-  departmentId: z.string().optional().or(z.literal('')),
-  year: z.number().int().min(1).max(4).optional()
-}).refine(
-  (data) => {
-    // If role is student, year must be provided
-    if (data.role === USER_ROLES.STUDENT) {
-      return data.year !== undefined
-    }
-    return true
-  },
-  {
-    message: "Year is required for students",
-    path: ["year"]
-  }
-)
+  getFacultyAssignments: (id: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
+    apiClient.get(`/api/v1/subjects/${id}/faculty`, { params }),
 
-export const updateUserSchema = z.object({
-  email: z.string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email must be less than 100 characters')
-    .optional(),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(100, 'Full name must be less than 100 characters')
-    .optional(),
-  role: z.enum([
-    USER_ROLES.ADMIN,
-    USER_ROLES.FACULTY,
-    USER_ROLES.STUDENT,
-    USER_ROLES.EXAM_COORDINATOR,
-    USER_ROLES.INVIGILATOR
-  ]).optional(),
-  contactPrimary: z.string().max(15).optional().or(z.literal('')),
-  contactSecondary: z.string().max(15).optional().or(z.literal('')),
-  addressLine1: z.string().max(255).optional().or(z.literal('')),
-  addressLine2: z.string().max(255).optional().or(z.literal('')),
-  city: z.string().max(50).optional().or(z.literal('')),
-  state: z.string().max(50).optional().or(z.literal('')),
-  postalCode: z.string().max(10).optional().or(z.literal('')),
-  country: z.string().max(50).optional().or(z.literal('')),
-  departmentId: z.string().optional().or(z.literal('')),
-  isActive: z.boolean().optional(),
-  year: z.number().int().min(1).max(4).optional()
-}).refine(
-  (data) => {
-    // If role is being updated to student, year must be provided
-    if (data.role === USER_ROLES.STUDENT) {
-      return data.year !== undefined
-    }
-    return true
-  },
-  {
-    message: "Year is required for students",
-    path: ["year"]
-  }
-)
-
-export type CreateUserFormData = z.infer<typeof createUserSchema>
-export type UpdateUserFormData = z.infer<typeof updateUserSchema>
-```
-
-## File: src/lib/auth/auth-guard.tsx
-```typescript
-'use client'
-
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from './auth-provider'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-
-type AuthGuardProps = {
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}
-
-export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
-  const { isAuthenticated, isLoading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login')
-    }
-  }, [isAuthenticated, isLoading, router])
-
-  if (isLoading) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
-  return <>{children}</>
-}
-```
-
-## File: src/lib/auth/role-guard.tsx
-```typescript
-'use client'
-
-import { useAuth } from './auth-provider'
-import type { UserRole } from '@/constants/roles'
-
-type RoleGuardProps = {
-  allowedRoles: UserRole[]
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}
-
-export const RoleGuard = ({ allowedRoles, children, fallback }: RoleGuardProps) => {
-  const { user } = useAuth()
-
-  if (!user || !allowedRoles.includes(user.role)) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
-          <p className="text-gray-600 mt-2">You don&rsquo;t have permission to access this page.</p>
-        </div>
-      </div>
-    )
-  }
-
-  return <>{children}</>
+  removeFacultyAssignment: (assignmentId: string): Promise<ApiResponse<{ message: string }>> =>
+    apiClient.delete(`/api/v1/subjects/faculty-assignment/${assignmentId}`)
 }
 ```
 
@@ -1769,921 +2400,112 @@ export const ROUTES = {
 } as const
 ```
 
-## File: src/features/auth/components/register-form.tsx
+## File: src/features/enrollments/hooks/use-enrollments.ts
 ```typescript
-'use client'
+import { apiClient } from '@/lib/api/client'
+import type { 
+  StudentEnrollment, 
+  CreateEnrollmentDto, 
+  UpdateEnrollmentDto, 
+  EnrollmentStats, 
+  GetEnrollmentsParams,
+  AvailableSubject,
+  SelfEnrollmentDto
+} from '../types/enrollments'
+import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
-import { useRegister } from '../hooks/use-auth-mutations'
-import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
-
-export const RegisterForm = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const registerMutation = useRegister()
-
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      fullName: '',
-      contactPrimary: '',
-      addressLine1: '',
-      addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      year: 1  // Default to Year 1
-    }
-  })
-
-  const onSubmit = (data: RegisterFormData) => {
-    registerMutation.mutate(data)
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
-      <div className="max-w-2xl w-full">
-        <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6 pt-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <UserPlusIcon className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Student Registration
-            </h1>
-            <p className="text-muted-foreground mt-2">Create your university account</p>
-          </CardHeader>
-
-          <CardContent className="px-8 pb-8">
-            {registerMutation.isError && (
-              <Alert className="mb-6 border-destructive/20 bg-destructive/5">
-                <AlertCircleIcon className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive">
-                  {registerMutation.error?.message || 'Registration failed. Please try again.'}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                {/* Full Name */}
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Full Name *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your full name"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* University Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        University Email *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="SE12345678@alfa.uni.lk"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Use your university email (e.g., SE12345678@alfa.uni.lk)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Username & Year Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Username <span className="text-muted-foreground text-sm">(Optional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Choose username"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Leave empty to auto-generate from email
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Academic Year Selection - REQUIRED */}
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Academic Year *
-                        </FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(Number(value))} 
-                          value={field.value?.toString()}
-                          defaultValue="1"
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Select year" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">Year 1</SelectItem>
-                            <SelectItem value="2">Year 2</SelectItem>
-                            <SelectItem value="3">Year 3</SelectItem>
-                            <SelectItem value="4">Year 4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription className="text-xs">
-                          Select your current academic year
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Password Fields Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Password *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="Create password"
-                              className="h-11 pr-12 focus:ring-primary"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showPassword ? (
-                                <EyeOffIcon className="w-5 h-5" />
-                              ) : (
-                                <EyeIcon className="w-5 h-5" />
-                              )}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Confirm Password *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showConfirmPassword ? 'text' : 'password'}
-                              placeholder="Confirm password"
-                              className="h-11 pr-12 focus:ring-primary"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showConfirmPassword ? (
-                                <EyeOffIcon className="w-5 h-5" />
-                              ) : (
-                                <EyeIcon className="w-5 h-5" />
-                              )}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <FormField
-                  control={form.control}
-                  name="contactPrimary"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="+94771234567"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Address Fields - Optional */}
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-medium text-muted-foreground border-b border-border pb-2">
-                    Address Information (Optional)
-                  </h4>
-                  
-                  <FormField
-                    control={form.control}
-                    name="addressLine1"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder="Street address"
-                            className="h-10 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="City"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="State"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="postalCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="ZIP"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
-                  disabled={registerMutation.isPending}
-                >
-                  {registerMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            </Form>
-
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <Link 
-                  href="/login" 
-                  className="text-primary hover:text-primary/80 font-medium hover:underline transition-colors"
-                >
-                  Sign in here
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-}
-```
-
-## File: src/features/auth/types/auth.ts
-```typescript
-import type { UserRole } from '@/constants/roles'
-
-export type LoginDto = {
-  usernameOrEmail: string
-  password: string
-}
-
-export type RegisterDto = {
-  email: string
-  username?: string
-  password: string
-  fullName: string
-  contactPrimary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  year?: number 
-}
-
-export type LoginUser = {
-  id: string
-  username: string
-  email: string
-  fullName: string
-  role: UserRole
-  isActive: boolean
-  profileImage?: string
-  year?: number   
-}
-
-export type LoginResponse = {
-  user: LoginUser
-  accessToken: string
-}
-
-export type ForgotPasswordDto = {
-  email: string
-}
-
-export type ResetPasswordDto = {
-  token: string
-  password: string
-  confirmPassword: string
-}
-```
-
-## File: src/features/auth/validations/auth-schemas.ts
-```typescript
-import { z } from 'zod'
-
-export const loginSchema = z.object({
-  usernameOrEmail: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required')
-})
-
-
-export const registerSchema = z.object({
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(20, 'Username must be less than 20 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-  email: z.string()
-    .email('Please enter a valid email address'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  confirmPassword: z.string()
-    .min(1, 'Please confirm your password'),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(50, 'Full name must be less than 50 characters'),
-  contactPrimary: z.string().optional(),
-  addressLine1: z.string().optional(),
-  addressLine2: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  year: z.union([
-    z.number().int().min(1).max(4),
-    z.undefined()
-  ]).optional()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-})
-export type LoginFormData = z.infer<typeof loginSchema>
-export type RegisterFormData = z.infer<typeof registerSchema>
-```
-
-## File: src/features/users/types/users.ts
-```typescript
-import type { UserRole } from '@/constants/roles'
-
-export type User = {
-  _id: string
-  username: string
-  email: string
-  fullName: string
-  role: UserRole
-  isActive: boolean
-  contactPrimary?: string
-  contactSecondary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  country?: string
-  profileImage?: string
-  departmentId?: string
-  year?: number   
-  createdAt: string
-  updatedAt: string
-  lastLoginAt?: string
-}
-
-export type CreateUserDto = {
-  username: string
-  password: string
-  email: string
-  fullName: string
-  role: UserRole
-  contactPrimary?: string
-  contactSecondary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  country?: string
-  departmentId?: string
-  year?: number 
-}
-
-export type UpdateUserDto = Partial<Omit<CreateUserDto, 'username' | 'password'>> & {
-  isActive?: boolean
-}
-
-export type ChangePasswordDto = {
-  currentPassword: string
-  newPassword: string
-}
-
-export type UserStats = {
-  totalUsers: number
-  activeUsers: number
-  usersByRole: Record<string, number>
-}
-
-export type GetUsersParams = {
-  role?: UserRole
-  isActive?: boolean
-  departmentId?: string
-  year?: number   
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-
-export type BackendUsersListResponse = {
-  users: User[]
+type BackendEnrollmentsListResponse = {
+  enrollments: StudentEnrollment[]
   total: number
   page: number
   limit: number
   totalPages: number
 }
 
-export type BackendUserResponse = {
-  user: User
+export const studentEnrollmentsService = {
+  getAll: async (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> => {
+    const response = await apiClient.get<BackendEnrollmentsListResponse>('/api/v1/student-enrollments', { params })
+    return {
+      data: response.enrollments || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1
+    }
+  },
+
+  getById: async (id: string): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.get<StudentEnrollment>(`/api/v1/student-enrollments/${id}`)
+    return {
+      data: enrollment
+    }
+  },
+
+  getByStudent: async (studentId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/student/${studentId}`, { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
+
+
+  getMyEnrollments: async (params?: { academicYear?: string; semester?: number; status?: string }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>('/api/v1/student-enrollments/my-enrollments', { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
+
+  getBySubject: async (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+    const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/subject/${subjectId}`, { params })
+    return {
+      data: Array.isArray(enrollments) ? enrollments : []
+    }
+  },
+
+  getStats: (): Promise<ApiResponse<EnrollmentStats>> =>
+    apiClient.get('/api/v1/student-enrollments/stats'),
+
+
+  getAvailableSubjects: async (academicYear: string, semester: number): Promise<ApiResponse<AvailableSubject[]>> => {
+    const subjects = await apiClient.get<AvailableSubject[]>('/api/v1/student-enrollments/available-subjects', {
+      params: { academicYear, semester }
+    })
+    return {
+      data: Array.isArray(subjects) ? subjects : []
+    }
+  },
+
+  create: async (data: CreateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.post<StudentEnrollment>('/api/v1/student-enrollments', data)
+    return {
+      data: enrollment
+    }
+  },
+
+
+  selfEnroll: async (data: SelfEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.post<StudentEnrollment>('/api/v1/student-enrollments/self-enroll', data)
+    return {
+      data: enrollment
+    }
+  },
+
+  update: async (id: string, data: UpdateEnrollmentDto): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.patch<StudentEnrollment>(`/api/v1/student-enrollments/${id}`, data)
+    return {
+      data: enrollment
+    }
+  },
+
+  withdraw: async (id: string, reason?: string): Promise<ApiResponse<StudentEnrollment>> => {
+    const enrollment = await apiClient.patch<StudentEnrollment>(`/api/v1/student-enrollments/${id}/withdraw`, { reason })
+    return {
+      data: enrollment
+    }
+  },
+
+  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
+    apiClient.delete(`/api/v1/student-enrollments/${id}`)
 }
 ```
-
-## File: src/features/auth/hooks/use-auth-mutations.ts
-```typescript
-'use client'
-
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
-import { authService } from './use-api'
-import { useAuth } from '@/lib/auth/auth-provider'
-import { ROUTES } from '@/constants/routes'
-import { USER_ROLES } from '@/constants/roles'
-import type { LoginFormData, RegisterFormData } from '../validations/auth-schemas'
-import type { LoginUser, RegisterDto } from '../types/auth'
-import type { User } from '@/features/users/types/users'
-import type { ApiError } from '@/types/common'
-import { toast } from 'sonner'
-
-const convertLoginUserToUser = (loginUser: LoginUser): User => ({
-  _id: loginUser.id,
-  username: loginUser.username,
-  email: loginUser.email,
-  fullName: loginUser.fullName,
-  role: loginUser.role,
-  isActive: loginUser.isActive,
-  profileImage: loginUser.profileImage,
-  year: loginUser.year,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
-})
-
-const DASHBOARD_ROUTES = {
-  [USER_ROLES.ADMIN]: ROUTES.ADMIN.DASHBOARD,
-  [USER_ROLES.FACULTY]: ROUTES.FACULTY.DASHBOARD,
-  [USER_ROLES.STUDENT]: ROUTES.STUDENT.DASHBOARD,
-  [USER_ROLES.EXAM_COORDINATOR]: ROUTES.EXAM_COORDINATOR.DASHBOARD,
-  [USER_ROLES.INVIGILATOR]: ROUTES.INVIGILATOR.DASHBOARD
-} as const
-
-export const useLogin = () => {
-  const { login } = useAuth()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (data: LoginFormData) => {
-      const response = await authService.login(data)
-      return response
-    },
-    onSuccess: (response) => {
-      const user = convertLoginUserToUser(response.user)
-      login(response.accessToken, user)
-      
-      queryClient.clear()
-      
-      const redirectRoute = DASHBOARD_ROUTES[response.user.role as keyof typeof DASHBOARD_ROUTES] || ROUTES.HOME
-      
-      toast.success(`Welcome back, ${response.user.fullName}!`, {
-        description: 'You have been successfully logged in.'
-      })
-      
-      setTimeout(() => {
-        router.replace(redirectRoute)
-      }, 100)
-    },
-    onError: (error: ApiError) => {
-      const errorMessage = error.message || 'Login failed. Please check your credentials.'
-      toast.error('Login Failed', {
-        description: errorMessage
-      })
-    }
-  })
-}
-
-export const useRegister = () => {
-  const router = useRouter()
-
-  return useMutation({
-    mutationFn: async (data: RegisterFormData) => {
-      // Remove confirmPassword and prepare the registration data
-      const { confirmPassword, ...restData } = data
-      
-      const registerData: RegisterDto = {
-        email: restData.email,
-        fullName: restData.fullName,
-        password: restData.password,
-        year: restData.year,
-        username: restData.username && restData.username.trim() !== '' ? restData.username : undefined,
-        contactPrimary: restData.contactPrimary && restData.contactPrimary.trim() !== '' ? restData.contactPrimary : undefined,
-        addressLine1: restData.addressLine1 && restData.addressLine1.trim() !== '' ? restData.addressLine1 : undefined,
-        addressLine2: restData.addressLine2 && restData.addressLine2.trim() !== '' ? restData.addressLine2 : undefined,
-        city: restData.city && restData.city.trim() !== '' ? restData.city : undefined,
-        state: restData.state && restData.state.trim() !== '' ? restData.state : undefined,
-        postalCode: restData.postalCode && restData.postalCode.trim() !== '' ? restData.postalCode : undefined,
-      }
-      
-      return authService.register(registerData)
-    },
-    onSuccess: () => {
-      toast.success('Account Created Successfully!', {
-        description: 'Please sign in with your new account.'
-      })
-      router.push('/login')
-    },
-    onError: (error: ApiError) => {
-      const errorMessage = error.message || 'Registration failed. Please try again.'
-      toast.error('Registration Failed', {
-        description: errorMessage
-      })
-    }
-  })
-}
-
-export const useLogout = () => {
-  const { logout } = useAuth()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: () => authService.logout(),
-    onSuccess: () => {
-      logout()
-      queryClient.clear()
-      toast.success('Logged Out', {
-        description: 'You have been successfully logged out.'
-      })
-      router.replace('/login')
-    },
-    onError: () => {
-      logout()
-      queryClient.clear()
-      router.replace('/login')
-      toast.success('Logged Out', {
-        description: 'You have been successfully logged out.'
-      })
-    }
-  })
-}
-```
-
-## File: src/lib/auth/auth-provider.tsx
-```typescript
-'use client'
-
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
-import { useAuthStore } from '@/lib/stores/auth-store'
-import { usersService } from '@/features/users/hooks/use-users'
-import type { User } from '@/features/users/types/users'
-
-type AuthContextType = {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (token: string, user: User) => void
-  logout: () => void
-  refetchUser: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
-
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
-  return context
-}
-
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const store = useAuthStore()
-  const [isHydrated, setIsHydrated] = useState(false)
-  const [isFetchingUser, setIsFetchingUser] = useState(false)
-
-  // Memoized values
-  const isLoading = !store.isInitialized || isFetchingUser
-
-  // useCallback for refetchUser to prevent dependency issues
-  const refetchUser = useCallback(async () => {
-    if (!store.isAuthenticated || !store.token) return
-    
-    setIsFetchingUser(true)
-    try {
-      const response = await usersService.getProfile()
-      store.setUser(response.data)
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error)
-      store.logout()
-    } finally {
-      setIsFetchingUser(false)
-    }
-  }, [store.isAuthenticated, store.token, store.setUser, store.logout])
-
-  // Handle hydration
-  useEffect(() => {
-    setIsHydrated(true)
-  }, [])
-
-  // Initialize auth state only once after hydration
-  useEffect(() => {
-    if (!isHydrated || store.isInitialized) return
-
-    const initializeAuth = async () => {
-      try {
-        store.initialize()
-        
-        // If we have a token but no user data, fetch user profile
-        if (store.isAuthenticated && !store.user) {
-          await refetchUser()
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error)
-        store.logout()
-      }
-    }
-
-    initializeAuth()
-  }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
-
-  /* -------------------------------------------------
-   * TEMPORARY DEBUG – remove after verifying year/departmentId
-   * ------------------------------------------------- */
-  useEffect(() => {
-    if (store.user) {
-      console.log('🔍 CURRENT USER FROM AUTH PROVIDER:', JSON.stringify(store.user, null, 2))
-    }
-  }, [store.user])
-  /* ------------------------------------------------- */
-
-  const contextValue = useMemo(() => ({
-    user: store.user,
-    isAuthenticated: store.isAuthenticated,
-    isLoading,
-    login: store.login,
-    logout: store.logout,
-    refetchUser
-  }), [store.user, store.isAuthenticated, isLoading, store.login, store.logout, refetchUser])
-
-  // Show loading screen during hydration or initialization
-  if (!isHydrated || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse"></div>
-              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">University Management System</h2>
-            <p className="text-muted-foreground">Initializing application...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
-```
-
-## File: src/lib/stores/auth-store.ts
-```typescript
-// src/lib/stores/auth-store.ts
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { apiClient } from '@/lib/api/client'
-import type { User } from '@/features/users/types/users'
-
-type AuthState = {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  isInitialized: boolean
-}
-
-type AuthActions = {
-  login: (token: string, user: User) => void
-  logout: () => void
-  setUser: (user: User) => void
-  initialize: () => void
-  setInitialized: (initialized: boolean) => void
-}
-
-export const useAuthStore = create<AuthState & AuthActions>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isInitialized: false,
-
-      // Actions
-      login: (token: string, user: User) => {
-        apiClient.setToken(token)
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isInitialized: true
-        })
-      },
-
-      logout: () => {
-        apiClient.setToken(null)
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isInitialized: true
-        })
-      },
-
-      setUser: (user: User) => {
-        set({ user })
-      },
-
-      initialize: () => {
-        const { token, isInitialized } = get()
-        
-        // Prevent multiple initializations
-        if (isInitialized) return
-        
-        if (token) {
-          apiClient.setToken(token)
-          set({ 
-            isAuthenticated: true,
-            isInitialized: true 
-          })
-        } else {
-          set({ 
-            isInitialized: true 
-          })
-        }
-      },
-
-      setInitialized: (initialized: boolean) => {
-        set({ isInitialized: initialized })
-      }
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        isAuthenticated: state.isAuthenticated
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.token) {
-          apiClient.setToken(state.token)
-        }
-      }
-    }
-  )
-)
-```
-
- 

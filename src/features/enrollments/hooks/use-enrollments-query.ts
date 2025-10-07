@@ -27,19 +27,20 @@ export const useEnrollmentQuery = (id: string | undefined) => {
 }
 
 
-export const useMyEnrollmentsQuery = (params?: { academicYear?: string; semester?: number; status?: string }) => {
-  const { user } = useAuth()
-  
+ 
+export const useMyEnrollmentsQuery = (params?: GetEnrollmentsParams) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['enrollments', 'my-enrollments', user?._id, params],
     queryFn: async () => {
-      if (!user?._id) throw new Error('User not authenticated')
-      return await studentEnrollmentsService.getMyEnrollments(params)
+      if (!user?._id) throw new Error('User not authenticated');
+      return await studentEnrollmentsService.getMyEnrollments(params);  
     },
     enabled: !!user?._id,
     staleTime: 30000,
-  })
-}
+  });
+};
 
 export const useEnrollmentsBySubjectQuery = (subjectId: string | undefined) => {
   return useQuery({

@@ -1,48 +1,51 @@
  
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PlusIcon, BookOpenIcon, GraduationCapIcon } from 'lucide-react'
-import { DataTable } from '@/components/data-display/data-table'
-import { getStudentEnrollmentColumns } from '@/features/enrollments/components/student-enrollment-columns'
-import { useMyEnrollmentsQuery } from '@/features/enrollments/hooks/use-enrollments-query'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-import { RoleGuard } from '@/lib/auth/role-guard'
-import { USER_ROLES } from '@/constants/roles'
-import { 
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlusIcon, BookOpenIcon, GraduationCapIcon } from 'lucide-react';
+import { DataTable } from '@/components/data-display/data-table';
+import { getStudentEnrollmentColumns } from '@/features/enrollments/components/student-enrollment-columns';
+import { useMyEnrollmentsQuery } from '@/features/enrollments/hooks/use-enrollments-query';
+import { LoadingSpinner } from '@/components/common/loading-spinner';
+import { RoleGuard } from '@/lib/auth/role-guard';
+import { USER_ROLES } from '@/constants/roles';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { ENROLLMENT_STATUS } from '@/features/enrollments/types/enrollments'
-import type { EnrollmentStatus } from '@/features/enrollments/types/enrollments'
+} from '@/components/ui/select';
+import { ENROLLMENT_STATUS } from '@/features/enrollments/types/enrollments';
+import type { EnrollmentStatus } from '@/features/enrollments/types/enrollments';
+import { usePagination } from '@/lib/hooks/use-pagination';
+import { useState } from 'react';
 
 const StudentEnrollmentsPage = () => {
-  const router = useRouter()
-  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'all'>('all')
-  
-  const queryParams = {
-    ...(statusFilter !== 'all' && { status: statusFilter as EnrollmentStatus }),
-  }
+  const router = useRouter();
+  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | 'all'>('all');
 
-  const { data, isLoading } = useMyEnrollmentsQuery(queryParams)
+  const { page, limit, pagination, onPaginationChange } = usePagination();
+  const queryParams = {
+    page,
+    limit,
+    ...(statusFilter !== 'all' && { status: statusFilter }),
+  };
+
+  const { data, isLoading } = useMyEnrollmentsQuery(queryParams);
 
   const columns = getStudentEnrollmentColumns({
-    onView: (enrollment) => router.push(`/student/enrollments/${enrollment._id}`)
-  })
+    onView: (enrollment) => router.push(`/student/enrollments/${enrollment._id}`),
+  });
 
-  // Calculate stats
-  const enrollments = data?.data || []
-  const totalEnrollments = enrollments.length
-  const activeEnrollments = enrollments.filter(e => e.status === ENROLLMENT_STATUS.ACTIVE).length
-  const totalCredits = enrollments
-    .filter(e => e.status === ENROLLMENT_STATUS.ACTIVE)
-    .reduce((sum, e) => sum + (e.subjectCredits || 0), 0)
+ 
+  const totalEnrollments = data?.total ?? 0;
+  const activeEnrollments = data?.data?.filter((e) => e.status === ENROLLMENT_STATUS.ACTIVE).length ?? 0;
+  const totalCredits = data?.data
+    ?.filter((e) => e.status === ENROLLMENT_STATUS.ACTIVE)
+    .reduce((sum, e) => sum + (e.subjectCredits || 0), 0) ?? 0;
 
   return (
     <RoleGuard allowedRoles={[USER_ROLES.STUDENT]}>
@@ -50,14 +53,9 @@ const StudentEnrollmentsPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Enrollments</h1>
-            <p className="text-muted-foreground mt-1">
-              View and manage your course enrollments
-            </p>
+            <p className="text-muted-foreground mt-1">View and manage your course enrollments</p>
           </div>
-          <Button 
-            onClick={() => router.push('/student/enrollments/enroll')}
-            className="bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70"
-          >
+          <Button onClick={() => router.push('/student/enrollments/enroll')} className="bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70">
             <PlusIcon className="mr-2 h-4 w-4" />
             Enroll in Subject
           </Button>
@@ -72,7 +70,7 @@ const StudentEnrollmentsPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalEnrollments}</div>
-              <p className="text-xs text-muted-foreground">All enrollments</p>
+              <p className="text-xs text-muted-foreground">Across all pages</p>
             </CardContent>
           </Card>
 
@@ -108,8 +106,8 @@ const StudentEnrollmentsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
-                <Select 
-                  value={statusFilter} 
+                <Select
+                  value={statusFilter}
                   onValueChange={(value) => setStatusFilter(value as EnrollmentStatus | 'all')}
                 >
                   <SelectTrigger>
@@ -132,7 +130,7 @@ const StudentEnrollmentsPage = () => {
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner size="lg" />
           </div>
-        ) : enrollments.length === 0 ? (
+        ) : data?.data?.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <BookOpenIcon className="h-16 w-16 text-muted-foreground mb-4" />
@@ -149,14 +147,17 @@ const StudentEnrollmentsPage = () => {
         ) : (
           <DataTable
             columns={columns}
-            data={enrollments}
+            data={data?.data || []}
             searchKey="subjectName"
             searchPlaceholder="Search by subject name..."
+            pageCount={data?.totalPages ?? 0}
+            pagination={pagination}
+            onPaginationChange={onPaginationChange}
           />
         )}
       </div>
     </RoleGuard>
-  )
-}
+  );
+};
 
-export default StudentEnrollmentsPage
+export default StudentEnrollmentsPage;

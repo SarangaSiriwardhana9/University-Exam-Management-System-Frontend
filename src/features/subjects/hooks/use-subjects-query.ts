@@ -45,18 +45,17 @@ export const useSubjectsByDepartmentQuery = (departmentId: string | undefined) =
   })
 }
 
-export const useMySubjectsQuery = () => {
-  const { user } = useAuth()
-  
+export const useMySubjectsQuery = (params?: GetSubjectsParams) => {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['subjects', 'my-subjects', user?._id],
+    queryKey: ['subjects', 'my-subjects', user?._id, params],
     queryFn: async () => {
-      if (!user?._id) throw new Error('User not authenticated')
-      // Since backend doesn't support facultyId filter,
-      // we'll get all active subjects and let faculty manage any they're assigned to
-      return await subjectsService.getAll({ isActive: true })
+      if (!user?._id) throw new Error('User not authenticated');
+ 
+      return await subjectsService.getAll({ ...params, isActive: true });
     },
     enabled: !!user?._id,
     staleTime: 30000,
-  })
-}
+  });
+};

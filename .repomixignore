@@ -2,12 +2,7 @@
 **
 
 # --- Allow key root files ---
-!package.json
-!tsconfig.json
-!next.config.ts
-!postcss.config.mjs
-!eslint.config.mjs
-!components.json
+ 
 
 # --- Unignore src folder structure (important!) ---
 !src/
@@ -22,24 +17,21 @@
 !src/app/globals.css
 
 # --- Include auth pages ---
-!src/app/(auth)/
-!src/app/(auth)/**
-!src/app/(dashboard)/admin/users/
-!src/app/(dashboard)/admin/users/**
+ 
+!src/app/(dashboard)/admin/subjects/
+!src/app/(dashboard)/admin/subjects/**
+!src/app/(dashboard)/student/enrollments/
+!src/app/(dashboard)/student/enrollments/**
 
 # --- Include auth + users features ---
-!src/features/auth/
-!src/features/auth/**
-!src/features/users/
-!src/features/users/**
+!src/features/subjects/
+!src/features/subjects/**
+!src/features/enrollments/
+!src/features/enrollments/**
 
 # --- Include shared libraries used by auth/users ---
 !src/lib/api/
 !src/lib/api/**
-!src/lib/auth/
-!src/lib/auth/**
-!src/lib/stores/
-!src/lib/stores/**
 !src/lib/providers/
 !src/lib/providers/**
 !src/lib/utils.ts

@@ -29,6 +29,7 @@ export type LoginUser = {
   isActive: boolean
   profileImage?: string
   year?: number   
+  departmentId?: string 
 }
 
 export type LoginResponse = {

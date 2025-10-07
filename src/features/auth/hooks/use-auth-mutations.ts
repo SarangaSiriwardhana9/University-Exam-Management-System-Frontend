@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth/auth-provider'
 import { ROUTES } from '@/constants/routes'
 import { USER_ROLES } from '@/constants/roles'
 import type { LoginFormData, RegisterFormData } from '../validations/auth-schemas'
-import type { LoginUser } from '../types/auth'
+import type { LoginUser, RegisterDto } from '../types/auth'
 import type { User } from '@/features/users/types/users'
 import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
@@ -21,6 +21,7 @@ const convertLoginUserToUser = (loginUser: LoginUser): User => ({
   role: loginUser.role,
   isActive: loginUser.isActive,
   profileImage: loginUser.profileImage,
+  departmentId: loginUser.departmentId,
   year: loginUser.year,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
@@ -74,7 +75,23 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterFormData) => {
-      const { confirmPassword, ...registerData } = data
+      // Remove confirmPassword and prepare the registration data
+      const { confirmPassword, ...restData } = data
+      
+      const registerData: RegisterDto = {
+        email: restData.email,
+        fullName: restData.fullName,
+        password: restData.password,
+        year: restData.year,
+        username: restData.username && restData.username.trim() !== '' ? restData.username : undefined,
+        contactPrimary: restData.contactPrimary && restData.contactPrimary.trim() !== '' ? restData.contactPrimary : undefined,
+        addressLine1: restData.addressLine1 && restData.addressLine1.trim() !== '' ? restData.addressLine1 : undefined,
+        addressLine2: restData.addressLine2 && restData.addressLine2.trim() !== '' ? restData.addressLine2 : undefined,
+        city: restData.city && restData.city.trim() !== '' ? restData.city : undefined,
+        state: restData.state && restData.state.trim() !== '' ? restData.state : undefined,
+        postalCode: restData.postalCode && restData.postalCode.trim() !== '' ? restData.postalCode : undefined,
+      }
+      
       return authService.register(registerData)
     },
     onSuccess: () => {

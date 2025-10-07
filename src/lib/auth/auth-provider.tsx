@@ -1,10 +1,8 @@
- 
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { usersService } from '@/features/users/hooks/use-users'
- 
 import type { User } from '@/features/users/types/users'
 
 type AuthContextType = {
@@ -35,20 +33,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isLoading = !store.isInitialized || isFetchingUser
 
   // useCallback for refetchUser to prevent dependency issues
-  const refetchUser = useCallback(async () => {
-    if (!store.isAuthenticated || !store.token) return
-    
-    setIsFetchingUser(true)
-    try {
-      const response = await usersService.getProfile()
-      store.setUser(response.data)
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error)
-      store.logout()
-    } finally {
-      setIsFetchingUser(false)
-    }
-  }, [store.isAuthenticated, store.token, store.setUser, store.logout])
+const refetchUser = useCallback(async () => {
+  if (!store.isAuthenticated || !store.token) return
+  
+  setIsFetchingUser(true)
+  try {
+    const response = await usersService.getProfile()
+    console.log('🔍 FETCHED USER FROM API:', JSON.stringify(response.data, null, 2))
+    store.setUser(response.data)
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error)
+    store.logout()
+  } finally {
+    setIsFetchingUser(false)
+  }
+}, [store.isAuthenticated, store.token, store.setUser, store.logout])
 
   // Handle hydration
   useEffect(() => {
@@ -75,6 +74,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth()
   }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
+
+  /* -------------------------------------------------
+   * TEMPORARY DEBUG – remove after verifying year/departmentId
+   * ------------------------------------------------- */
+  useEffect(() => {
+    if (store.user) {
+      console.log('🔍 CURRENT USER FROM AUTH PROVIDER:', JSON.stringify(store.user, null, 2))
+    }
+  }, [store.user])
+  /* ------------------------------------------------- */
 
   const contextValue = useMemo(() => ({
     user: store.user,

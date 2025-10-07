@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { useState } from 'react'
@@ -34,7 +33,7 @@ export const RegisterForm = () => {
       city: '',
       state: '',
       postalCode: '',
-      year: undefined
+      year: 1  // Default to Year 1
     }
   })
 
@@ -47,13 +46,13 @@ export const RegisterForm = () => {
       <div className="max-w-2xl w-full">
         <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6 pt-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-student to-student/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <UserPlusIcon className="w-8 h-8 text-student-foreground" />
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+              <UserPlusIcon className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-student to-student/80 bg-clip-text text-transparent">
-              Join University
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Student Registration
             </h1>
-            <p className="text-muted-foreground mt-2">Create your account to get started</p>
+            <p className="text-muted-foreground mt-2">Create your university account</p>
           </CardHeader>
 
           <CardContent className="px-8 pb-8">
@@ -75,7 +74,7 @@ export const RegisterForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-foreground font-medium">
-                        Full Name
+                        Full Name *
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -89,14 +88,41 @@ export const RegisterForm = () => {
                   )}
                 />
 
-                {/* Username & Email Row */}
+                {/* University Email */}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground font-medium">
+                        University Email *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="SE12345678@alfa.uni.lk"
+                          className="h-11 focus:ring-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Use your university email (e.g., SE12345678@alfa.uni.lk)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Username & Year Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground font-medium">Username</FormLabel>
+                        <FormLabel className="text-foreground font-medium">
+                          Username <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Choose username"
@@ -104,25 +130,43 @@ export const RegisterForm = () => {
                             {...field}
                           />
                         </FormControl>
+                        <FormDescription className="text-xs">
+                          Leave empty to auto-generate from email
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
+                  {/* Academic Year Selection - REQUIRED */}
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="year"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground font-medium">Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="your@email.com"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
+                        <FormLabel className="text-foreground font-medium">
+                          Academic Year *
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(Number(value))} 
+                          value={field.value?.toString()}
+                          defaultValue="1"
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select year" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Year 1</SelectItem>
+                            <SelectItem value="2">Year 2</SelectItem>
+                            <SelectItem value="3">Year 3</SelectItem>
+                            <SelectItem value="4">Year 4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-xs">
+                          Select your current academic year
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -136,7 +180,7 @@ export const RegisterForm = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground font-medium">Password</FormLabel>
+                        <FormLabel className="text-foreground font-medium">Password *</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
@@ -168,7 +212,7 @@ export const RegisterForm = () => {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground font-medium">Confirm Password</FormLabel>
+                        <FormLabel className="text-foreground font-medium">Confirm Password *</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
@@ -196,61 +240,26 @@ export const RegisterForm = () => {
                   />
                 </div>
 
-                {/* Phone Number & Academic Year Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="contactPrimary"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter phone number"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* NEW: Academic Year Selection */}
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Academic Year <span className="text-muted-foreground text-sm">(Optional)</span>
-                        </FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
-                          value={field.value?.toString()}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Select year" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">Year 1</SelectItem>
-                            <SelectItem value="2">Year 2</SelectItem>
-                            <SelectItem value="3">Year 3</SelectItem>
-                            <SelectItem value="4">Year 4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Select your current academic year if you&lsquo;re a student
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* Phone Number */}
+                <FormField
+                  control={form.control}
+                  name="contactPrimary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground font-medium">
+                        Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+94771234567"
+                          className="h-11 focus:ring-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Address Fields - Optional */}
                 <div className="space-y-4 pt-2">
@@ -331,12 +340,12 @@ export const RegisterForm = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70 text-student-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
                   disabled={registerMutation.isPending}
                 >
                   {registerMutation.isPending ? (
                     <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-student-foreground border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                       <span>Creating account...</span>
                     </div>
                   ) : (

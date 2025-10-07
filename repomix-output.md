@@ -1,34 +1,4 @@
  
-```
-
-## File: eslint.config.mjs
-```
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-    ],
-  },
-];
-
-export default eslintConfig;
-```
 
 ## File: next.config.ts
 ```typescript
@@ -282,393 +252,6 @@ export const getUserColumns = ({ onEdit, onDelete, onView }: UserColumnsProps): 
 ]
 ```
 
-## File: src/features/users/components/user-form.tsx
-```typescript
-// src/features/users/components/user-form.tsx
-'use client'
-
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { USER_ROLES } from '@/constants/roles'
-import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
-import type { User } from '../types/users'
-
-// Use discriminated union for props
-type CreateUserFormProps = {
-  user?: never
-  onSubmit: (data: CreateUserFormData) => void
-  onCancel: () => void
-  isLoading?: boolean
-}
-
-type UpdateUserFormProps = {
-  user: User
-  onSubmit: (data: UpdateUserFormData) => void
-  onCancel: () => void
-  isLoading?: boolean
-}
-
-type UserFormProps = CreateUserFormProps | UpdateUserFormProps
-
-export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
-  const isEditMode = !!user
-
-  const form = useForm<CreateUserFormData | UpdateUserFormData>({
-    resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      fullName: '',
-      role: USER_ROLES.STUDENT,
-      contactPrimary: '',
-      contactSecondary: '',
-      addressLine1: '',
-      addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: '',
-      departmentId: '',
-      year: undefined  // NEW: Add year field
-    }
-  })
-
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        contactPrimary: user.contactPrimary || '',
-        contactSecondary: user.contactSecondary || '',
-        addressLine1: user.addressLine1 || '',
-        addressLine2: user.addressLine2 || '',
-        city: user.city || '',
-        state: user.state || '',
-        postalCode: user.postalCode || '',
-        country: user.country || '',
-        departmentId: user.departmentId || '',
-        year: user.year  // NEW: Add year to reset
-      })
-    }
-  }, [user, form])
-
-const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
-  // Remove year if user is not a student
-  const submissionData = { ...data };
-  if (submissionData.role !== USER_ROLES.STUDENT) {
-    delete submissionData.year;
-  }
-  
-  if (isEditMode) {
-    (onSubmit as (data: UpdateUserFormData) => void)(submissionData as UpdateUserFormData)
-  } else {
-    (onSubmit as (data: CreateUserFormData) => void)(submissionData as CreateUserFormData)
-  }
-}
-
-  // Watch the role field to conditionally show year field
-  const selectedRole = form.watch('role')
-  const isStudent = selectedRole === USER_ROLES.STUDENT
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Basic Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Basic Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter username" 
-                      {...field} 
-                      disabled={isEditMode}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email *</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
-                      <SelectItem value={USER_ROLES.FACULTY}>Faculty</SelectItem>
-                      <SelectItem value={USER_ROLES.STUDENT}>Student</SelectItem>
-                      <SelectItem value={USER_ROLES.EXAM_COORDINATOR}>Exam Coordinator</SelectItem>
-                      <SelectItem value={USER_ROLES.INVIGILATOR}>Invigilator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* NEW: Academic Year Field - Show only for students */}
-          {isStudent && (
-            <FormField
-              control={form.control}
-              name="year"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Academic Year</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
-                    value={field.value?.toString() || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select academic year" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="1">Year 1</SelectItem>
-                      <SelectItem value="2">Year 2</SelectItem>
-                      <SelectItem value="3">Year 3</SelectItem>
-                      <SelectItem value="4">Year 4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the student&lsquo;s current academic year (required for enrollment)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {!isEditMode && (
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter password" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-        </div>
-
-        {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="contactPrimary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Primary Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter primary phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contactSecondary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secondary Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter secondary phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Address Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Address Information</h3>
-          
-          <FormField
-            control={form.control}
-            name="addressLine1"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
-                <FormControl>
-                  <Input placeholder="Street address" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="addressLine2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
-                <FormControl>
-                  <Input placeholder="Apartment, suite, etc." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input placeholder="City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>State</FormLabel>
-                  <FormControl>
-                    <Input placeholder="State" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="postalCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Postal Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ZIP" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input placeholder="Country" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  )
-}
-```
-
 ## File: src/features/users/hooks/use-user-mutations.ts
 ```typescript
 'use client'
@@ -768,78 +351,6 @@ export const useUserQuery = (id: string | undefined) => {
     retry: 1,
   })
 }
-```
-
-## File: src/features/users/validations/user-schemas.ts
-```typescript
-// src/features/users/validations/user-schemas.ts
-import { z } from 'zod'
-import { USER_ROLES } from '@/constants/roles'
-
-export const createUserSchema = z.object({
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(100, 'Password must be less than 100 characters'),
-  email: z.string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email must be less than 100 characters'),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(100, 'Full name must be less than 100 characters'),
-  role: z.enum([
-    USER_ROLES.ADMIN,
-    USER_ROLES.FACULTY,
-    USER_ROLES.STUDENT,
-    USER_ROLES.EXAM_COORDINATOR,
-    USER_ROLES.INVIGILATOR
-  ]),
-  contactPrimary: z.string().max(15).optional(),
-  contactSecondary: z.string().max(15).optional(),
-  addressLine1: z.string().max(255).optional(),
-  addressLine2: z.string().max(255).optional(),
-  city: z.string().max(50).optional(),
-  state: z.string().max(50).optional(),
-  postalCode: z.string().max(10).optional(),
-  country: z.string().max(50).optional(),
-  departmentId: z.string().optional(),
-  year: z.number().int().min(1).max(4).optional()  // NEW: Year field
-})
-
-export const updateUserSchema = z.object({
-  email: z.string()
-    .email('Please enter a valid email address')
-    .max(100, 'Email must be less than 100 characters')
-    .optional(),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(100, 'Full name must be less than 100 characters')
-    .optional(),
-  role: z.enum([
-    USER_ROLES.ADMIN,
-    USER_ROLES.FACULTY,
-    USER_ROLES.STUDENT,
-    USER_ROLES.EXAM_COORDINATOR,
-    USER_ROLES.INVIGILATOR
-  ]).optional(),
-  contactPrimary: z.string().max(15).optional(),
-  contactSecondary: z.string().max(15).optional(),
-  addressLine1: z.string().max(255).optional(),
-  addressLine2: z.string().max(255).optional(),
-  city: z.string().max(50).optional(),
-  state: z.string().max(50).optional(),
-  postalCode: z.string().max(10).optional(),
-  country: z.string().max(50).optional(),
-  departmentId: z.string().optional(),
-  isActive: z.boolean().optional(),
-  year: z.number().int().min(1).max(4).optional()  // NEW: Year field
-})
-
-export type CreateUserFormData = z.infer<typeof createUserSchema>
-export type UpdateUserFormData = z.infer<typeof updateUserSchema>
 ```
 
 ## File: src/lib/api/client.ts
@@ -1515,466 +1026,400 @@ export const LoginForm = () => {
 }
 ```
 
-## File: src/features/auth/components/register-form.tsx
+## File: src/features/users/components/user-form.tsx
 ```typescript
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
-import { useRegister } from '../hooks/use-auth-mutations'
-import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { USER_ROLES } from '@/constants/roles'
+import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
+import type { User } from '../types/users'
 
-export const RegisterForm = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const registerMutation = useRegister()
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+type CreateUserFormProps = {
+  user?: never
+  onSubmit: (data: CreateUserFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type UpdateUserFormProps = {
+  user: User
+  onSubmit: (data: UpdateUserFormData) => void
+  onCancel: () => void
+  isLoading?: boolean
+}
+
+type UserFormProps = CreateUserFormProps | UpdateUserFormProps
+
+export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
+  const isEditMode = !!user
+
+  const form = useForm<CreateUserFormData | UpdateUserFormData>({
+    resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
     defaultValues: {
       username: '',
       email: '',
       password: '',
-      confirmPassword: '',
       fullName: '',
+      role: USER_ROLES.STUDENT,
       contactPrimary: '',
+      contactSecondary: '',
       addressLine1: '',
       addressLine2: '',
       city: '',
       state: '',
       postalCode: '',
+      country: '',
+      departmentId: '',
       year: undefined
     }
   })
 
-  const onSubmit = (data: RegisterFormData) => {
-    registerMutation.mutate(data)
+  useEffect(() => {
+    if (user) {
+
+      const resetData = {
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        contactPrimary: user.contactPrimary || '',
+        contactSecondary: user.contactSecondary || '',
+        addressLine1: user.addressLine1 || '',
+        addressLine2: user.addressLine2 || '',
+        city: user.city || '',
+        state: user.state || '',
+        postalCode: user.postalCode || '',
+        country: user.country || '',
+        departmentId: user.departmentId || '',
+
+        year: user.role === USER_ROLES.STUDENT ? user.year : undefined
+      }
+      form.reset(resetData)
+    }
+  }, [user, form])
+
+  const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
+
+    const submissionData = { ...data };
+    if (submissionData.role !== USER_ROLES.STUDENT) {
+      delete submissionData.year;
+    }
+    
+    if (isEditMode) {
+      (onSubmit as (data: UpdateUserFormData) => void)(submissionData as UpdateUserFormData)
+    } else {
+      (onSubmit as (data: CreateUserFormData) => void)(submissionData as CreateUserFormData)
+    }
   }
 
+
+  const selectedRole = form.watch('role')
+  const isStudent = selectedRole === USER_ROLES.STUDENT
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
-      <div className="max-w-2xl w-full">
-        <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6 pt-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-student to-student/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <UserPlusIcon className="w-8 h-8 text-student-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-student to-student/80 bg-clip-text text-transparent">
-              Join University
-            </h1>
-            <p className="text-muted-foreground mt-2">Create your account to get started</p>
-          </CardHeader>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* Basic Information */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Basic Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <CardContent className="px-8 pb-8">
-            {registerMutation.isError && (
-              <Alert className="mb-6 border-destructive/20 bg-destructive/5">
-                <AlertCircleIcon className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive">
-                  {registerMutation.error?.message || 'Registration failed. Please try again.'}
-                </AlertDescription>
-              </Alert>
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter username" 
+                      {...field} 
+                      disabled={isEditMode}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email *</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="Enter email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role *</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
+                      <SelectItem value={USER_ROLES.FACULTY}>Faculty</SelectItem>
+                      <SelectItem value={USER_ROLES.STUDENT}>Student</SelectItem>
+                      <SelectItem value={USER_ROLES.EXAM_COORDINATOR}>Exam Coordinator</SelectItem>
+                      <SelectItem value={USER_ROLES.INVIGILATOR}>Invigilator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+
+          {isStudent && (
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Academic Year {isStudent && '*'}</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                    value={field.value?.toString() || ''}
+
+                    defaultValue={field.value?.toString() || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select academic year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">Year 1</SelectItem>
+                      <SelectItem value="2">Year 2</SelectItem>
+                      <SelectItem value="3">Year 3</SelectItem>
+                      <SelectItem value="4">Year 4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the student&apos;s current academic year (required for enrollment)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {!isEditMode && (
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="Enter password" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+
+        {/* Rest of the form remains the same... */}
+        {/* Contact Information */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Contact Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="contactPrimary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Primary Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter primary phone" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="contactSecondary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Secondary Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter secondary phone" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Address Information */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Address Information</h3>
+          
+          <FormField
+            control={form.control}
+            name="addressLine1"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 1</FormLabel>
+                <FormControl>
+                  <Input placeholder="Street address" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                {/* Full Name */}
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Full Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your full name"
-                          className="h-11 focus:ring-primary"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <FormField
+            control={form.control}
+            name="addressLine2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 2</FormLabel>
+                <FormControl>
+                  <Input placeholder="Apartment, suite, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                {/* Username & Email Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Username</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Choose username"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="City" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="your@email.com"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <FormControl>
+                    <Input placeholder="State" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                {/* Password Fields Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Password</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="Create password"
-                              className="h-11 pr-12 focus:ring-primary"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showPassword ? (
-                                <EyeOffIcon className="w-5 h-5" />
-                              ) : (
-                                <EyeIcon className="w-5 h-5" />
-                              )}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <FormField
+              control={form.control}
+              name="postalCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Postal Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ZIP" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Confirm Password</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type={showConfirmPassword ? 'text' : 'password'}
-                              placeholder="Confirm password"
-                              className="h-11 pr-12 focus:ring-primary"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showConfirmPassword ? (
-                                <EyeOffIcon className="w-5 h-5" />
-                              ) : (
-                                <EyeIcon className="w-5 h-5" />
-                              )}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Country</FormLabel>
+                <FormControl>
+                  <Input placeholder="Country" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-                {/* Phone Number & Academic Year Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="contactPrimary"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter phone number"
-                            className="h-11 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* NEW: Academic Year Selection */}
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">
-                          Academic Year <span className="text-muted-foreground text-sm">(Optional)</span>
-                        </FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
-                          value={field.value?.toString()}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Select year" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">Year 1</SelectItem>
-                            <SelectItem value="2">Year 2</SelectItem>
-                            <SelectItem value="3">Year 3</SelectItem>
-                            <SelectItem value="4">Year 4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Select your current academic year if you&lsquo;re a student
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Address Fields - Optional */}
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-sm font-medium text-muted-foreground border-b border-border pb-2">
-                    Address Information (Optional)
-                  </h4>
-                  
-                  <FormField
-                    control={form.control}
-                    name="addressLine1"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder="Street address"
-                            className="h-10 focus:ring-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="City"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="State"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="postalCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="ZIP"
-                              className="h-10 focus:ring-primary"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70 text-student-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
-                  disabled={registerMutation.isPending}
-                >
-                  {registerMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-student-foreground border-t-transparent rounded-full animate-spin" />
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            </Form>
-
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <Link 
-                  href="/login" 
-                  className="text-primary hover:text-primary/80 font-medium hover:underline transition-colors"
-                >
-                  Sign in here
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end space-x-4 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   )
 }
-```
-
-## File: src/features/auth/types/auth.ts
-```typescript
-import type { UserRole } from '@/constants/roles'
-
-export type LoginDto = {
-  usernameOrEmail: string
-  password: string
-}
-
-export type RegisterDto = {
-  email: string
-  username?: string
-  password: string
-  fullName: string
-  contactPrimary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  year?: number 
-}
-
-export type LoginUser = {
-  id: string
-  username: string
-  email: string
-  fullName: string
-  role: UserRole
-  isActive: boolean
-  profileImage?: string
-  year?: number   
-}
-
-export type LoginResponse = {
-  user: LoginUser
-  accessToken: string
-}
-
-export type ForgotPasswordDto = {
-  email: string
-}
-
-export type ResetPasswordDto = {
-  token: string
-  password: string
-  confirmPassword: string
-}
-```
-
-## File: src/features/auth/validations/auth-schemas.ts
-```typescript
-import { z } from 'zod'
-
-export const loginSchema = z.object({
-  usernameOrEmail: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required')
-})
-
-// Alternative simpler approach
-export const registerSchema = z.object({
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(20, 'Username must be less than 20 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
-  email: z.string()
-    .email('Please enter a valid email address'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  confirmPassword: z.string()
-    .min(1, 'Please confirm your password'),
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(50, 'Full name must be less than 50 characters'),
-  contactPrimary: z.string().optional(),
-  addressLine1: z.string().optional(),
-  addressLine2: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  // FIX: Define as union type explicitly
-  year: z.union([
-    z.number().int().min(1).max(4),
-    z.undefined()
-  ]).optional()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-})
-export type LoginFormData = z.infer<typeof loginSchema>
-export type RegisterFormData = z.infer<typeof registerSchema>
 ```
 
 ## File: src/features/users/hooks/use-users.ts
@@ -2050,89 +1495,99 @@ export const usersService = {
 }
 ```
 
-## File: src/features/users/types/users.ts
+## File: src/features/users/validations/user-schemas.ts
 ```typescript
-import type { UserRole } from '@/constants/roles'
+import { z } from 'zod'
+import { USER_ROLES } from '@/constants/roles'
 
-export type User = {
-  _id: string
-  username: string
-  email: string
-  fullName: string
-  role: UserRole
-  isActive: boolean
-  contactPrimary?: string
-  contactSecondary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  country?: string
-  profileImage?: string
-  departmentId?: string
-  year?: number   
-  createdAt: string
-  updatedAt: string
-  lastLoginAt?: string
-}
+export const createUserSchema = z.object({
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(50, 'Username must be less than 50 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  password: z.string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password must be less than 100 characters'),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be less than 100 characters'),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100, 'Full name must be less than 100 characters'),
+  role: z.enum([
+    USER_ROLES.ADMIN,
+    USER_ROLES.FACULTY,
+    USER_ROLES.STUDENT,
+    USER_ROLES.EXAM_COORDINATOR,
+    USER_ROLES.INVIGILATOR
+  ]),
+  contactPrimary: z.string().max(15).optional().or(z.literal('')),
+  contactSecondary: z.string().max(15).optional().or(z.literal('')),
+  addressLine1: z.string().max(255).optional().or(z.literal('')),
+  addressLine2: z.string().max(255).optional().or(z.literal('')),
+  city: z.string().max(50).optional().or(z.literal('')),
+  state: z.string().max(50).optional().or(z.literal('')),
+  postalCode: z.string().max(10).optional().or(z.literal('')),
+  country: z.string().max(50).optional().or(z.literal('')),
+  departmentId: z.string().optional().or(z.literal('')),
+  year: z.number().int().min(1).max(4).optional()
+}).refine(
+  (data) => {
+    // If role is student, year must be provided
+    if (data.role === USER_ROLES.STUDENT) {
+      return data.year !== undefined
+    }
+    return true
+  },
+  {
+    message: "Year is required for students",
+    path: ["year"]
+  }
+)
 
-export type CreateUserDto = {
-  username: string
-  password: string
-  email: string
-  fullName: string
-  role: UserRole
-  contactPrimary?: string
-  contactSecondary?: string
-  addressLine1?: string
-  addressLine2?: string
-  city?: string
-  state?: string
-  postalCode?: string
-  country?: string
-  departmentId?: string
-  year?: number 
-}
+export const updateUserSchema = z.object({
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be less than 100 characters')
+    .optional(),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100, 'Full name must be less than 100 characters')
+    .optional(),
+  role: z.enum([
+    USER_ROLES.ADMIN,
+    USER_ROLES.FACULTY,
+    USER_ROLES.STUDENT,
+    USER_ROLES.EXAM_COORDINATOR,
+    USER_ROLES.INVIGILATOR
+  ]).optional(),
+  contactPrimary: z.string().max(15).optional().or(z.literal('')),
+  contactSecondary: z.string().max(15).optional().or(z.literal('')),
+  addressLine1: z.string().max(255).optional().or(z.literal('')),
+  addressLine2: z.string().max(255).optional().or(z.literal('')),
+  city: z.string().max(50).optional().or(z.literal('')),
+  state: z.string().max(50).optional().or(z.literal('')),
+  postalCode: z.string().max(10).optional().or(z.literal('')),
+  country: z.string().max(50).optional().or(z.literal('')),
+  departmentId: z.string().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
+  year: z.number().int().min(1).max(4).optional()
+}).refine(
+  (data) => {
+    // If role is being updated to student, year must be provided
+    if (data.role === USER_ROLES.STUDENT) {
+      return data.year !== undefined
+    }
+    return true
+  },
+  {
+    message: "Year is required for students",
+    path: ["year"]
+  }
+)
 
-export type UpdateUserDto = Partial<Omit<CreateUserDto, 'username' | 'password'>> & {
-  isActive?: boolean
-}
-
-export type ChangePasswordDto = {
-  currentPassword: string
-  newPassword: string
-}
-
-export type UserStats = {
-  totalUsers: number
-  activeUsers: number
-  usersByRole: Record<string, number>
-}
-
-export type GetUsersParams = {
-  role?: UserRole
-  isActive?: boolean
-  departmentId?: string
-  year?: number   
-  limit?: number
-  page?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-}
-
-export type BackendUsersListResponse = {
-  users: User[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
-
-export type BackendUserResponse = {
-  user: User
-}
+export type CreateUserFormData = z.infer<typeof createUserSchema>
+export type UpdateUserFormData = z.infer<typeof updateUserSchema>
 ```
 
 ## File: src/lib/auth/auth-guard.tsx
@@ -2314,6 +1769,562 @@ export const ROUTES = {
 } as const
 ```
 
+## File: src/features/auth/components/register-form.tsx
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
+import { useRegister } from '../hooks/use-auth-mutations'
+import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
+
+export const RegisterForm = () => {
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const registerMutation = useRegister()
+
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      fullName: '',
+      contactPrimary: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      year: 1  // Default to Year 1
+    }
+  })
+
+  const onSubmit = (data: RegisterFormData) => {
+    registerMutation.mutate(data)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
+      <div className="max-w-2xl w-full">
+        <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6 pt-8">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+              <UserPlusIcon className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Student Registration
+            </h1>
+            <p className="text-muted-foreground mt-2">Create your university account</p>
+          </CardHeader>
+
+          <CardContent className="px-8 pb-8">
+            {registerMutation.isError && (
+              <Alert className="mb-6 border-destructive/20 bg-destructive/5">
+                <AlertCircleIcon className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive">
+                  {registerMutation.error?.message || 'Registration failed. Please try again.'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                {/* Full Name */}
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground font-medium">
+                        Full Name *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your full name"
+                          className="h-11 focus:ring-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* University Email */}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground font-medium">
+                        University Email *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="SE12345678@alfa.uni.lk"
+                          className="h-11 focus:ring-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Use your university email (e.g., SE12345678@alfa.uni.lk)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Username & Year Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Username <span className="text-muted-foreground text-sm">(Optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Choose username"
+                            className="h-11 focus:ring-primary"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Leave empty to auto-generate from email
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Academic Year Selection - REQUIRED */}
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">
+                          Academic Year *
+                        </FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(Number(value))} 
+                          value={field.value?.toString()}
+                          defaultValue="1"
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select year" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Year 1</SelectItem>
+                            <SelectItem value="2">Year 2</SelectItem>
+                            <SelectItem value="3">Year 3</SelectItem>
+                            <SelectItem value="4">Year 4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-xs">
+                          Select your current academic year
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Password Fields Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">Password *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="Create password"
+                              className="h-11 pr-12 focus:ring-primary"
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showPassword ? (
+                                <EyeOffIcon className="w-5 h-5" />
+                              ) : (
+                                <EyeIcon className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground font-medium">Confirm Password *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              placeholder="Confirm password"
+                              className="h-11 pr-12 focus:ring-primary"
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOffIcon className="w-5 h-5" />
+                              ) : (
+                                <EyeIcon className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <FormField
+                  control={form.control}
+                  name="contactPrimary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground font-medium">
+                        Phone Number <span className="text-muted-foreground text-sm">(Optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+94771234567"
+                          className="h-11 focus:ring-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Address Fields - Optional */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-sm font-medium text-muted-foreground border-b border-border pb-2">
+                    Address Information (Optional)
+                  </h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="addressLine1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Street address"
+                            className="h-10 focus:ring-primary"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="City"
+                              className="h-10 focus:ring-primary"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="State"
+                              className="h-10 focus:ring-primary"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="postalCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="ZIP"
+                              className="h-10 focus:ring-primary"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      <span>Creating account...</span>
+                    </div>
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="mt-8 text-center">
+              <p className="text-muted-foreground">
+                Already have an account?{' '}
+                <Link 
+                  href="/login" 
+                  className="text-primary hover:text-primary/80 font-medium hover:underline transition-colors"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+```
+
+## File: src/features/auth/types/auth.ts
+```typescript
+import type { UserRole } from '@/constants/roles'
+
+export type LoginDto = {
+  usernameOrEmail: string
+  password: string
+}
+
+export type RegisterDto = {
+  email: string
+  username?: string
+  password: string
+  fullName: string
+  contactPrimary?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  year?: number 
+}
+
+export type LoginUser = {
+  id: string
+  username: string
+  email: string
+  fullName: string
+  role: UserRole
+  isActive: boolean
+  profileImage?: string
+  year?: number   
+}
+
+export type LoginResponse = {
+  user: LoginUser
+  accessToken: string
+}
+
+export type ForgotPasswordDto = {
+  email: string
+}
+
+export type ResetPasswordDto = {
+  token: string
+  password: string
+  confirmPassword: string
+}
+```
+
+## File: src/features/auth/validations/auth-schemas.ts
+```typescript
+import { z } from 'zod'
+
+export const loginSchema = z.object({
+  usernameOrEmail: z.string().min(1, 'Username or email is required'),
+  password: z.string().min(1, 'Password is required')
+})
+
+
+export const registerSchema = z.object({
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username must be less than 20 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  email: z.string()
+    .email('Please enter a valid email address'),
+  password: z.string()
+    .min(6, 'Password must be at least 6 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+  confirmPassword: z.string()
+    .min(1, 'Please confirm your password'),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(50, 'Full name must be less than 50 characters'),
+  contactPrimary: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  year: z.union([
+    z.number().int().min(1).max(4),
+    z.undefined()
+  ]).optional()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+})
+export type LoginFormData = z.infer<typeof loginSchema>
+export type RegisterFormData = z.infer<typeof registerSchema>
+```
+
+## File: src/features/users/types/users.ts
+```typescript
+import type { UserRole } from '@/constants/roles'
+
+export type User = {
+  _id: string
+  username: string
+  email: string
+  fullName: string
+  role: UserRole
+  isActive: boolean
+  contactPrimary?: string
+  contactSecondary?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+  profileImage?: string
+  departmentId?: string
+  year?: number   
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string
+}
+
+export type CreateUserDto = {
+  username: string
+  password: string
+  email: string
+  fullName: string
+  role: UserRole
+  contactPrimary?: string
+  contactSecondary?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+  departmentId?: string
+  year?: number 
+}
+
+export type UpdateUserDto = Partial<Omit<CreateUserDto, 'username' | 'password'>> & {
+  isActive?: boolean
+}
+
+export type ChangePasswordDto = {
+  currentPassword: string
+  newPassword: string
+}
+
+export type UserStats = {
+  totalUsers: number
+  activeUsers: number
+  usersByRole: Record<string, number>
+}
+
+export type GetUsersParams = {
+  role?: UserRole
+  isActive?: boolean
+  departmentId?: string
+  year?: number   
+  limit?: number
+  page?: number
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+export type BackendUsersListResponse = {
+  users: User[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export type BackendUserResponse = {
+  user: User
+}
+```
+
 ## File: src/features/auth/hooks/use-auth-mutations.ts
 ```typescript
 'use client'
@@ -2325,7 +2336,7 @@ import { useAuth } from '@/lib/auth/auth-provider'
 import { ROUTES } from '@/constants/routes'
 import { USER_ROLES } from '@/constants/roles'
 import type { LoginFormData, RegisterFormData } from '../validations/auth-schemas'
-import type { LoginUser } from '../types/auth'
+import type { LoginUser, RegisterDto } from '../types/auth'
 import type { User } from '@/features/users/types/users'
 import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
@@ -2338,7 +2349,7 @@ const convertLoginUserToUser = (loginUser: LoginUser): User => ({
   role: loginUser.role,
   isActive: loginUser.isActive,
   profileImage: loginUser.profileImage,
-  year: loginUser.year,  // NEW: Include year
+  year: loginUser.year,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 })
@@ -2391,7 +2402,23 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterFormData) => {
-      const { confirmPassword, ...registerData } = data
+      // Remove confirmPassword and prepare the registration data
+      const { confirmPassword, ...restData } = data
+      
+      const registerData: RegisterDto = {
+        email: restData.email,
+        fullName: restData.fullName,
+        password: restData.password,
+        year: restData.year,
+        username: restData.username && restData.username.trim() !== '' ? restData.username : undefined,
+        contactPrimary: restData.contactPrimary && restData.contactPrimary.trim() !== '' ? restData.contactPrimary : undefined,
+        addressLine1: restData.addressLine1 && restData.addressLine1.trim() !== '' ? restData.addressLine1 : undefined,
+        addressLine2: restData.addressLine2 && restData.addressLine2.trim() !== '' ? restData.addressLine2 : undefined,
+        city: restData.city && restData.city.trim() !== '' ? restData.city : undefined,
+        state: restData.state && restData.state.trim() !== '' ? restData.state : undefined,
+        postalCode: restData.postalCode && restData.postalCode.trim() !== '' ? restData.postalCode : undefined,
+      }
+      
       return authService.register(registerData)
     },
     onSuccess: () => {
@@ -2443,7 +2470,6 @@ export const useLogout = () => {
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { usersService } from '@/features/users/hooks/use-users'
- 
 import type { User } from '@/features/users/types/users'
 
 type AuthContextType = {
@@ -2514,6 +2540,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth()
   }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
+
+  /* -------------------------------------------------
+   * TEMPORARY DEBUG – remove after verifying year/departmentId
+   * ------------------------------------------------- */
+  useEffect(() => {
+    if (store.user) {
+      console.log('🔍 CURRENT USER FROM AUTH PROVIDER:', JSON.stringify(store.user, null, 2))
+    }
+  }, [store.user])
+  /* ------------------------------------------------- */
 
   const contextValue = useMemo(() => ({
     user: store.user,
@@ -2650,78 +2686,4 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 )
 ```
 
-## File: package.json
-```json
-{
-  "name": "university-exam-frontend-new",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
-    "@radix-ui/react-accordion": "^1.2.12",
-    "@radix-ui/react-alert-dialog": "^1.1.15",
-    "@radix-ui/react-aspect-ratio": "^1.1.7",
-    "@radix-ui/react-avatar": "^1.1.10",
-    "@radix-ui/react-checkbox": "^1.3.3",
-    "@radix-ui/react-collapsible": "^1.1.12",
-    "@radix-ui/react-context-menu": "^2.2.16",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-hover-card": "^1.1.15",
-    "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/react-menubar": "^1.1.16",
-    "@radix-ui/react-navigation-menu": "^1.2.14",
-    "@radix-ui/react-popover": "^1.1.15",
-    "@radix-ui/react-progress": "^1.1.7",
-    "@radix-ui/react-radio-group": "^1.3.8",
-    "@radix-ui/react-scroll-area": "^1.2.10",
-    "@radix-ui/react-select": "^2.2.6",
-    "@radix-ui/react-separator": "^1.1.7",
-    "@radix-ui/react-slider": "^1.3.6",
-    "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-switch": "^1.2.6",
-    "@radix-ui/react-tabs": "^1.1.13",
-    "@radix-ui/react-toggle": "^1.1.10",
-    "@radix-ui/react-tooltip": "^1.2.8",
-    "@tanstack/react-query": "^5.90.2",
-    "@tanstack/react-query-devtools": "^5.90.2",
-    "@tanstack/react-table": "^8.21.3",
-    "axios": "^1.12.2",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
-    "date-fns": "^4.1.0",
-    "lucide-react": "^0.544.0",
-    "next": "15.5.4",
-    "next-themes": "^0.4.6",
-    "nuqs": "^2.6.0",
-    "react": "19.1.0",
-    "react-day-picker": "^9.11.0",
-    "react-dom": "19.1.0",
-    "react-hook-form": "^7.63.0",
-    "react-resizable-panels": "^3.0.6",
-    "sonner": "^2.0.7",
-    "tailwind-merge": "^3.3.1",
-    "zod": "^4.1.11",
-    "zustand": "^5.0.8"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/axios": "^0.9.36",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
-}
-```
+ 

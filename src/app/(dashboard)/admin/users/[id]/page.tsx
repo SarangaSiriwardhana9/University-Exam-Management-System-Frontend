@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChevronLeftIcon, EditIcon, TrashIcon } from 'lucide-react'
 import { useUserQuery } from '@/features/users/hooks/use-users-query'
+import { useDepartmentQuery } from '@/features/departments/hooks/use-departments-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { RoleGuard } from '@/lib/auth/role-guard'
 import { USER_ROLES } from '@/constants/roles'
@@ -29,6 +30,11 @@ const formatRole = (role: string) => {
   return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
 }
 
+const getYearLabel = (year?: number) => {
+  if (!year) return '—'
+  return `Year ${year}`
+}
+
 type ViewUserPageProps = {
   params: Promise<{ id: string }>
 }
@@ -37,9 +43,13 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
   const router = useRouter()
   const { id: userId } = use(params)
 
-  console.log('View page - User ID from params:', userId)
-
   const { data: userResponse, isLoading, error } = useUserQuery(userId)
+  
+  // Fetch department info if user has departmentId
+  const user = userResponse?.data
+  const { data: departmentResponse, isLoading: isDepartmentLoading } = useDepartmentQuery(
+    user?.departmentId
+  )
 
   if (isLoading) {
     return (
@@ -53,13 +63,13 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
     console.error('Error fetching user:', error)
   }
 
-  if (!userResponse?.data) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-bold text-gray-900">User Not Found</h2>
           <p className="text-muted-foreground">
-            The user you&apos;re looking for doesn&lsquo;t exist.
+            The user you&apos;re looking for doesn&apos;t exist.
           </p>
           {error && (
             <p className="text-sm text-red-500">
@@ -74,7 +84,9 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
     )
   }
 
-  const user = userResponse.data
+  const department = departmentResponse?.data
+  const isStudent = user.role === USER_ROLES.STUDENT
+  const isFaculty = user.role === USER_ROLES.FACULTY
 
   return (
     <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
@@ -164,6 +176,53 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Academic Information - Show for Students and Faculty */}
+            {(isStudent || isFaculty) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Academic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Department</p>
+                      {isDepartmentLoading ? (
+                        <div className="flex items-center mt-1">
+                          <LoadingSpinner size="sm" />
+                          <span className="ml-2 text-sm">Loading...</span>
+                        </div>
+                      ) : department ? (
+                        <div className="mt-1">
+                          <p className="font-medium">{department.departmentName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Code: {department.departmentCode}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-muted-foreground">Not assigned</p>
+                      )}
+                    </div>
+                    
+                    {isStudent && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
+                        <p className="mt-1">
+                          {getYearLabel(user.year)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {department?.description && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm font-medium text-muted-foreground">Department Description</p>
+                      <p className="mt-1 text-sm">{department.description}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Contact Information */}
             <Card>

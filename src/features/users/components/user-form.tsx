@@ -25,7 +25,8 @@ import {
 import { USER_ROLES } from '@/constants/roles'
 import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
 import type { User } from '../types/users'
-
+import { useDepartmentsQuery } from '@/features/departments/hooks/use-departments-query'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 
 type CreateUserFormProps = {
   user?: never
@@ -45,6 +46,12 @@ type UserFormProps = CreateUserFormProps | UpdateUserFormProps
 
 export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
   const isEditMode = !!user
+
+  // Fetch departments
+  const { data: departmentsResponse, isLoading: isDepartmentsLoading } = useDepartmentsQuery({
+    page: 1,
+    limit: 100, // Get all departments
+  })
 
   const form = useForm<CreateUserFormData | UpdateUserFormData>({
     resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
@@ -69,7 +76,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
 
   useEffect(() => {
     if (user) {
-
       const resetData = {
         username: user.username,
         email: user.email,
@@ -84,7 +90,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         postalCode: user.postalCode || '',
         country: user.country || '',
         departmentId: user.departmentId || '',
-
         year: user.role === USER_ROLES.STUDENT ? user.year : undefined
       }
       form.reset(resetData)
@@ -92,10 +97,16 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
   }, [user, form])
 
   const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
-
-    const submissionData = { ...data };
+    const submissionData = { ...data }
+    
+    // Remove year if not a student
     if (submissionData.role !== USER_ROLES.STUDENT) {
-      delete submissionData.year;
+      delete submissionData.year
+    }
+    
+    // Remove departmentId if empty string
+    if (submissionData.departmentId === '') {
+      delete submissionData.departmentId
     }
     
     if (isEditMode) {
@@ -105,9 +116,12 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
     }
   }
 
-
   const selectedRole = form.watch('role')
   const isStudent = selectedRole === USER_ROLES.STUDENT
+  const isFaculty = selectedRole === USER_ROLES.FACULTY
+
+  // Department is required for students and faculty
+  const requiresDepartment = isStudent || isFaculty
 
   return (
     <Form {...form}>
@@ -195,18 +209,69 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
             />
           </div>
 
+          {/* Department Selection - Show for Students and Faculty */}
+          {requiresDepartment && (
+            <FormField
+              control={form.control}
+              name="departmentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department {requiresDepartment && '*'}</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ''}
+                    defaultValue={field.value || ''}
+                    disabled={isDepartmentsLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          isDepartmentsLoading 
+                            ? "Loading departments..." 
+                            : "Select department"
+                        } />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {isDepartmentsLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <LoadingSpinner size="sm" />
+                        </div>
+                      ) : departmentsResponse?.data && departmentsResponse.data.length > 0 ? (
+                        departmentsResponse.data.map((dept) => (
+                          <SelectItem key={dept._id} value={dept._id}>
+                            {dept.departmentName} ({dept.departmentCode})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="py-2 px-3 text-sm text-muted-foreground">
+                          No departments available
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {isStudent 
+                      ? "Select the student's department" 
+                      : "Select the faculty member's department"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
+          {/* Academic Year - Show only for Students */}
           {isStudent && (
             <FormField
               control={form.control}
               name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Academic Year {isStudent && '*'}</FormLabel>
+                  <FormLabel>Academic Year *</FormLabel>
                   <Select 
                     onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
                     value={field.value?.toString() || ''}
-
                     defaultValue={field.value?.toString() || ''}
                   >
                     <FormControl>
@@ -251,7 +316,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
           )}
         </div>
 
-        {/* Rest of the form remains the same... */}
         {/* Contact Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Contact Information</h3>

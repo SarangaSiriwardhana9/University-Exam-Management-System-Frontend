@@ -47,6 +47,13 @@ export const getSubjectColumns = ({ onEdit, onDelete, onView }: SubjectColumnsPr
     ),
   },
   {
+    accessorKey: 'licName',
+    header: 'LIC',
+    cell: ({ row }) => (
+      <div className="text-sm text-muted-foreground">{row.original.licName || '—'}</div>
+    ),
+  },
+  {
     accessorKey: 'year',
     header: 'Year',
     cell: ({ row }) => (
@@ -61,6 +68,20 @@ export const getSubjectColumns = ({ onEdit, onDelete, onView }: SubjectColumnsPr
     cell: ({ row }) => (
       <div className="text-center font-medium">
         {row.original.credits}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'lecturerIds',
+    header: 'Lecturers',
+    cell: ({ row }) => (
+      <div className="text-sm max-w-xs truncate">
+        {(row.original.lecturers && row.original.lecturers.length > 0)
+          ? row.original.lecturers.map(l => l.fullName).join(', ')
+          : (row.original.lecturerIds && row.original.lecturerIds.length > 0)
+            ? `${row.original.lecturerIds.length} lecturer${row.original.lecturerIds.length > 1 ? 's' : ''}`
+            : '—'
+        }
       </div>
     ),
   },

@@ -47,10 +47,26 @@ export const studentEnrollmentsService = {
 
 
 getMyEnrollments: async (params?: GetEnrollmentsParams): Promise<PaginatedResponse<StudentEnrollment>> => {
-  const response = await apiClient.get<BackendEnrollmentsListResponse>(
+  // The backend may return either a paginated object or a plain array for
+  // the "my-enrollments" endpoint. Accept both shapes and normalize to the
+  // PaginatedResponse expected by the UI.
+  const response = await apiClient.get<BackendEnrollmentsListResponse | StudentEnrollment[]>(
     '/api/v1/student-enrollments/my-enrollments',
     { params }
   );
+
+  // If the backend returned a plain array, wrap it into the paginated shape.
+  if (Array.isArray(response)) {
+    return {
+      data: response || [],
+      total: response.length || 0,
+      page: 1,
+      limit: response.length || 10,
+      totalPages: 1,
+    };
+  }
+
+  // Otherwise assume the paginated shape.
   return {
     data: response.enrollments || [],
     total: response.total || 0,

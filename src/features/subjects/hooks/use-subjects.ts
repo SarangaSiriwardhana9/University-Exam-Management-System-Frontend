@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from '@/lib/api/client'
 import type { 
   Subject, 
@@ -79,12 +80,48 @@ const extractDepartmentId = (departmentId: RawSubject['departmentId']): string |
 // Transform subject to normalize the data
 const transformSubject = (subj: RawSubject): Subject => {
   const departmentId = extractDepartmentId(subj.departmentId)
-  const departmentName = extractDepartmentName(subj.departmentId)
-  
+  // prefer top-level departmentName if backend provided it
+  const departmentName = (subj as any).departmentName || extractDepartmentName(subj.departmentId)
+  // Extract LIC and lecturers if populated
+  let licId: string | undefined = undefined
+  let licName: string | undefined = undefined
+  if (subj['licId']) {
+    const lic = subj['licId'] as any
+    if (typeof lic === 'string') licId = lic
+    else if (lic && lic._id) {
+      licId = lic._id
+      licName = lic.fullName
+    }
+  }
+  // backend might return licName as top-level when licId is a string
+  if (!licName && (subj as any).licName) {
+    licName = (subj as any).licName
+  }
+
+  let lecturerIds: string[] | undefined = undefined
+  let lecturers: { _id: string; fullName: string }[] | undefined = undefined
+  if (Array.isArray(subj['lecturerIds'])) {
+    const arr = subj['lecturerIds'] as any[]
+    lecturerIds = arr.map((x) => (x && x._id ? x._id : String(x)))
+    // if lecturers are populated as objects, use their fullName; otherwise try to find a parallel top-level 'lecturers' list
+    if (arr.length > 0 && arr[0] && arr[0]._id) {
+      lecturers = arr.map((x) => ({ _id: x._id ? x._id : String(x), fullName: x.fullName }))
+    } else if ((subj as any).lecturers && Array.isArray((subj as any).lecturers)) {
+      lecturers = (subj as any).lecturers.map((x: any) => ({ _id: x._id?.toString() ?? String(x._id), fullName: x.fullName }))
+    } else {
+      // when we only have lecturerIds (strings), leave lecturers undefined so UI can show '-' or use IDs only
+      lecturers = undefined
+    }
+  }
+
   return {
     ...subj,
     departmentId: departmentId || '',
-    departmentName: departmentName
+    departmentName: departmentName,
+    licId,
+    licName,
+    lecturerIds,
+    lecturers
   }
 }
 

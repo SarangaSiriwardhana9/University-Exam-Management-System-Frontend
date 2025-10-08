@@ -52,6 +52,13 @@ export const getFacultySubjectColumns = ({
     ),
   },
   {
+    accessorKey: 'licName',
+    header: 'LIC',
+    cell: ({ row }) => (
+      <div className="text-sm text-muted-foreground">{row.original.licName || '—'}</div>
+    ),
+  },
+  {
     accessorKey: 'year',
     header: 'Year',
     cell: ({ row }) => (
@@ -67,6 +74,13 @@ export const getFacultySubjectColumns = ({
       <div className="text-center font-medium">
         {row.original.credits}
       </div>
+    ),
+  },
+  {
+    accessorKey: 'lecturerIds',
+    header: 'Lecturers',
+    cell: ({ row }) => (
+      <div className="text-sm max-w-xs truncate">{(row.original.lecturers || []).map(l => l.fullName).join(', ') || '—'}</div>
     ),
   },
   {

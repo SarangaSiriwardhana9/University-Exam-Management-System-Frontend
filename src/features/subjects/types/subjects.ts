@@ -10,6 +10,10 @@ export type Subject = {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  licId?: string
+  licName?: string
+  lecturerIds?: string[]
+  lecturers?: { _id: string; fullName: string }[]
 }
 
 export type CreateSubjectDto = {
@@ -19,6 +23,8 @@ export type CreateSubjectDto = {
   year: number
   credits?: number
   description?: string
+  licId?: string
+  lecturerIds?: string[]
 }
 
 export type UpdateSubjectDto = Partial<Omit<CreateSubjectDto, 'subjectCode'>> & {

@@ -20,6 +20,9 @@ export const createSubjectSchema = z.object({
     .optional()
     .default(3),
   description: z.string().optional()
+  ,
+  licId: z.string().optional(),
+  lecturerIds: z.array(z.string()).optional()
 })
 
 export const updateSubjectSchema = createSubjectSchema.partial().omit({ subjectCode: true }).extend({

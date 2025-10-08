@@ -177,6 +177,64 @@ export const subjectsService = {
   getFacultyAssignments: (id: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
     apiClient.get(`/api/v1/subjects/${id}/faculty`, { params }),
 
+  getMyAssignments: (params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
+    apiClient.get('/api/v1/subjects/my', { params }),
+
+  // Client-side wrapper: fetch faculty assignments and convert to a paginated Subject list
+  getMySubjects: async (params?: GetSubjectsParams, userId?: string): Promise<PaginatedResponse<Subject>> => {
+    const resp = await apiClient.get<FacultyAssignment[]>('/api/v1/subjects/my')
+    const assignments = Array.isArray(resp) ? resp : []
+
+    // If backend has no faculty_subjects yet, fallback to scanning subjects and matching by licId/lecturerIds
+    let subjects: Subject[] = []
+    if (assignments.length === 0 && userId) {
+  // fetch up to 2000 subjects for client-side filtering (adjust if needed)
+  const all = await apiClient.get<BackendSubjectsListResponse>('/api/v1/subjects', { params: { page: 1, limit: 2000 } })
+      const rawSubjects = Array.isArray(all.subjects) ? all.subjects : all.subjects || []
+      subjects = rawSubjects.map(transformSubject).filter((s) => {
+        // match licId or lecturerIds
+        if (s.licId && s.licId === userId) return true
+        if (Array.isArray(s.lecturerIds) && s.lecturerIds.includes(userId)) return true
+        return false
+      })
+    } else {
+
+      // Convert each assignment.subjectId (may be populated object) into a Subject-like object
+      subjects = assignments.map((a: any) => {
+      const s = a.subjectId || {}
+      const raw: RawSubject = {
+        _id: s._id ?? s.subjectId ?? '',
+        subjectCode: s.subjectCode ?? '',
+        subjectName: s.subjectName ?? '',
+        departmentId: (s.departmentId && (typeof s.departmentId === 'string' || s.departmentId._id)) ? s.departmentId : '',
+        year: s.year ?? 0,
+        credits: s.credits ?? 0,
+        description: s.description,
+        isActive: s.isActive ?? true,
+        createdAt: s.createdAt ?? new Date().toISOString(),
+        updatedAt: s.updatedAt ?? new Date().toISOString(),
+      }
+      return transformSubject(raw)
+    })
+    }
+
+    // apply simple client-side pagination
+    const page = params?.page ?? 1
+    const limit = params?.limit ?? 10
+    const total = subjects.length
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+    const start = (page - 1) * limit
+    const paged = subjects.slice(start, start + limit)
+
+    return {
+      data: paged,
+      total,
+      page,
+      limit,
+      totalPages,
+    }
+  },
+
   removeFacultyAssignment: (assignmentId: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/subjects/faculty-assignment/${assignmentId}`)
 }

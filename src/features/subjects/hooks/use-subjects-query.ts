@@ -33,6 +33,18 @@ export const useSubjectStatsQuery = () => {
   })
 }
 
+export const useFacultyAssignmentsQuery = (subjectId: string | undefined, params?: { academicYear?: string; semester?: number }) => {
+  return useQuery({
+    queryKey: ['subjects', subjectId, 'assignments', params],
+    queryFn: async () => {
+      if (!subjectId) throw new Error('Subject ID is required')
+      return await subjectsService.getFacultyAssignments(subjectId, params)
+    },
+    enabled: !!subjectId && subjectId !== 'undefined',
+    retry: 1,
+  })
+}
+
 export const useSubjectsByDepartmentQuery = (departmentId: string | undefined) => {
   return useQuery({
     queryKey: ['subjects', 'department', departmentId],
@@ -52,8 +64,8 @@ export const useMySubjectsQuery = (params?: GetSubjectsParams) => {
     queryKey: ['subjects', 'my-subjects', user?._id, params],
     queryFn: async () => {
       if (!user?._id) throw new Error('User not authenticated');
- 
-      return await subjectsService.getAll({ ...params, isActive: true });
+
+      return await subjectsService.getMySubjects(params, user._id);
     },
     enabled: !!user?._id,
     staleTime: 30000,

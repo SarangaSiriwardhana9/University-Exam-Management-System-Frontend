@@ -17,9 +17,7 @@ export const useExamSessionQuery = (id: string | undefined) => {
     queryKey: ['exam-sessions', id],
     queryFn: async () => {
       if (!id) throw new Error('Exam Session ID is required')
-      console.log('Fetching exam session with ID:', id)
       const result = await examSessionsService.getById(id)
-      console.log('Exam session fetch result:', result)
       return result
     },
     enabled: !!id && id !== 'undefined',
@@ -31,7 +29,7 @@ export const useUpcomingExamSessionsQuery = (params?: { limit?: number }) => {
   return useQuery({
     queryKey: ['exam-sessions', 'upcoming', params],
     queryFn: () => examSessionsService.getUpcoming(params),
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   })
 }
 
@@ -39,6 +37,6 @@ export const useExamSessionStatsQuery = () => {
   return useQuery({
     queryKey: ['exam-sessions', 'stats'],
     queryFn: () => examSessionsService.getStats(),
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000,
   })
 }

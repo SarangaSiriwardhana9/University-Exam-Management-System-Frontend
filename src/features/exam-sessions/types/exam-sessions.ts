@@ -21,7 +21,7 @@ export type ExamSession = {
   roomNumber?: string
   building?: string
   maxStudents: number
-  currentStudents: number
+  registeredStudents: number
   instructions?: string
   status: ExamSessionStatus
   createdBy: string

@@ -14,7 +14,6 @@ type RawExamSession = Omit<ExamSession, 'paperId' | 'paperTitle' | 'subjectCode'
   roomId: string | { _id: string; roomNumber: string; building?: string }
 }
 
-// Helper functions for paper transformation
 const extractPaperId = (paperId: RawExamSession['paperId']): string => {
   if (!paperId) return ''
   if (typeof paperId === 'string' && !paperId.includes('{')) {
@@ -23,34 +22,65 @@ const extractPaperId = (paperId: RawExamSession['paperId']): string => {
   if (typeof paperId === 'object' && '_id' in paperId) {
     return paperId._id
   }
+  if (typeof paperId === 'string' && paperId.includes('ObjectId')) {
+    try {
+      const match = paperId.match(/ObjectId\('([^']+)'\)/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return ''
+    }
+  }
   return ''
 }
 
 const extractPaperTitle = (paperId: RawExamSession['paperId']): string | undefined => {
   if (!paperId) return undefined
-  if (typeof paperId === 'object' && '_id' in paperId) {
+  if (typeof paperId === 'object' && 'paperTitle' in paperId) {
     return paperId.paperTitle
+  }
+  if (typeof paperId === 'string' && paperId.includes('paperTitle')) {
+    try {
+      const match = paperId.match(/paperTitle:\s*'([^']+)'/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }
 
 const extractSubjectCode = (paperId: RawExamSession['paperId']): string | undefined => {
   if (!paperId) return undefined
-  if (typeof paperId === 'object' && '_id' in paperId) {
+  if (typeof paperId === 'object' && 'subjectCode' in paperId) {
     return paperId.subjectCode
+  }
+  if (typeof paperId === 'string' && paperId.includes('subjectCode')) {
+    try {
+      const match = paperId.match(/subjectCode:\s*'([^']+)'/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }
 
 const extractSubjectName = (paperId: RawExamSession['paperId']): string | undefined => {
   if (!paperId) return undefined
-  if (typeof paperId === 'object' && '_id' in paperId) {
+  if (typeof paperId === 'object' && 'subjectName' in paperId) {
     return paperId.subjectName
+  }
+  if (typeof paperId === 'string' && paperId.includes('subjectName')) {
+    try {
+      const match = paperId.match(/subjectName:\s*'([^']+)'/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }
 
-// Helper functions for room transformation
 const extractRoomId = (roomId: RawExamSession['roomId']): string => {
   if (!roomId) return ''
   if (typeof roomId === 'string' && !roomId.includes('{')) {
@@ -59,21 +89,45 @@ const extractRoomId = (roomId: RawExamSession['roomId']): string => {
   if (typeof roomId === 'object' && '_id' in roomId) {
     return roomId._id
   }
+  if (typeof roomId === 'string' && roomId.includes('ObjectId')) {
+    try {
+      const match = roomId.match(/ObjectId\('([^']+)'\)/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return ''
+    }
+  }
   return ''
 }
 
 const extractRoomNumber = (roomId: RawExamSession['roomId']): string | undefined => {
   if (!roomId) return undefined
-  if (typeof roomId === 'object' && '_id' in roomId) {
+  if (typeof roomId === 'object' && 'roomNumber' in roomId) {
     return roomId.roomNumber
+  }
+  if (typeof roomId === 'string' && roomId.includes('roomNumber')) {
+    try {
+      const match = roomId.match(/roomNumber:\s*'([^']+)'/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }
 
 const extractBuilding = (roomId: RawExamSession['roomId']): string | undefined => {
   if (!roomId) return undefined
-  if (typeof roomId === 'object' && '_id' in roomId) {
+  if (typeof roomId === 'object' && 'building' in roomId) {
     return roomId.building
+  }
+  if (typeof roomId === 'string' && roomId.includes('building')) {
+    try {
+      const match = roomId.match(/building:\s*'([^']+)'/)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }

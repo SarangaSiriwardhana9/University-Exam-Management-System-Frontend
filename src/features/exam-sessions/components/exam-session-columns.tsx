@@ -107,13 +107,13 @@ export const getExamSessionColumns = ({
     cell: ({ row }) => {
       const session = row.original
       const percentage = session.maxStudents > 0 
-        ? Math.round((session.currentStudents / session.maxStudents) * 100)
+        ? Math.round((session.registeredStudents / session.maxStudents) * 100)
         : 0
       
       return (
         <div className="text-sm">
           <div className="font-medium">
-            {session.currentStudents} / {session.maxStudents}
+            {session.registeredStudents} / {session.maxStudents}
           </div>
           <div className="text-muted-foreground">{percentage}% filled</div>
         </div>

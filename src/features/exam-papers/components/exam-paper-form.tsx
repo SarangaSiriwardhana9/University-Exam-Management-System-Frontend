@@ -36,12 +36,14 @@ import { PlusIcon, TrashIcon, SearchIcon } from 'lucide-react'
 import { EXAM_TYPES } from '../types/exam-papers'
 import { createExamPaperSchema, updateExamPaperSchema, type CreateExamPaperFormData, type UpdateExamPaperFormData } from '../validations/exam-paper-schemas'
 import type { ExamPaper } from '../types/exam-papers'
-import { useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
+import { useMySubjectsQuery, useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import { useQuestionsBySubjectQuery } from '@/features/questions/hooks/use-questions-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import type { Question } from '@/features/questions/types/questions'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth/auth-provider'
+import { USER_ROLES } from '@/constants/roles'
 
 type CreateExamPaperFormProps = {
   paper?: never
@@ -65,8 +67,11 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const { data: subjectsData, isLoading: isLoadingSubjects } = useSubjectsQuery({ isActive: true })
-  const subjects = subjectsData?.data || []
+  const { user } = useAuth()
+  const { data: allSubjectsData, isLoading: isLoadingAllSubjects } = useSubjectsQuery({ isActive: true })
+  const { data: mySubjectsData, isLoading: isLoadingMySubjects } = useMySubjectsQuery({ isActive: true })
+  const isFaculty = user?.role === USER_ROLES.FACULTY
+  const subjects = (isFaculty ? mySubjectsData?.data : allSubjectsData?.data) || []
 
   const { data: questionsData, isLoading: isLoadingQuestions } = useQuestionsBySubjectQuery(
     selectedSubject || undefined,
@@ -160,7 +165,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     }
   }
 
-  if (isLoadingSubjects) {
+  if (isLoadingAllSubjects || isLoadingMySubjects) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />

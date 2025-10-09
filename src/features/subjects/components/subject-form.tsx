@@ -16,6 +16,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import {
   Select,
   SelectContent,
@@ -75,6 +77,8 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
 
   const [extraLecturers, setExtraLecturers] = useState<User[]>([])
   const [isLoadingExtraLecturers, setIsLoadingExtraLecturers] = useState(false)
+  const [licOpen, setLicOpen] = useState(false)
+  const [lecturerQuery, setLecturerQuery] = useState('')
 
   const form = useForm<CreateSubjectFormData | UpdateSubjectFormData>({
     resolver: zodResolver(isEditMode ? updateSubjectSchema : createSubjectSchema) as unknown as Resolver<
@@ -242,30 +246,33 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Lecturer In Charge (LIC)</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value ?? undefined}
-                    disabled={Boolean(isFacultyLoading || (isEditMode && subjectLicId && isLicLoading))}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select LIC (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {facultyOptions.length > 0 ? (
-                        facultyOptions.map((u) => (
-                          <SelectItem key={u._id} value={u._id}>
-                            {u.fullName} ({u.email})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="py-6 text-center text-sm text-muted-foreground">
-                          {isFacultyLoading ? 'Loading faculty...' : 'No faculty available'}
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={licOpen} onOpenChange={setLicOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between" disabled={Boolean(isFacultyLoading || (isEditMode && subjectLicId && isLicLoading))}>
+                        {field.value ? (facultyOptions.find((u) => u._id === field.value)?.fullName || 'Select LIC (optional)') : 'Select LIC (optional)'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0">
+                      <Command>
+                        <CommandInput placeholder="Search lecturers..." />
+                        <CommandEmpty>No lecturer found.</CommandEmpty>
+                        <CommandList>
+                          {facultyOptions.map((u) => (
+                            <CommandItem
+                              key={u._id}
+                              value={`${u.fullName} ${u.email}`}
+                              onSelect={() => {
+                                field.onChange(u._id)
+                                setLicOpen(false)
+                              }}
+                            >
+                              {u.fullName} ({u.email})
+                            </CommandItem>
+                          ))}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormDescription>Optional lecturer in charge for this subject</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -274,11 +281,23 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
 
             <FormItem>
               <FormLabel>Lecturers</FormLabel>
+              <div className="mb-2">
+                <Input placeholder="Search lecturers..." value={lecturerQuery} onChange={(e) => setLecturerQuery(e.target.value)} />
+              </div>
               <div className="max-h-40 overflow-auto rounded border p-2">
                 {isFacultyLoading || isLoadingExtraLecturers ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">Loading lecturers...</div>
                 ) : facultyOptions.length > 0 ? (
-                  facultyOptions.map((u) => (
+                  facultyOptions
+                    .filter((u) => {
+                      const q = lecturerQuery.trim().toLowerCase()
+                      if (!q) return true
+                      return (
+                        u.fullName.toLowerCase().includes(q) ||
+                        (u.email || '').toLowerCase().includes(q)
+                      )
+                    })
+                    .map((u) => (
                     <label
                       key={u._id}
                       className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-accent rounded px-2"
@@ -304,7 +323,7 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                         {u.fullName} ({u.email})
                       </span>
                     </label>
-                  ))
+                    ))
                 ) : (
                   <div className="py-6 text-center text-sm text-muted-foreground">No faculty available</div>
                 )}

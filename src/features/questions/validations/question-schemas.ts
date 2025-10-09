@@ -58,7 +58,7 @@ export const createQuestionSchema = z.object({
   path: ["options"]
 })
 
-export const updateQuestionSchema = createQuestionSchema.partial().extend({
+export const updateQuestionSchema = createQuestionSchema.partial().omit({ subjectId: true }).extend({
   isActive: z.boolean().optional()
 })
 

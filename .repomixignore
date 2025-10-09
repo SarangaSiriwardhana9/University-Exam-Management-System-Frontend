@@ -22,12 +22,20 @@
 !src/app/(dashboard)/admin/subjects/**
 !src/app/(dashboard)/student/enrollments/
 !src/app/(dashboard)/student/enrollments/**
+!src/app/(dashboard)/faculty/exam-papers/
+!src/app/(dashboard)/faculty/exam-papers/**
+!src/app/(dashboard)/faculty/questions/
+!src/app/(dashboard)/faculty/questions/**
 
 # --- Include auth + users features ---
 !src/features/subjects/
 !src/features/subjects/**
 !src/features/enrollments/
 !src/features/enrollments/**
+!src/features/exam-papers/
+!src/features/exam-papers/**
+!src/features/questions/
+!src/features/questions/**
 
 # --- Include shared libraries used by auth/users ---
 !src/lib/api/

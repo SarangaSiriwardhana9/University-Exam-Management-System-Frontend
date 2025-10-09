@@ -28,8 +28,10 @@ import { PlusIcon, TrashIcon } from 'lucide-react'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY } from '@/constants/roles'
 import { createQuestionSchema, updateQuestionSchema, type CreateQuestionFormData, type UpdateQuestionFormData } from '../validations/question-schemas'
 import type { Question } from '../types/questions'
-import { useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
+import { useMySubjectsQuery, useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
+import { useAuth } from '@/lib/auth/auth-provider'
+import { USER_ROLES } from '@/constants/roles'
 
 type CreateQuestionFormProps = {
   question?: never
@@ -51,8 +53,11 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   const isEditMode = !!question
   const [selectedType, setSelectedType] = useState<string>(question?.questionType || QUESTION_TYPES.MCQ)
 
-  const { data: subjectsData, isLoading: isLoadingSubjects } = useSubjectsQuery({ isActive: true })
-  const subjects = subjectsData?.data || []
+  const { user } = useAuth()
+  const { data: allSubjectsData, isLoading: isLoadingAllSubjects } = useSubjectsQuery({ isActive: true })
+  const { data: mySubjectsData, isLoading: isLoadingMySubjects } = useMySubjectsQuery({ isActive: true })
+  const isFaculty = user?.role === USER_ROLES.FACULTY
+  const subjects = (isFaculty ? mySubjectsData?.data : allSubjectsData?.data) || []
 
   const form = useForm<CreateQuestionFormData | UpdateQuestionFormData>({
     resolver: zodResolver(isEditMode ? updateQuestionSchema : createQuestionSchema),
@@ -111,22 +116,30 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   }, [question, form])
 
   const handleSubmit = (data: CreateQuestionFormData | UpdateQuestionFormData) => {
-    // Remove options if question type doesn't need them
-    const finalData = { ...data }
-    if (selectedType !== QUESTION_TYPES.MCQ && selectedType !== QUESTION_TYPES.TRUE_FALSE) {
-      delete finalData.options
-    }
-
     if (isEditMode) {
-      (onSubmit as (data: UpdateQuestionFormData) => void)(finalData as UpdateQuestionFormData)
+      // For updates, exclude subjectId and options if not needed
+      const updateData: any = { ...data }
+      delete updateData.subjectId
+      
+      if (selectedType !== QUESTION_TYPES.MCQ && selectedType !== QUESTION_TYPES.TRUE_FALSE) {
+        delete updateData.options
+      }
+      
+      (onSubmit as (data: UpdateQuestionFormData) => void)(updateData)
     } else {
-      (onSubmit as (data: CreateQuestionFormData) => void)(finalData as CreateQuestionFormData)
+      // For creates, only exclude options if not needed
+      const createData: any = { ...data }
+      if (selectedType !== QUESTION_TYPES.MCQ && selectedType !== QUESTION_TYPES.TRUE_FALSE) {
+        delete createData.options
+      }
+      
+      (onSubmit as (data: CreateQuestionFormData) => void)(createData)
     }
   }
 
   const needsOptions = selectedType === QUESTION_TYPES.MCQ || selectedType === QUESTION_TYPES.TRUE_FALSE
 
-  if (isLoadingSubjects) {
+  if (isLoadingAllSubjects || isLoadingMySubjects) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
@@ -148,7 +161,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Subject *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isEditMode}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select subject" />

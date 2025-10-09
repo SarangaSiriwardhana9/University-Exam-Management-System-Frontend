@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from '@/lib/api/client'
 import type { 
   Subject, 
@@ -12,7 +11,7 @@ import type {
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
 type BackendSubjectsListResponse = {
-  subjects: Subject[]
+  subjects: RawSubject[]
   total: number
   page: number
   limit: number
@@ -23,101 +22,94 @@ type RawSubject = Omit<Subject, 'departmentId' | 'departmentName'> & {
   departmentId: string | { _id: string; departmentCode: string; departmentName: string }
 }
 
-// Helper function to extract department name
 const extractDepartmentName = (departmentId: RawSubject['departmentId']): string | undefined => {
   if (!departmentId) return undefined
   
-  // If it's already an object
   if (typeof departmentId === 'object' && '_id' in departmentId) {
     return departmentId.departmentName
   }
   
-  // If it's a stringified object (malformed backend response)
   if (typeof departmentId === 'string' && departmentId.includes('departmentName')) {
     try {
-      // Try to extract the departmentName from the string
       const match = departmentId.match(/departmentName:\s*'([^']+)'/)
-      if (match && match[1]) {
-        return match[1]
-      }
-    } catch (error) {
-      console.error('Failed to parse departmentId:', error)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
     }
   }
   
   return undefined
 }
 
-// Helper function to extract department ID
 const extractDepartmentId = (departmentId: RawSubject['departmentId']): string | undefined => {
   if (!departmentId) return undefined
   
-  // If it's a string ID
   if (typeof departmentId === 'string' && !departmentId.includes('{')) {
     return departmentId
   }
   
-  // If it's an object
   if (typeof departmentId === 'object' && '_id' in departmentId) {
     return departmentId._id
   }
   
-  // If it's a stringified object
   if (typeof departmentId === 'string' && departmentId.includes('ObjectId')) {
     try {
       const match = departmentId.match(/ObjectId\('([^']+)'\)/)
-      if (match && match[1]) {
-        return match[1]
-      }
-    } catch (error) {
-      console.error('Failed to parse departmentId:', error)
+      if (match?.[1]) return match[1]
+    } catch {
+      return undefined
     }
   }
   
   return undefined
 }
 
-// Transform subject to normalize the data
 const transformSubject = (subj: RawSubject): Subject => {
   const departmentId = extractDepartmentId(subj.departmentId)
-  // prefer top-level departmentName if backend provided it
-  const departmentName = (subj as any).departmentName || extractDepartmentName(subj.departmentId)
-  // Extract LIC and lecturers if populated
+  const departmentName = (subj as Record<string, unknown>).departmentName as string | undefined || extractDepartmentName(subj.departmentId)
+  
   let licId: string | undefined = undefined
   let licName: string | undefined = undefined
+  
   if (subj['licId']) {
-    const lic = subj['licId'] as any
-    if (typeof lic === 'string') licId = lic
-    else if (lic && lic._id) {
-      licId = lic._id
-      licName = lic.fullName
+    const lic = subj['licId'] as Record<string, unknown>
+    if (typeof lic === 'string') {
+      licId = lic
+    } else if (lic?._id) {
+      licId = lic._id as string
+      licName = lic.fullName as string
     }
   }
-  // backend might return licName as top-level when licId is a string
-  if (!licName && (subj as any).licName) {
-    licName = (subj as any).licName
+  
+  if (!licName && (subj as Record<string, unknown>).licName) {
+    licName = (subj as Record<string, unknown>).licName as string
   }
 
   let lecturerIds: string[] | undefined = undefined
   let lecturers: { _id: string; fullName: string }[] | undefined = undefined
+  
   if (Array.isArray(subj['lecturerIds'])) {
-    const arr = subj['lecturerIds'] as any[]
-    lecturerIds = arr.map((x) => (x && x._id ? x._id : String(x)))
-    // if lecturers are populated as objects, use their fullName; otherwise try to find a parallel top-level 'lecturers' list
-    if (arr.length > 0 && arr[0] && arr[0]._id) {
-      lecturers = arr.map((x) => ({ _id: x._id ? x._id : String(x), fullName: x.fullName }))
-    } else if ((subj as any).lecturers && Array.isArray((subj as any).lecturers)) {
-      lecturers = (subj as any).lecturers.map((x: any) => ({ _id: x._id?.toString() ?? String(x._id), fullName: x.fullName }))
-    } else {
-      // when we only have lecturerIds (strings), leave lecturers undefined so UI can show '-' or use IDs only
-      lecturers = undefined
+    const arr = subj['lecturerIds'] as Record<string, unknown>[]
+    lecturerIds = arr.map((x) => (x?._id ? String(x._id) : String(x)))
+    
+    if (arr.length > 0 && arr[0]?._id) {
+      lecturers = arr.map((x) => ({ 
+        _id: String(x._id), 
+        fullName: x.fullName as string 
+      }))
+    } else if ((subj as Record<string, unknown>).lecturers && Array.isArray((subj as Record<string, unknown>).lecturers)) {
+      const subjLecturers = (subj as Record<string, unknown>).lecturers as Record<string, unknown>[]
+      lecturers = subjLecturers.map((x) => ({ 
+        _id: x._id?.toString() ?? String(x._id), 
+        fullName: x.fullName as string 
+      }))
     }
   }
 
   return {
     ...subj,
     departmentId: departmentId || '',
-    departmentName: departmentName,
+    departmentName,
     licId,
     licName,
     lecturerIds,
@@ -180,45 +172,43 @@ export const subjectsService = {
   getMyAssignments: (params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
     apiClient.get('/api/v1/subjects/my', { params }),
 
-  // Client-side wrapper: fetch faculty assignments and convert to a paginated Subject list
   getMySubjects: async (params?: GetSubjectsParams, userId?: string): Promise<PaginatedResponse<Subject>> => {
     const resp = await apiClient.get<FacultyAssignment[]>('/api/v1/subjects/my')
     const assignments = Array.isArray(resp) ? resp : []
 
-    // If backend has no faculty_subjects yet, fallback to scanning subjects and matching by licId/lecturerIds
     let subjects: Subject[] = []
+    
     if (assignments.length === 0 && userId) {
-  // fetch up to 2000 subjects for client-side filtering (adjust if needed)
-  const all = await apiClient.get<BackendSubjectsListResponse>('/api/v1/subjects', { params: { page: 1, limit: 2000 } })
-      const rawSubjects = Array.isArray(all.subjects) ? all.subjects : all.subjects || []
+      const all = await apiClient.get<BackendSubjectsListResponse>('/api/v1/subjects', { 
+        params: { page: 1, limit: 2000 } 
+      })
+      const rawSubjects = Array.isArray(all.subjects) ? all.subjects : []
       subjects = rawSubjects.map(transformSubject).filter((s) => {
-        // match licId or lecturerIds
         if (s.licId && s.licId === userId) return true
         if (Array.isArray(s.lecturerIds) && s.lecturerIds.includes(userId)) return true
         return false
       })
     } else {
-
-      // Convert each assignment.subjectId (may be populated object) into a Subject-like object
-      subjects = assignments.map((a: any) => {
-      const s = a.subjectId || {}
-      const raw: RawSubject = {
-        _id: s._id ?? s.subjectId ?? '',
-        subjectCode: s.subjectCode ?? '',
-        subjectName: s.subjectName ?? '',
-        departmentId: (s.departmentId && (typeof s.departmentId === 'string' || s.departmentId._id)) ? s.departmentId : '',
-        year: s.year ?? 0,
-        credits: s.credits ?? 0,
-        description: s.description,
-        isActive: s.isActive ?? true,
-        createdAt: s.createdAt ?? new Date().toISOString(),
-        updatedAt: s.updatedAt ?? new Date().toISOString(),
-      }
-      return transformSubject(raw)
-    })
+      subjects = assignments.map((a: Record<string, unknown>) => {
+        const s = (a.subjectId || {}) as Record<string, unknown>
+        const raw: RawSubject = {
+          _id: (s._id ?? s.subjectId ?? '') as string,
+          subjectCode: (s.subjectCode ?? '') as string,
+          subjectName: (s.subjectName ?? '') as string,
+          departmentId: (s.departmentId && (typeof s.departmentId === 'string' || (s.departmentId as Record<string, unknown>)._id)) 
+            ? s.departmentId as RawSubject['departmentId']
+            : '',
+          year: (s.year ?? 0) as number,
+          credits: (s.credits ?? 0) as number,
+          description: s.description as string | undefined,
+          isActive: (s.isActive ?? true) as boolean,
+          createdAt: (s.createdAt ?? new Date().toISOString()) as string,
+          updatedAt: (s.updatedAt ?? new Date().toISOString()) as string,
+        }
+        return transformSubject(raw)
+      })
     }
 
-    // apply simple client-side pagination
     const page = params?.page ?? 1
     const limit = params?.limit ?? 10
     const total = subjects.length

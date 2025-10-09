@@ -81,7 +81,6 @@ const SubjectsPage = () => {
           />
         )}
 
-        {/* Delete Confirmation */}
         <AlertDialog
           open={!!deletingSubject}
           onOpenChange={() => setDeletingSubject(null)}

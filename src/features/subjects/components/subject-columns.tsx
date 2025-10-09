@@ -76,12 +76,11 @@ export const getSubjectColumns = ({ onEdit, onDelete, onView }: SubjectColumnsPr
     header: 'Lecturers',
     cell: ({ row }) => (
       <div className="text-sm max-w-xs truncate">
-        {(row.original.lecturers && row.original.lecturers.length > 0)
+        {row.original.lecturers?.length
           ? row.original.lecturers.map(l => l.fullName).join(', ')
-          : (row.original.lecturerIds && row.original.lecturerIds.length > 0)
+          : row.original.lecturerIds?.length
             ? `${row.original.lecturerIds.length} lecturer${row.original.lecturerIds.length > 1 ? 's' : ''}`
-            : '—'
-        }
+            : '—'}
       </div>
     ),
   },

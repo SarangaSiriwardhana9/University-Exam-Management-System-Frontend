@@ -58,11 +58,9 @@ type SubjectFormProps = CreateSubjectFormProps | UpdateSubjectFormProps
 export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectFormProps) => {
   const isEditMode = !!subject
 
-  // Queries
   const { data: departmentsData, isLoading: isDepartmentsLoading } = useDepartmentsQuery({ isActive: true })
   const { data: facultyData, isLoading: isFacultyLoading } = useUsersQuery({ role: USER_ROLES.FACULTY, isActive: true })
 
-  // Extract helper
   const extractId = (v?: string | { _id?: string; id?: string } | null): string | undefined => {
     if (!v) return undefined
     if (typeof v === 'string') return v
@@ -106,7 +104,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
 
   const watchedLecturerIds = form.watch('lecturerIds')
 
-  // Fetch missing lecturers not in faculty list
   useEffect(() => {
     if (!subject || !subject.lecturerIds?.length) return
 
@@ -126,7 +123,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
     }
   }, [subject, facultyData?.data])
 
-  // Reset form when subject or fetched data changes
   useEffect(() => {
     if (!isEditMode || !subject) return
 
@@ -197,12 +193,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Subject Information</h3>
-
           {isLoadingInitialData && (
             <div className="text-sm text-muted-foreground">Loading subject data...</div>
           )}
 
-          {/* Subject Code & Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!isEditMode && (
               <FormField
@@ -241,7 +235,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
             />
           </div>
 
-          {/* LIC and Lecturers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -279,7 +272,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               )}
             />
 
-            {/* Lecturers List */}
             <FormItem>
               <FormLabel>Lecturers</FormLabel>
               <div className="max-h-40 overflow-auto rounded border p-2">
@@ -321,7 +313,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
             </FormItem>
           </div>
 
-          {/* Department */}
           <FormField
             control={form.control}
             name="departmentId"
@@ -358,7 +349,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
             )}
           />
 
-          {/* Year & Credits */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -410,7 +400,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
             />
           </div>
 
-          {/* Description */}
           <FormField
             control={form.control}
             name="description"
@@ -427,7 +416,6 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
           />
         </div>
 
-        {/* Buttons */}
         <div className="flex items-center justify-end space-x-4 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel

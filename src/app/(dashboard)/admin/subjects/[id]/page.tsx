@@ -82,7 +82,6 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Subject Profile Card */}
           <Card className="md:col-span-1">
             <CardHeader>
               <CardTitle>Profile</CardTitle>
@@ -111,9 +110,7 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
             </CardContent>
           </Card>
 
-          {/* Subject Information Cards */}
           <div className="md:col-span-2 space-y-6">
-            {/* Basic Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
@@ -144,7 +141,6 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
               </CardContent>
             </Card>
 
-            {/* Description */}
             {subject.description && (
               <Card>
                 <CardHeader>
@@ -155,8 +151,6 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Metadata */}
             <Card>
               <CardHeader>
                 <CardTitle>System Information</CardTitle>

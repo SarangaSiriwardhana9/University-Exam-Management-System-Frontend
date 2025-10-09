@@ -1,4 +1,5 @@
-// src/features/questions/components/question-form.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -60,6 +61,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   const subjects = (isFaculty ? mySubjectsData?.data : allSubjectsData?.data) || []
 
   const form = useForm<CreateQuestionFormData | UpdateQuestionFormData>({
+ 
     resolver: zodResolver(isEditMode ? updateQuestionSchema : createQuestionSchema),
     defaultValues: {
       subjectId: '',
@@ -117,7 +119,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
 
   const handleSubmit = (data: CreateQuestionFormData | UpdateQuestionFormData) => {
     if (isEditMode) {
-      // For updates, exclude subjectId and options if not needed
+ 
       const updateData: any = { ...data }
       delete updateData.subjectId
       
@@ -127,7 +129,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
       
       (onSubmit as (data: UpdateQuestionFormData) => void)(updateData)
     } else {
-      // For creates, only exclude options if not needed
+ 
       const createData: any = { ...data }
       if (selectedType !== QUESTION_TYPES.MCQ && selectedType !== QUESTION_TYPES.TRUE_FALSE) {
         delete createData.options

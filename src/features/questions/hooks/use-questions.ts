@@ -1,4 +1,4 @@
-// src/features/questions/hooks/use-questions.ts
+ 
 import { apiClient } from '@/lib/api/client'
 import type { 
   Question, 
@@ -14,16 +14,15 @@ type RawQuestion = Omit<Question, 'subjectId' | 'subjectCode' | 'subjectName'> &
   subjectId: string | { _id: string; subjectCode: string; subjectName: string }
 }
 
-// Helper function to extract subject details
+ 
 const extractSubjectCode = (subjectId: RawQuestion['subjectId']): string | undefined => {
   if (!subjectId) return undefined
   
-  // If it's already an object
+ 
   if (typeof subjectId === 'object' && '_id' in subjectId) {
     return subjectId.subjectCode
   }
-  
-  // If it's a stringified object (malformed backend response)
+ 
   if (typeof subjectId === 'string' && subjectId.includes('subjectCode')) {
     try {
       const match = subjectId.match(/subjectCode:\s*'([^']+)'/)
@@ -41,12 +40,12 @@ const extractSubjectCode = (subjectId: RawQuestion['subjectId']): string | undef
 const extractSubjectName = (subjectId: RawQuestion['subjectId']): string | undefined => {
   if (!subjectId) return undefined
   
-  // If it's already an object
+ 
   if (typeof subjectId === 'object' && '_id' in subjectId) {
     return subjectId.subjectName
   }
   
-  // If it's a stringified object
+ 
   if (typeof subjectId === 'string' && subjectId.includes('subjectName')) {
     try {
       const match = subjectId.match(/subjectName:\s*'([^']+)'/)
@@ -61,21 +60,21 @@ const extractSubjectName = (subjectId: RawQuestion['subjectId']): string | undef
   return undefined
 }
 
-// Helper function to extract subject ID
+ 
 const extractSubjectId = (subjectId: RawQuestion['subjectId']): string => {
   if (!subjectId) return ''
   
-  // If it's a string ID
+ 
   if (typeof subjectId === 'string' && !subjectId.includes('{')) {
     return subjectId
   }
   
-  // If it's an object
+ 
   if (typeof subjectId === 'object' && '_id' in subjectId) {
     return subjectId._id
   }
   
-  // If it's a stringified object
+ 
   if (typeof subjectId === 'string' && subjectId.includes('ObjectId')) {
     try {
       const match = subjectId.match(/ObjectId\('([^']+)'\)/)
@@ -90,7 +89,7 @@ const extractSubjectId = (subjectId: RawQuestion['subjectId']): string => {
   return ''
 }
 
-// Transform question to normalize the data
+ 
 const transformQuestion = (question: RawQuestion): Question => {
   const subjectId = extractSubjectId(question.subjectId)
   const subjectCode = extractSubjectCode(question.subjectId)

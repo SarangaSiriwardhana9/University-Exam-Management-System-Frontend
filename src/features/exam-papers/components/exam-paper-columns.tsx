@@ -1,4 +1,4 @@
-// src/features/exam-papers/components/exam-paper-columns.tsx
+ 
 'use client'
 
 import { type ColumnDef } from '@tanstack/react-table'

@@ -54,7 +54,7 @@ type EnrollmentFormProps = CreateEnrollmentFormProps | UpdateEnrollmentFormProps
 export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: EnrollmentFormProps) => {
   const isEditMode = !!enrollment
 
-  // Fetch students and subjects for dropdowns
+ 
   const { data: studentsData } = useUsersQuery({ role: USER_ROLES.STUDENT, isActive: true })
   const { data: subjectsData } = useSubjectsQuery({ isActive: true })
 
@@ -92,7 +92,7 @@ export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: En
     }
   }
 
-  // Get current academic year
+ 
   const currentYear = new Date().getFullYear()
   const academicYears = [
     `${currentYear}-${currentYear + 1}`,

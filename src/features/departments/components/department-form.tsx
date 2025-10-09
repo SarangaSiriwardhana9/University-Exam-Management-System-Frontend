@@ -43,7 +43,7 @@ type UpdateDepartmentFormProps = {
 
 type DepartmentFormProps = CreateDepartmentFormProps | UpdateDepartmentFormProps
 
-// Helper function to extract the ID from headOfDepartment
+ 
 const getHeadOfDepartmentId = (headOfDepartment: Department['headOfDepartment']): string => {
   if (!headOfDepartment) return ''
   
@@ -61,7 +61,7 @@ const getHeadOfDepartmentId = (headOfDepartment: Department['headOfDepartment'])
 export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: DepartmentFormProps) => {
   const isEditMode = !!department
 
-  // Fetch faculty members for head of department dropdown
+ 
   const { data: usersData, isLoading: isLoadingUsers } = useUsersQuery({ 
     role: USER_ROLES.FACULTY, 
     isActive: true 
@@ -77,7 +77,7 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
     }
   })
 
-  // Update form when department data is loaded
+ 
   useEffect(() => {
     if (department) {
       const hodId = getHeadOfDepartmentId(department.headOfDepartment)
@@ -94,7 +94,7 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
     }
   }, [department, form])
 
-  // Debug: Log when users data changes
+ 
   useEffect(() => {
     if (usersData?.data) {
       console.log('Faculty members loaded:', usersData.data.length)

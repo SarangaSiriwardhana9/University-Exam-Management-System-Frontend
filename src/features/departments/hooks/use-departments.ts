@@ -20,19 +20,19 @@ type RawDepartment = Omit<Department, 'headOfDepartment' | 'headOfDepartmentName
   headOfDepartment?: string | { _id: string; email: string; fullName: string }
 }
 
-// Helper function to extract head of department name
+ 
 const extractHeadOfDepartmentName = (headOfDepartment: RawDepartment['headOfDepartment']): string | undefined => {
   if (!headOfDepartment) return undefined
   
-  // If it's already an object
+ 
   if (typeof headOfDepartment === 'object' && headOfDepartment._id) {
     return headOfDepartment.fullName
   }
   
-  // If it's a stringified object (malformed backend response)
+ 
   if (typeof headOfDepartment === 'string' && headOfDepartment.includes('fullName')) {
     try {
-      // Try to extract the fullName from the string
+ 
       const match = headOfDepartment.match(/fullName:\s*'([^']+)'/)
       if (match && match[1]) {
         return match[1]
@@ -45,21 +45,21 @@ const extractHeadOfDepartmentName = (headOfDepartment: RawDepartment['headOfDepa
   return undefined
 }
 
-// Helper function to extract head of department ID
+ 
 const extractHeadOfDepartmentId = (headOfDepartment: RawDepartment['headOfDepartment']): string | undefined => {
   if (!headOfDepartment) return undefined
   
-  // If it's a string ID
+ 
   if (typeof headOfDepartment === 'string' && !headOfDepartment.includes('{')) {
     return headOfDepartment
   }
   
-  // If it's an object
+ 
   if (typeof headOfDepartment === 'object' && headOfDepartment._id) {
     return headOfDepartment._id
   }
   
-  // If it's a stringified object
+ 
   if (typeof headOfDepartment === 'string' && headOfDepartment.includes('ObjectId')) {
     try {
       const match = headOfDepartment.match(/ObjectId\('([^']+)'\)/)
@@ -74,7 +74,7 @@ const extractHeadOfDepartmentId = (headOfDepartment: RawDepartment['headOfDepart
   return undefined
 }
 
-// Transform department to normalize the data
+ 
 const transformDepartment = (dept: RawDepartment): Department => {
   const headOfDepartmentId = extractHeadOfDepartmentId(dept.headOfDepartment)
   const headOfDepartmentName = extractHeadOfDepartmentName(dept.headOfDepartment)

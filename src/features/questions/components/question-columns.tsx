@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { type ColumnDef } from '@tanstack/react-table'
@@ -12,33 +11,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon } from 'lucide-react'
+import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, ListTreeIcon } from 'lucide-react'
 import type { Question } from '../types/questions'
 import { cn } from '@/lib/utils'
 import type { QuestionType, DifficultyLevel } from '@/constants/roles'
 
-const getQuestionTypeBadge = (type: QuestionType) => {
+const getQuestionTypeBadge = (type: QuestionType | string) => {
   const typeStyles = {
     mcq: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    short_answer: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    long_answer: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    fill_blank: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    true_false: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300'
+    structured: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
+    essay: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   } as const
-  return typeStyles[type] || 'bg-muted'
+  return typeStyles[type as keyof typeof typeStyles] || 'bg-muted'
 }
 
-const getDifficultyBadge = (level: DifficultyLevel) => {
+const getDifficultyBadge = (level: DifficultyLevel | string) => {
   const difficultyStyles = {
     easy: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
     hard: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
   } as const
-  return difficultyStyles[level] || 'bg-muted'
+  return difficultyStyles[level as keyof typeof difficultyStyles] || 'bg-muted'
 }
 
 const formatQuestionType = (type: string) => {
-  return type.replace('_', ' ').toUpperCase()
+  const typeMap: Record<string, string> = {
+    mcq: 'MCQ',
+    structured: 'STRUCTURED',
+    essay: 'ESSAY',
+  }
+  return typeMap[type] || type.toUpperCase()
 }
 
 const formatDifficulty = (level: string) => {
@@ -57,9 +59,15 @@ export const getQuestionColumns = ({ onEdit, onDelete, onView }: QuestionColumns
     header: 'Question',
     cell: ({ row }) => {
       const text = row.original.questionText
+      const hasSubQuestions = row.original.hasSubQuestions
       return (
         <div className="max-w-md">
-          <p className="font-medium line-clamp-2">{text}</p>
+          <div className="flex items-start gap-2">
+            {hasSubQuestions && (
+              <ListTreeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            )}
+            <p className="font-medium line-clamp-2">{text}</p>
+          </div>
           {row.original.topic && (
             <p className="text-xs text-muted-foreground mt-1">Topic: {row.original.topic}</p>
           )}
@@ -73,7 +81,7 @@ export const getQuestionColumns = ({ onEdit, onDelete, onView }: QuestionColumns
     cell: ({ row }) => (
       <div>
         <p className="font-medium">{row.original.subjectCode}</p>
-        <p className="text-xs text-muted-foreground">{row.original.subjectName}</p>
+        <p className="text-xs text-muted-foreground line-clamp-1">{row.original.subjectName}</p>
       </div>
     ),
   },

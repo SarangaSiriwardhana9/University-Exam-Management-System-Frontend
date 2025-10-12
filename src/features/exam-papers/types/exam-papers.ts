@@ -1,4 +1,3 @@
-// src/features/exam-papers/types/exam-papers.ts
 import type { QuestionType, DifficultyLevel } from '@/constants/roles'
 
 export const EXAM_TYPES = {
@@ -9,6 +8,47 @@ export const EXAM_TYPES = {
 } as const
 
 export type ExamType = typeof EXAM_TYPES[keyof typeof EXAM_TYPES]
+
+export type SubPaperQuestion = {
+  _id: string
+  questionId: string
+  questionText: string
+  questionType: string
+  difficultyLevel: string
+  marksAllocated: number
+  subQuestionLabel: string
+  subQuestionOrder: number
+  subQuestionLevel: number
+  subQuestions?: SubPaperQuestion[]
+  createdAt: string
+}
+
+export type PaperQuestion = {
+  _id: string
+  questionId: string
+  questionText: string
+  questionType: string
+  difficultyLevel: string
+  questionOrder: number
+  marksAllocated: number
+  partLabel: string
+  partTitle?: string
+  isOptional: boolean
+  subQuestionLevel: number
+  subQuestions?: SubPaperQuestion[]
+  createdAt: string
+}
+
+export type PaperPart = {
+  partLabel: string
+  partTitle: string
+  partInstructions?: string
+  partOrder: number
+  totalMarks: number
+  questionCount: number
+  hasOptionalQuestions?: boolean
+  minimumQuestionsToAnswer?: number
+}
 
 export type ExamPaper = {
   _id: string
@@ -29,23 +69,38 @@ export type ExamPaper = {
   versionNumber: number
   parentPaperId?: string
   isActive: boolean
+  parts: PaperPart[]
   questions?: PaperQuestion[]
   questionCount?: number
   createdAt: string
   updatedAt: string
 }
 
-export type PaperQuestion = {
-  _id: string
+export type SubQuestionDto = {
   questionId: string
-  questionText: string
-  questionType: string
-  difficultyLevel: string
+  marksAllocated: number
+  subQuestionLabel: string
+  subQuestionOrder: number
+  subQuestions?: SubQuestionDto[]
+}
+
+export type PaperQuestionDto = {
+  questionId: string
   questionOrder: number
   marksAllocated: number
-  section: string
-  isOptional: boolean
-  createdAt: string
+  partLabel: string
+  partTitle?: string
+  isOptional?: boolean
+  subQuestions?: SubQuestionDto[]
+}
+
+export type PaperPartDto = {
+  partLabel: string
+  partTitle: string
+  partInstructions?: string
+  partOrder: number
+  hasOptionalQuestions?: boolean
+  minimumQuestionsToAnswer?: number
 }
 
 export type CreateExamPaperDto = {
@@ -55,17 +110,21 @@ export type CreateExamPaperDto = {
   totalMarks: number
   durationMinutes: number
   instructions?: string
-  questions: Array<{
-    questionId: string
-    questionOrder: number
-    marksAllocated: number
-    section?: string
-    isOptional?: boolean
-  }>
+  parts: PaperPartDto[]
+  questions: PaperQuestionDto[]
 }
 
 export type UpdateExamPaperDto = Partial<CreateExamPaperDto> & {
   isActive?: boolean
+}
+
+export type QuestionCriteriaDto = {
+  topic?: string
+  difficultyLevel?: DifficultyLevel
+  questionType?: QuestionType
+  count: number
+  marksPerQuestion: number
+  section?: string
 }
 
 export type GeneratePaperDto = {
@@ -74,21 +133,16 @@ export type GeneratePaperDto = {
   paperType: ExamType
   durationMinutes: number
   instructions?: string
-  questionCriteria: Array<{
-    topic?: string
-    difficultyLevel?: DifficultyLevel
-    questionType?: QuestionType
-    count: number
-    marksPerQuestion: number
-    section?: string
-  }>
+  questionCriteria: QuestionCriteriaDto[]
 }
 
 export type ExamPaperStats = {
   totalPapers: number
-  papersByType: Record<string, number>
-  papersBySubject: Record<string, number>
   finalizedPapers: number
+  papersByType: Record<string, number>
+  papersBySubject: Array<{ subjectName: string; count: number }>
+  averageQuestionsPerPaper: number
+  averageDuration: number
 }
 
 export type GetExamPapersParams = {
@@ -104,7 +158,6 @@ export type GetExamPapersParams = {
   sortOrder?: 'asc' | 'desc'
 }
 
-// Backend response types
 export type BackendExamPapersListResponse = {
   examPapers: ExamPaper[]
   total: number

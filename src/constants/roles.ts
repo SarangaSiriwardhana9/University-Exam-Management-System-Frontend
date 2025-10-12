@@ -8,15 +8,25 @@ export const USER_ROLES = {
 
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES]
 
+// Updated question types - only active types
 export const QUESTION_TYPES = {
   MCQ: 'mcq',
-  SHORT_ANSWER: 'short_answer',
-  LONG_ANSWER: 'long_answer',
-  FILL_BLANK: 'fill_blank',
-  TRUE_FALSE: 'true_false'
+  STRUCTURED: 'structured',
+  ESSAY: 'essay',
 } as const
 
 export type QuestionType = typeof QUESTION_TYPES[keyof typeof QUESTION_TYPES]
+
+// Sub-question types (can be used within STRUCTURED/ESSAY)
+export const SUB_QUESTION_TYPES = {
+  SHORT_ANSWER: 'short_answer',
+  LONG_ANSWER: 'long_answer',
+  FILL_BLANK: 'fill_blank',
+  STRUCTURED: 'structured',
+  ESSAY: 'essay',
+} as const
+
+export type SubQuestionType = typeof SUB_QUESTION_TYPES[keyof typeof SUB_QUESTION_TYPES]
 
 export const DIFFICULTY_LEVELS = {
   EASY: 'easy',
@@ -36,3 +46,12 @@ export const BLOOMS_TAXONOMY = {
 } as const
 
 export type BloomsTaxonomy = typeof BLOOMS_TAXONOMY[keyof typeof BLOOMS_TAXONOMY]
+
+export const EXAM_TYPES = {
+  MIDTERM: 'midterm',
+  FINAL: 'final',
+  QUIZ: 'quiz',
+  ASSIGNMENT: 'assignment'
+} as const
+
+export type ExamType = typeof EXAM_TYPES[keyof typeof EXAM_TYPES]

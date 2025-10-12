@@ -1,5 +1,18 @@
- 
-import type { QuestionType, DifficultyLevel, BloomsTaxonomy } from '@/constants/roles'
+import type { QuestionType, DifficultyLevel, BloomsTaxonomy, SubQuestionType } from '@/constants/roles'
+
+export type SubQuestion = {
+  _id: string
+  questionText: string
+  questionDescription?: string
+  questionType: SubQuestionType
+  marks: number
+  subQuestionLabel: string
+  subQuestionOrder: number
+  subQuestionLevel: number
+  subQuestions?: SubQuestion[]
+  createdAt: string
+  updatedAt: string
+}
 
 export type Question = {
   _id: string
@@ -20,17 +33,30 @@ export type Question = {
   createdBy: string
   createdByName?: string
   isActive: boolean
+  hasSubQuestions: boolean
+  subQuestionLevel: number
   options?: QuestionOption[]
+  subQuestions?: SubQuestion[]
   createdAt: string
   updatedAt: string
 }
 
 export type QuestionOption = {
-  _id: string
+  _id?: string
   optionText: string
   isCorrect: boolean
   optionOrder: number
-  createdAt: string
+  createdAt?: string
+}
+
+export type CreateSubQuestionDto = {
+  questionText: string
+  questionDescription?: string
+  questionType: SubQuestionType
+  marks: number
+  subQuestionLabel: string
+  subQuestionOrder: number
+  subQuestions?: CreateSubQuestionDto[]
 }
 
 export type CreateQuestionDto = {
@@ -50,17 +76,20 @@ export type CreateQuestionDto = {
     isCorrect: boolean
     optionOrder: number
   }>
+  subQuestions?: CreateSubQuestionDto[]
 }
 
-export type UpdateQuestionDto = Partial<CreateQuestionDto> & {
+export type UpdateQuestionDto = Partial<Omit<CreateQuestionDto, 'subjectId'>> & {
   isActive?: boolean
 }
 
 export type QuestionStats = {
   totalQuestions: number
+  activeQuestions: number
+  publicQuestions: number
   questionsByType: Record<string, number>
   questionsByDifficulty: Record<string, number>
-  questionsBySubject: Record<string, number>
+  questionsBySubject: Array<{ subjectName: string; count: number }>
 }
 
 export type GetQuestionsParams = {
@@ -78,15 +107,10 @@ export type GetQuestionsParams = {
   sortOrder?: 'asc' | 'desc'
 }
 
-// Backend response types
 export type BackendQuestionsListResponse = {
   questions: Question[]
   total: number
   page: number
   limit: number
   totalPages: number
-}
-
-export type BackendQuestionResponse = {
-  question: Question
 }

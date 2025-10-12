@@ -1,4 +1,3 @@
-// src/features/exam-papers/hooks/use-exam-paper-mutations.ts
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -69,7 +68,8 @@ export const useDuplicateExamPaper = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => examPapersService.duplicate(id),
+    mutationFn: ({ id, newTitle }: { id: string; newTitle: string }) => 
+      examPapersService.duplicate(id, newTitle),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-papers'] })
       toast.success('Exam Paper Duplicated', {

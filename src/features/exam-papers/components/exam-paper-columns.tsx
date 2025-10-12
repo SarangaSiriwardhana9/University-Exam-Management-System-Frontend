@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { type ColumnDef } from '@tanstack/react-table'
@@ -12,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, CopyIcon, LockIcon } from 'lucide-react'
+import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, CopyIcon, LockIcon, LayersIcon } from 'lucide-react'
 import type { ExamPaper, ExamType } from '../types/exam-papers'
 import { cn } from '@/lib/utils'
 
@@ -60,7 +59,15 @@ export const getExamPaperColumns = ({
       const paper = row.original
       return (
         <div>
-          <p className="font-medium">{paper.paperTitle}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium">{paper.paperTitle}</p>
+            {paper.parts && paper.parts.length > 1 && (
+              <Badge variant="outline" className="text-xs">
+                <LayersIcon className="h-3 w-3 mr-1" />
+                {paper.parts.length} parts
+              </Badge>
+            )}
+          </div>
           {paper.subjectCode && (
             <p className="text-xs text-muted-foreground">
               {paper.subjectCode} - {paper.subjectName}
@@ -79,6 +86,29 @@ export const getExamPaperColumns = ({
         <Badge variant="outline" className={cn('font-medium', getExamTypeBadge(type))}>
           {formatExamType(type)}
         </Badge>
+      )
+    },
+  },
+  {
+    accessorKey: 'parts',
+    header: 'Structure',
+    cell: ({ row }) => {
+      const parts = row.original.parts || []
+      if (parts.length === 0) return <span className="text-muted-foreground">—</span>
+      
+      return (
+        <div className="flex flex-wrap gap-1">
+          {parts.slice(0, 3).map((part) => (
+            <Badge key={part.partLabel} variant="secondary" className="text-xs">
+              {part.partLabel}
+            </Badge>
+          ))}
+          {parts.length > 3 && (
+            <Badge variant="secondary" className="text-xs">
+              +{parts.length - 3}
+            </Badge>
+          )}
+        </div>
       )
     },
   },
@@ -112,7 +142,7 @@ export const getExamPaperColumns = ({
       return (
         <div className="flex gap-1">
           {isFinalized && (
-            <Badge variant="default" className="bg-purple-100 text-purple-700">
+            <Badge variant="default" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
               <LockIcon className="h-3 w-3 mr-1" />
               Finalized
             </Badge>

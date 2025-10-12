@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useForm, useFieldArray, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
@@ -8,15 +8,25 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { PlusIcon, TrashIcon, SearchIcon, InfoIcon, ListTreeIcon } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  PlusIcon, 
+  TrashIcon, 
+  SearchIcon, 
+  ListTreeIcon, 
+  AlertCircleIcon, 
+  CheckCircle2Icon, 
+  FilterIcon,
+  XIcon
+} from 'lucide-react'
 import { EXAM_TYPES } from '../types/exam-papers'
+import { QUESTION_TYPES, DIFFICULTY_LEVELS } from '@/constants/roles'
 import { createExamPaperSchema, updateExamPaperSchema, type CreateExamPaperFormData, type UpdateExamPaperFormData } from '../validations/exam-paper-schemas'
 import type { ExamPaper, PaperQuestionDto } from '../types/exam-papers'
 import { useMySubjectsQuery, useSubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
@@ -37,9 +47,12 @@ type ExamPaperFormProps = {
 export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPaperFormProps) => {
   const isEditMode = !!paper
   const [selectedSubject, setSelectedSubject] = useState<string>(paper?.subjectId || '')
-  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedPartForQuestion, setSelectedPartForQuestion] = useState<string>('')
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(new Set())
+  const [activePartTab, setActivePartTab] = useState<string>('')
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<string>('all')
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
+  const [currentStep, setCurrentStep] = useState(1)
 
   const { user } = useAuth()
   const { data: allSubjectsData, isLoading: isLoadingAllSubjects } = useSubjectsQuery({ isActive: true })
@@ -49,12 +62,12 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
 
   const { data: questionsData, isLoading: isLoadingQuestions } = useQuestionsBySubjectQuery(
     selectedSubject || undefined,
-    false
+    true
   )
   const questions = questionsData?.data || []
 
-  const form = useForm({
-    resolver: zodResolver(isEditMode ? updateExamPaperSchema : createExamPaperSchema),
+  const form = useForm<CreateExamPaperFormData>({
+    resolver: zodResolver(isEditMode ? updateExamPaperSchema : createExamPaperSchema) as any,
     defaultValues: {
       subjectId: '',
       paperTitle: '',
@@ -62,7 +75,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       totalMarks: 100,
       durationMinutes: 180,
       instructions: '',
-      parts: [{ partLabel: 'A', partTitle: 'Part A', partOrder: 1 }],
+      parts: [{ partLabel: 'A', partTitle: 'Multiple Choice Questions', partOrder: 1 }],
       questions: []
     }
   }) as UseFormReturn<CreateExamPaperFormData>
@@ -78,8 +91,17 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   })
 
   useEffect(() => {
+    if (partFields.length > 0 && !activePartTab) {
+      setActivePartTab(partFields[0].partLabel)
+    }
+  }, [partFields, activePartTab])
+
+  useEffect(() => {
     if (paper) {
       setSelectedSubject(paper.subjectId)
+      const questionIds = new Set(paper.questions?.map(q => q.questionId) || [])
+      setSelectedQuestionIds(questionIds)
+      
       form.reset({
         subjectId: paper.subjectId,
         paperTitle: paper.paperTitle,
@@ -95,7 +117,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           hasOptionalQuestions: p.hasOptionalQuestions,
           minimumQuestionsToAnswer: p.minimumQuestionsToAnswer
         })),
-        questions: paper.questions?.map((q) => ({
+        questions: paper.questions?.map(q => ({
           questionId: q.questionId,
           questionOrder: q.questionOrder,
           marksAllocated: q.marksAllocated,
@@ -104,58 +126,81 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           isOptional: q.isOptional
         })) || []
       })
+      setCurrentStep(2)
     }
   }, [paper, form])
 
   const handleSubjectChange = (value: string) => {
     setSelectedSubject(value)
     form.setValue('subjectId', value)
-    form.setValue('questions', [])
   }
 
-  const handleAddQuestion = (question: Question, partLabel: string) => {
-    const existingQuestion = questionFields.find(f => f.questionId === question._id)
-    if (existingQuestion) return
+  const handleQuestionToggle = (question: Question) => {
+    const questionId = question._id
+    const newSelectedIds = new Set(selectedQuestionIds)
+    
+    if (newSelectedIds.has(questionId)) {
+      newSelectedIds.delete(questionId)
+      const index = questionFields.findIndex(q => q.questionId === questionId)
+      if (index !== -1) removeQuestion(index)
+    } else {
+      newSelectedIds.add(questionId)
+      const part = partFields.find(p => p.partLabel === activePartTab)
+      const questionOrder = questionFields.filter(q => q.partLabel === activePartTab).length + 1
 
-    const part = partFields.find(p => p.partLabel === partLabel)
-    const questionOrder = questionFields.filter(q => q.partLabel === partLabel).length + 1
-
-    const newQuestion: PaperQuestionDto = {
-      questionId: question._id,
-      questionOrder,
-      marksAllocated: question.marks,
-      partLabel: partLabel,
-      partTitle: part?.partTitle,
-      isOptional: false
+      const newQuestion: PaperQuestionDto = {
+        questionId: question._id,
+        questionOrder,
+        marksAllocated: question.marks,
+        partLabel: activePartTab,
+        partTitle: part?.partTitle,
+        isOptional: false
+      }
+      appendQuestion(newQuestion)
     }
-
-    appendQuestion(newQuestion)
-    setIsQuestionDialogOpen(false)
+    
+    setSelectedQuestionIds(newSelectedIds)
   }
 
-  const calculateTotalAllocatedMarks = () => {
-    return questionFields.reduce((sum, field) => sum + (field.marksAllocated || 0), 0)
-  }
-
-  const allocatedMarks = calculateTotalAllocatedMarks()
-  const targetMarks = form.watch('totalMarks') || 0
-
-  const filteredQuestions = questions.filter(q => 
-    q.questionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.topic?.toLowerCase().includes(searchTerm.toLowerCase())
+  const allocatedMarks = useMemo(() => 
+    questionFields.reduce((sum, field) => sum + (field.marksAllocated || 0), 0),
+    [questionFields]
   )
 
-  const getQuestionDetails = (questionId: string) => {
-    return questions.find(q => q._id === questionId)
-  }
+  const targetMarks = form.watch('totalMarks') || 0
+  const marksMatch = allocatedMarks === targetMarks
 
-  const handleSubmit = (data: CreateExamPaperFormData | UpdateExamPaperFormData) => {
+  const filteredQuestions = useMemo(() => 
+    questions.filter(q => {
+      const matchesSearch = q.questionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.topic?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesType = questionTypeFilter === 'all' || q.questionType === questionTypeFilter
+      const matchesDifficulty = difficultyFilter === 'all' || q.difficultyLevel === difficultyFilter
+      
+      return matchesSearch && matchesType && matchesDifficulty
+    }),
+    [questions, searchTerm, questionTypeFilter, difficultyFilter]
+  )
+
+  const getQuestionDetails = (questionId: string) => questions.find(q => q._id === questionId)
+
+  const questionsByPart = useMemo(() => {
+    const grouped: Record<string, typeof questionFields> = {}
+    partFields.forEach(part => {
+      grouped[part.partLabel] = questionFields.filter(q => q.partLabel === part.partLabel)
+    })
+    return grouped
+  }, [questionFields, partFields])
+
+  const handleSubmit = (data: CreateExamPaperFormData) => {
     if (isEditMode) {
-      (onSubmit as (data: UpdateExamPaperFormData) => void)(data as UpdateExamPaperFormData)
+      onSubmit(data as UpdateExamPaperFormData)
     } else {
-      (onSubmit as (data: CreateExamPaperFormData) => void)(data as CreateExamPaperFormData)
+      onSubmit(data)
     }
   }
+
+  const hasActiveFilters = questionTypeFilter !== 'all' || difficultyFilter !== 'all'
 
   if (isLoadingAllSubjects || isLoadingMySubjects) {
     return (
@@ -167,579 +212,747 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Exam Paper Creation</AlertTitle>
-          <AlertDescription>
-            Build your exam paper by selecting questions from the question bank. Structured questions with sub-parts are fully supported.
-          </AlertDescription>
-        </Alert>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="subjectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject *</FormLabel>
-                    <Select 
-                      onValueChange={handleSubjectChange} 
-                      value={field.value}
-                      disabled={isEditMode}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select subject" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {subjects.map((subject) => (
-                          <SelectItem key={subject._id} value={subject._id}>
-                            {subject.subjectCode} - {subject.subjectName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="paperType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Exam Type *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={EXAM_TYPES.MIDTERM}>Midterm</SelectItem>
-                        <SelectItem value={EXAM_TYPES.FINAL}>Final</SelectItem>
-                        <SelectItem value={EXAM_TYPES.QUIZ}>Quiz</SelectItem>
-                        <SelectItem value={EXAM_TYPES.ASSIGNMENT}>Assignment</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="paperTitle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paper Title *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., SE3034 - Introduction to Programming - Final Exam 2024" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="totalMarks"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Total Marks *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min={1}
-                        placeholder="100" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Allocated: {allocatedMarks} / {targetMarks}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="durationMinutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration (minutes) *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min={1}
-                        placeholder="180" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {field.value ? `${Math.floor(field.value / 60)}h ${field.value % 60}m` : ''}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="instructions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>General Instructions</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="e.g., Answer all questions. Write your answers in the provided answer booklet." 
-                      className="min-h-[100px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Separator />
-
-        <Card>
-          <CardHeader>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full">
+        <div className="flex flex-col h-full">
+          <div className="border-b bg-muted/30 px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Paper Sections</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Organize your exam into sections (Part A, Part B, etc.)
+                <h2 className="text-2xl font-bold">
+                  {isEditMode ? 'Edit Exam Paper' : 'Create Exam Paper'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {currentStep === 1 ? 'Step 1: Basic Information & Sections' : 'Step 2: Add Questions to Sections'}
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => appendPart({
-                  partLabel: String.fromCharCode(65 + partFields.length),
-                  partTitle: `Part ${String.fromCharCode(65 + partFields.length)}`,
-                  partOrder: partFields.length + 1,
-                  hasOptionalQuestions: false
-                })}
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Section
-              </Button>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-lg px-4 py-1">
+                  {allocatedMarks} / {targetMarks} marks
+                </Badge>
+                {marksMatch && questionFields.length > 0 && (
+                  <CheckCircle2Icon className="h-5 w-5 text-green-600" />
+                )}
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
 
-            <div className="space-y-3">
-              {partFields.map((field, index) => (
-                <div key={field.id} className="p-4 border rounded-lg space-y-3 bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono">Part {field.partLabel}</Badge>
-                      {field.partTitle}
-                    </h4>
-                    {partFields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removePart(index)}
-                      >
-                        <TrashIcon className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  currentStep === 1 ? "bg-primary text-primary-foreground" : "bg-green-600 text-white"
+                )}>
+                  {currentStep === 1 ? '1' : <CheckCircle2Icon className="h-5 w-5" />}
+                </div>
+                <span className="text-sm font-medium">Setup</span>
+              </div>
+              <div className="h-[2px] flex-1 bg-muted" />
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  currentStep === 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  2
+                </div>
+                <span className="text-sm font-medium">Add Questions</span>
+              </div>
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name={`parts.${index}.partLabel`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Section Label *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="A, B, C..." 
-                              className="font-mono uppercase" 
-                              {...field} 
-                              onChange={(e) => field.onChange(e.target.value.toUpperCase())} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+          <div className="flex-1 overflow-hidden">
+            {currentStep === 1 ? (
+              <ScrollArea className="h-full">
+                <div className="max-w-4xl mx-auto p-6 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Basic Information</CardTitle>
+                      <CardDescription>Set up the core details of your exam paper</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="subjectId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subject *</FormLabel>
+                              <Select 
+                                onValueChange={handleSubjectChange} 
+                                value={field.value}
+                                disabled={isEditMode}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select subject" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {subjects.map(subject => (
+                                    <SelectItem key={subject._id} value={subject._id}>
+                                      {subject.subjectCode} - {subject.subjectName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name={`parts.${index}.partTitle`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Section Title *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Multiple Choice Questions" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                        <FormField
+                          control={form.control}
+                          name="paperType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Exam Type *</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value={EXAM_TYPES.MIDTERM}>Midterm</SelectItem>
+                                  <SelectItem value={EXAM_TYPES.FINAL}>Final</SelectItem>
+                                  <SelectItem value={EXAM_TYPES.QUIZ}>Quiz</SelectItem>
+                                  <SelectItem value={EXAM_TYPES.ASSIGNMENT}>Assignment</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  <FormField
-                    control={form.control}
-                    name={`parts.${index}.partInstructions`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Section Instructions</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="e.g., Answer all questions. Each question carries 1 mark." 
-                            rows={2}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name={`parts.${index}.hasOptionalQuestions`}
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel className="text-xs !mt-0">Has Optional Questions</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch(`parts.${index}.hasOptionalQuestions`) && (
                       <FormField
                         control={form.control}
-                        name={`parts.${index}.minimumQuestionsToAnswer`}
+                        name="paperTitle"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Minimum to Answer</FormLabel>
+                            <FormLabel>Paper Title *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                min={0}
-                                placeholder="e.g., 3"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              <Input placeholder="e.g., Software Engineering Final Exam 2024" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="totalMarks"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Total Marks *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  {...field}
+                                  onChange={e => field.onChange(parseInt(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="durationMinutes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Duration (minutes) *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  {...field}
+                                  onChange={e => field.onChange(parseInt(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                {field.value ? `${Math.floor(field.value / 60)}h ${field.value % 60}m` : ''}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="instructions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>General Instructions</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="e.g., Answer all questions. Write answers in the provided booklet." 
+                                className="min-h-[80px]"
+                                {...field} 
                               />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>Paper Sections</CardTitle>
+                          <CardDescription>Organize your exam into parts (e.g., MCQs, Essays, etc.)</CardDescription>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newLabel = String.fromCharCode(65 + partFields.length)
+                            appendPart({
+                              partLabel: newLabel,
+                              partTitle: `Part ${newLabel}`,
+                              partOrder: partFields.length + 1,
+                              hasOptionalQuestions: false
+                            })
+                          }}
+                        >
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Add Section
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {partFields.map((field, index) => (
+                        <div key={field.id} className="p-4 border-2 rounded-lg space-y-4 hover:border-primary/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="font-mono text-base px-3 py-1">
+                                Part {field.partLabel}
+                              </Badge>
+                              <Badge variant="secondary">
+                                {questionsByPart[field.partLabel]?.length || 0} questions
+                              </Badge>
+                            </div>
+                            {partFields.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  removePart(index)
+                                  if (activePartTab === field.partLabel && partFields.length > 1) {
+                                    setActivePartTab(partFields[0].partLabel)
+                                  }
+                                }}
+                              >
+                                <TrashIcon className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <FormField
+                              control={form.control}
+                              name={`parts.${index}.partLabel`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Section Label *</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="A" 
+                                      className="font-mono uppercase" 
+                                      {...field} 
+                                      onChange={e => field.onChange(e.target.value.toUpperCase())} 
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`parts.${index}.partTitle`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Section Title *</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="e.g., Multiple Choice Questions" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <FormField
+                            control={form.control}
+                            name={`parts.${index}.partInstructions`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">Section Instructions (Optional)</FormLabel>
+                                <FormControl>
+                                  <Textarea 
+                                    placeholder="e.g., Choose the best answer for each question. Each question carries 1 mark." 
+                                    rows={2}
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="flex items-center gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`parts.${index}.hasOptionalQuestions`}
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl>
+                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                  </FormControl>
+                                  <FormLabel className="text-xs !mt-0">Has Optional Questions</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+
+                            {form.watch(`parts.${index}.hasOptionalQuestions`) && (
+                              <FormField
+                                control={form.control}
+                                name={`parts.${index}.minimumQuestionsToAnswer`}
+                                render={({ field }) => (
+                                  <FormItem className="flex-1">
+                                    <FormControl>
+                                      <Input 
+                                        type="number" 
+                                        min={0}
+                                        placeholder="Minimum questions to answer"
+                                        {...field}
+                                        onChange={e => field.onChange(parseInt(e.target.value))}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="button" 
+                      onClick={() => {
+                        if (!selectedSubject) {
+                          form.setError('subjectId', { message: 'Please select a subject' })
+                          return
+                        }
+                        if (partFields.length === 0) {
+                          return
+                        }
+                        setCurrentStep(2)
+                      }}
+                      disabled={!selectedSubject || partFields.length === 0}
+                    >
+                      Continue to Add Questions
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            ) : (
+              <div className="h-full flex">
+                <div className="flex-1 flex flex-col border-r">
+                  <div className="border-b px-6 py-4 bg-muted/30">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Select Questions for Each Section</h3>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentStep(1)}
+                      >
+                        ← Back to Setup
+                      </Button>
+                    </div>
 
-        <Separator />
+                    <Tabs value={activePartTab} onValueChange={setActivePartTab}>
+                      <TabsList className="w-full justify-start">
+                        {partFields.map(part => {
+                          const partQuestions = questionsByPart[part.partLabel] || []
+                          const partMarks = partQuestions.reduce((sum, q) => sum + (q.marksAllocated || 0), 0)
+                          
+                          return (
+                            <TabsTrigger key={part.id} value={part.partLabel} className="flex items-center gap-2">
+                              <span className="font-mono">Part {part.partLabel}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {partQuestions.length}Q • {partMarks}m
+                              </Badge>
+                            </TabsTrigger>
+                          )
+                        })}
+                      </TabsList>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Questions</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {questionFields.length} question(s) • {allocatedMarks}/{targetMarks} marks
-                </p>
-              </div>
-              <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="default"
-                    disabled={!selectedSubject || partFields.length === 0}
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Questions
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Select Questions from Question Bank</DialogTitle>
-                    <DialogDescription>
-                      Choose questions to add to your exam paper. Questions with sub-parts will include all their nested structure.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div className="flex gap-3">
-                      <div className="relative flex-1">
-                        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      {partFields.map(part => {
+                        const partQuestions = questionsByPart[part.partLabel] || []
+                        
+                        return (
+                          <TabsContent key={part.id} value={part.partLabel} className="mt-0">
+                            <div className="pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <h4 className="font-semibold text-lg">{part.partTitle}</h4>
+                                  {part.partInstructions && (
+                                    <p className="text-sm text-muted-foreground mt-1">{part.partInstructions}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </TabsContent>
+                        )
+                      })}
+                    </Tabs>
+                  </div>
+
+                  <ScrollArea className="flex-1">
+                    <div className="p-6">
+                      {partFields.map(part => {
+                        if (part.partLabel !== activePartTab) return null
+                        
+                        const partQuestions = questionsByPart[part.partLabel] || []
+
+                        return (
+                          <div key={part.id} className="space-y-3">
+                            {partQuestions.length === 0 ? (
+                              <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                                <ListTreeIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                                <p className="text-muted-foreground font-medium">No questions added yet</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Select questions from the question bank on the right
+                                </p>
+                              </div>
+                            ) : (
+                              partQuestions.map((field, idx) => {
+                                const questionDetails = getQuestionDetails(field.questionId)
+                                const questionIndex = questionFields.indexOf(field)
+                                
+                                return (
+                                  <Card key={field.id}>
+                                    <CardContent className="p-4">
+                                      <div className="flex items-start gap-3">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Badge variant="outline" className="font-mono">Q{idx + 1}</Badge>
+                                            {questionDetails?.hasSubQuestions && (
+                                              <Badge variant="default" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                                <ListTreeIcon className="h-3 w-3 mr-1" />
+                                                Has Sub-parts
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <p className="font-medium mb-2">{questionDetails?.questionText}</p>
+                                          {questionDetails && (
+                                            <div className="flex gap-2 flex-wrap mb-3">
+                                              <Badge variant="outline" className="text-xs">
+                                                {questionDetails.questionType.toUpperCase()}
+                                              </Badge>
+                                              <Badge variant="outline" className="text-xs">
+                                                {questionDetails.difficultyLevel}
+                                              </Badge>
+                                              <Badge variant="secondary" className="text-xs">
+                                                Default: {questionDetails.marks}m
+                                              </Badge>
+                                              {questionDetails.topic && (
+                                                <Badge variant="secondary" className="text-xs">
+                                                  {questionDetails.topic}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          <div className="grid grid-cols-3 gap-3">
+                                            <FormField
+                                              control={form.control}
+                                              name={`questions.${questionIndex}.marksAllocated`}
+                                              render={({ field }) => (
+                                                <FormItem>
+                                                  <FormLabel className="text-xs">Marks *</FormLabel>
+                                                  <FormControl>
+                                                    <Input 
+                                                      type="number" 
+                                                      min={0.5}
+                                                      step={0.5}
+                                                      className="h-9"
+                                                      {...field}
+                                                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                                                    />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                                </FormItem>
+                                              )}
+                                            />
+
+                                            <FormField
+                                              control={form.control}
+                                              name={`questions.${questionIndex}.isOptional`}
+                                              render={({ field }) => (
+                                                <FormItem className="flex flex-col justify-end">
+                                                  <div className="flex items-center space-x-2 pb-2">
+                                                    <FormControl>
+                                                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                                    </FormControl>
+                                                    <FormLabel className="text-xs !mt-0">Optional</FormLabel>
+                                                  </div>
+                                                </FormItem>
+                                              )}
+                                            />
+
+                                            <div className="flex items-end">
+                                              <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                className="w-full"
+                                                onClick={() => {
+                                                  removeQuestion(questionIndex)
+                                                  setSelectedQuestionIds(prev => {
+                                                    const newSet = new Set(prev)
+                                                    newSet.delete(field.questionId)
+                                                    return newSet
+                                                  })
+                                                }}
+                                              >
+                                                <TrashIcon className="h-4 w-4 mr-1" />
+                                                Remove
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )
+                              })
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                <div className="w-[400px] flex flex-col">
+                  <div className="border-b px-4 py-4 bg-muted/30">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold">Question Bank</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {filteredQuestions.length} / {questions.length}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           placeholder="Search questions..."
                           className="pl-10"
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onChange={e => setSearchTerm(e.target.value)}
                         />
                       </div>
-                      <Select value={selectedPartForQuestion} onValueChange={setSelectedPartForQuestion}>
-                        <SelectTrigger className="w-[250px]">
-                          <SelectValue placeholder="Select Section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {partFields.map(p => (
-                            <SelectItem key={p.id} value={p.partLabel}>
-                              Part {p.partLabel} - {p.partTitle}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
 
-                    {!selectedPartForQuestion && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        Please select a section to add questions to
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FilterIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Filters</span>
+                          {hasActiveFilters && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 ml-auto"
+                              onClick={() => {
+                                setQuestionTypeFilter('all')
+                                setDifficultyFilter('all')
+                              }}
+                            >
+                              <XIcon className="h-3 w-3 mr-1" />
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+
+                        <Select value={questionTypeFilter} onValueChange={setQuestionTypeFilter}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Question Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value={QUESTION_TYPES.MCQ}>MCQ</SelectItem>
+                            <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
+                            <SelectItem value={QUESTION_TYPES.ESSAY}>Essay</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Difficulty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Difficulties</SelectItem>
+                            <SelectItem value={DIFFICULTY_LEVELS.EASY}>Easy</SelectItem>
+                            <SelectItem value={DIFFICULTY_LEVELS.MEDIUM}>Medium</SelectItem>
+                            <SelectItem value={DIFFICULTY_LEVELS.HARD}>Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
+                    </div>
+                  </div>
 
-                    {selectedPartForQuestion && (
-                      <>
-                        {isLoadingQuestions ? (
-                          <div className="flex justify-center py-8">
-                            <LoadingSpinner />
-                          </div>
-                        ) : filteredQuestions.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">
-                            No questions available for this subject
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {filteredQuestions.map((question) => {
-                              const isAdded = questionFields.some(f => f.questionId === question._id)
-                              return (
-                                <div
-                                  key={question._id}
-                                  className={cn(
-                                    "p-4 border rounded-lg hover:bg-muted/50 transition-colors",
-                                    isAdded && "bg-muted opacity-50"
-                                  )}
-                                >
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                      <div className="flex items-start gap-2">
-                                        {question.hasSubQuestions && (
-                                          <ListTreeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                                        )}
-                                        <p className="font-medium line-clamp-2">{question.questionText}</p>
-                                      </div>
-                                      <div className="flex gap-2 mt-2 flex-wrap">
-                                        <Badge variant="outline" className="text-xs">
-                                          {question.questionType.replace('_', ' ').toUpperCase()}
-                                        </Badge>
-                                        <Badge variant="outline" className="text-xs">
-                                          {question.difficultyLevel}
-                                        </Badge>
-                                        <Badge variant="secondary" className="text-xs">
-                                          {question.marks} marks
-                                        </Badge>
-                                        {question.hasSubQuestions && (
-                                          <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                                            Has Sub-parts
-                                          </Badge>
-                                        )}
-                                        {question.topic && (
-                                          <Badge variant="secondary" className="text-xs">
-                                            {question.topic}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-4">
+                      {isLoadingQuestions ? (
+                        <div className="flex justify-center py-8">
+                          <LoadingSpinner />
+                        </div>
+                      ) : filteredQuestions.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                          {hasActiveFilters ? 'No questions match your filters' : 'No questions available'}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredQuestions.map(question => {
+                            const isSelected = selectedQuestionIds.has(question._id)
+                            const isInCurrentPart = questionFields.find(
+                              q => q.questionId === question._id && q.partLabel === activePartTab
+                            )
+
+                            return (
+                              <div
+                                key={question._id}
+                                className={cn(
+                                  "p-3 border rounded-lg transition-all cursor-pointer",
+                                  isInCurrentPart 
+                                    ? "bg-primary/10 border-primary" 
+                                    : isSelected 
+                                      ? "bg-muted/50 border-muted-foreground/20"
+                                      : "hover:bg-muted/50 hover:border-muted-foreground/20"
+                                )}
+                                onClick={() => !isInCurrentPart && handleQuestionToggle(question)}
+                              >
+                                <div className="space-y-2">
+                                  <div className="flex items-start gap-2">
+                                    {question.hasSubQuestions && (
+                                      <ListTreeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                    )}
+                                    <p className="font-medium text-sm line-clamp-2 flex-1">
+                                      {question.questionText}
+                                    </p>
+                                  </div>
+                                  
+                                  <div className="flex gap-1 flex-wrap">
+                                    <Badge variant="outline" className="text-xs">
+                                      {question.questionType.toUpperCase()}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {question.difficultyLevel}
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {question.marks}m
+                                    </Badge>
+                                    {question.hasSubQuestions && (
+                                      <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                        Sub-parts
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {isInCurrentPart ? (
+                                    <Badge variant="default" className="w-full justify-center text-xs">
+                                      Added to this section
+                                    </Badge>
+                                  ) : isSelected ? (
+                                    <Badge variant="secondary" className="w-full justify-center text-xs">
+                                      Added to another section
+                                    </Badge>
+                                  ) : (
                                     <Button
                                       type="button"
                                       size="sm"
-                                      onClick={() => handleAddQuestion(question, selectedPartForQuestion)}
-                                      disabled={isAdded}
+                                      variant="outline"
+                                      className="w-full h-7 text-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleQuestionToggle(question)
+                                      }}
                                     >
-                                      {isAdded ? 'Added' : 'Add'}
+                                      <PlusIcon className="h-3 w-3 mr-1" />
+                                      Add to Part {activePartTab}
                                     </Button>
-                                  </div>
+                                  )}
                                 </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-
-            {questionFields.length === 0 ? (
-              <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                <p className="text-muted-foreground">No questions added yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Click "Add Questions" to select from your question bank
-                </p>
-              </div>
-            ) : (
-              <Accordion type="single" collapsible className="space-y-2">
-                {partFields.map((part) => {
-                  const partQuestions = questionFields.filter(q => q.partLabel === part.partLabel)
-                  const partMarks = partQuestions.reduce((sum, q) => sum + (q.marksAllocated || 0), 0)
-
-                  return (
-                    <AccordionItem key={part.id} value={part.partLabel} className="border rounded-lg px-4">
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3 flex-1">
-                          <Badge variant="outline" className="font-mono">Part {part.partLabel}</Badge>
-                          <span className="font-medium">{part.partTitle}</span>
-                          <Badge variant="secondary" className="ml-auto mr-4">
-                            {partQuestions.length} questions • {partMarks} marks
-                          </Badge>
+                              </div>
+                            )
+                          })}
                         </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-3">
-                        {partQuestions.map((field, index) => {
-                          const questionDetails = getQuestionDetails(field.questionId)
-                          const questionIndex = questionFields.indexOf(field)
-                          
-                          return (
-                            <div key={field.id} className="p-4 border rounded-lg space-y-3 bg-card">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant="outline" className="font-mono text-xs">Q{index + 1}</Badge>
-                                    {questionDetails?.hasSubQuestions && (
-                                      <ListTreeIcon className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                    <p className="font-medium line-clamp-2 flex-1">
-                                      {questionDetails?.questionText || 'Question not found'}
-                                    </p>
-                                  </div>
-                                  {questionDetails && (
-                                    <div className="flex gap-2 flex-wrap">
-                                      <Badge variant="outline" className="text-xs">
-                                        {questionDetails.questionType.replace('_', ' ').toUpperCase()}
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs">
-                                        {questionDetails.difficultyLevel}
-                                      </Badge>
-                                      {questionDetails.hasSubQuestions && (
-                                        <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                                          Structured with sub-parts
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeQuestion(questionIndex)}
-                                >
-                                  <TrashIcon className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-3">
-                                <FormField
-                                  control={form.control}
-                                  name={`questions.${questionIndex}.marksAllocated`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-xs">Marks for this Question</FormLabel>
-                                      <FormControl>
-                                        <Input 
-                                          type="number" 
-                                          min={0.5}
-                                          step={0.5}
-                                          {...field}
-                                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                        />
-                                      </FormControl>
-                                      {questionDetails && (
-                                        <FormDescription className="text-xs">
-                                          Default: {questionDetails.marks} marks
-                                        </FormDescription>
-                                      )}
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-
-                                <FormField
-                                  control={form.control}
-                                  name={`questions.${questionIndex}.isOptional`}
-                                  render={({ field }) => (
-                                    <FormItem className="flex items-end pb-2">
-                                      <div className="flex items-center space-x-2">
-                                        <FormControl>
-                                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                        <FormLabel className="text-xs !mt-0">Mark as Optional</FormLabel>
-                                      </div>
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </AccordionContent>
-                    </AccordionItem>
-                  )
-                })}
-              </Accordion>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
             )}
+          </div>
 
-            {allocatedMarks !== targetMarks && questionFields.length > 0 && (
-              <Alert variant="destructive">
-                <InfoIcon className="h-4 w-4" />
-                <AlertTitle>Marks Mismatch</AlertTitle>
-                <AlertDescription>
-                  Allocated: {allocatedMarks} marks • Target: {targetMarks} marks. Please adjust.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+          {currentStep === 2 && (
+            <div className="border-t bg-muted/30 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Total Questions:</span>
+                    <Badge variant="secondary">{questionFields.length}</Badge>
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Sections:</span>
+                    <Badge variant="secondary">{partFields.length}</Badge>
+                  </div>
+                </div>
 
-        <div className="flex items-center justify-end space-x-4 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isLoading || questionFields.length === 0 || allocatedMarks !== targetMarks}
-          >
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Paper' : 'Create Paper'}
-          </Button>
+                <div className="flex items-center gap-3">
+                  {!marksMatch && questionFields.length > 0 && (
+                    <Alert variant="destructive" className="py-2 px-3">
+                      <AlertCircleIcon className="h-4 w-4" />
+                      <AlertDescription className="text-xs ml-2">
+                        Marks mismatch: {allocatedMarks} / {targetMarks}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                  </Button>
+                  
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || questionFields.length === 0 || !marksMatch}
+                    className="min-w-[120px]"
+                  >
+                    {isLoading ? 'Saving...' : isEditMode ? 'Update Paper' : 'Create Paper'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </form>
     </Form>

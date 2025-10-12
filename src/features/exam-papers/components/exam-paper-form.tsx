@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { PlusIcon, TrashIcon, SearchIcon, InfoIcon, ListTreeIcon } from 'lucide-react'
 import { EXAM_TYPES } from '../types/exam-papers'
@@ -53,7 +53,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   )
   const questions = questionsData?.data || []
 
-  const form = useForm<CreateExamPaperFormData | UpdateExamPaperFormData>({
+  const form = useForm({
     resolver: zodResolver(isEditMode ? updateExamPaperSchema : createExamPaperSchema),
     defaultValues: {
       subjectId: '',
@@ -62,10 +62,10 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       totalMarks: 100,
       durationMinutes: 180,
       instructions: '',
-      parts: [{ partLabel: 'A', partTitle: 'Multiple Choice Questions', partOrder: 1, hasOptionalQuestions: false }],
+      parts: [{ partLabel: 'A', partTitle: 'Part A', partOrder: 1 }],
       questions: []
     }
-  })
+  }) as UseFormReturn<CreateExamPaperFormData>
 
   const { fields: partFields, append: appendPart, remove: removePart } = useFieldArray({
     control: form.control,
@@ -170,16 +170,17 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Alert>
           <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Creating Exam Papers</AlertTitle>
+          <AlertTitle>Exam Paper Creation</AlertTitle>
           <AlertDescription>
-            Add questions from your question bank to different parts of the paper. 
-            Questions with sub-parts will automatically include their nested structure.
+            Build your exam paper by selecting questions from the question bank. Structured questions with sub-parts are fully supported.
           </AlertDescription>
         </Alert>
 
         <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="text-lg font-semibold">Basic Information</h3>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -321,10 +322,10 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
         <Separator />
 
         <Card>
-          <CardContent className="pt-6 space-y-4">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Paper Sections</h3>
+                <CardTitle>Paper Sections</CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Organize your exam into sections (Part A, Part B, etc.)
                 </p>
@@ -344,6 +345,8 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                 Add Section
               </Button>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
 
             <div className="space-y-3">
               {partFields.map((field, index) => (
@@ -463,12 +466,12 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
         <Separator />
 
         <Card>
-          <CardContent className="pt-6 space-y-4">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Questions</h3>
+                <CardTitle>Questions</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {questionFields.length} question(s) added • {allocatedMarks} marks allocated
+                  {questionFields.length} question(s) • {allocatedMarks}/{targetMarks} marks
                 </p>
               </div>
               <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
@@ -593,12 +596,14 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                 </DialogContent>
               </Dialog>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
 
             {questionFields.length === 0 ? (
               <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                <p className="text-muted-foreground font-medium">No questions added yet</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Click &ldquo;Add Questions&rdquo; to select from your question bank
+                <p className="text-muted-foreground">No questions added yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Click "Add Questions" to select from your question bank
                 </p>
               </div>
             ) : (
@@ -678,9 +683,11 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                           onChange={(e) => field.onChange(parseFloat(e.target.value))}
                                         />
                                       </FormControl>
-                                      <FormDescription className="text-xs">
-                                        Original: {questionDetails?.marks || 0} marks
-                                      </FormDescription>
+                                      {questionDetails && (
+                                        <FormDescription className="text-xs">
+                                          Default: {questionDetails.marks} marks
+                                        </FormDescription>
+                                      )}
                                       <FormMessage />
                                     </FormItem>
                                   )}
@@ -714,10 +721,9 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
             {allocatedMarks !== targetMarks && questionFields.length > 0 && (
               <Alert variant="destructive">
                 <InfoIcon className="h-4 w-4" />
-                <AlertTitle>Mark Allocation Mismatch</AlertTitle>
+                <AlertTitle>Marks Mismatch</AlertTitle>
                 <AlertDescription>
-                  Allocated marks ({allocatedMarks}) don&apos;t match total marks ({targetMarks}). 
-                  Please adjust question marks or total marks.
+                  Allocated: {allocatedMarks} marks • Target: {targetMarks} marks. Please adjust.
                 </AlertDescription>
               </Alert>
             )}

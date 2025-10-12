@@ -1,16 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod'
 import { EXAM_TYPES } from '../types/exam-papers'
 
-const subQuestionSchema: z.ZodType<any> = z.lazy(() =>
-  z.object({
-    questionId: z.string().min(1, 'Question is required'),
-    marksAllocated: z.number().min(0.5, 'Marks must be at least 0.5'),
-    subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
-    subQuestionOrder: z.number().int().min(1),
-    subQuestions: z.array(subQuestionSchema).optional()
-  })
-)
+const subQuestionSchemaBase = z.object({
+  questionId: z.string().min(1, 'Question is required'),
+  marksAllocated: z.number().min(0.5, 'Marks must be at least 0.5'),
+  subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
+  subQuestionOrder: z.number().int().min(1),
+})
+
+export type SubQuestionInput = z.infer<typeof subQuestionSchemaBase> & {
+  subQuestions?: SubQuestionInput[]
+}
+
+const subQuestionSchema: z.ZodType<SubQuestionInput> = subQuestionSchemaBase.extend({
+  subQuestions: z.lazy(() => subQuestionSchema.array()).optional()
+})
 
 const paperQuestionSchema = z.object({
   questionId: z.string().min(1, 'Question is required'),

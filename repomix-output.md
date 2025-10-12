@@ -1,9 +1,155 @@
  
 # Files
 
+## File: src/features/questions/utils/question-utils.ts
+```typescript
+import type { CreateQuestionFormData, CreateSubQuestionDto } from '../validations/question-schemas'
+import type { Question } from '../types/questions'
+import { QUESTION_TYPES, SUB_QUESTION_TYPES } from '@/constants/roles'
+
+const SUB_LABELS = {
+  LEVEL_1: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+  LEVEL_2: ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'],
+  LEVEL_3: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+}
+
+const getSubQuestionLabel = (index: number, level: number): string => {
+  if (level === 1) return SUB_LABELS.LEVEL_1[index] || `${index + 1}`
+  if (level === 2) return SUB_LABELS.LEVEL_2[index] || `${index + 1}`
+  if (level === 3) return SUB_LABELS.LEVEL_3[index] || `${index + 1}`
+  return `${index + 1}`
+}
+
+export const getDefaultQuestionFormData = (): CreateQuestionFormData => ({
+  subjectId: '',
+  questionText: '',
+  questionDescription: '',
+  questionType: QUESTION_TYPES.MCQ,
+  difficultyLevel: 'medium',
+  marks: 1,
+  topic: '',
+  subtopic: '',
+  bloomsTaxonomy: undefined,
+  keywords: '',
+  isPublic: false,
+  options: [],
+  subQuestions: [],
+})
+
+export const getDefaultMcqOptions = () => [
+  { optionText: '', isCorrect: false, optionOrder: 1 },
+  { optionText: '', isCorrect: false, optionOrder: 2 },
+]
+
+export const getDefaultSubQuestion = (index: number, level: number = 1): CreateSubQuestionDto => ({
+  questionText: '',
+  questionDescription: '',
+  questionType: SUB_QUESTION_TYPES.SHORT_ANSWER,
+  marks: 1,
+  subQuestionLabel: getSubQuestionLabel(index, level),
+  subQuestionOrder: index + 1,
+  subQuestions: [],
+})
+
+export const calculateTotalMarks = (
+  questionType: string,
+  marks: number,
+  subQuestions: CreateSubQuestionDto[] = []
+): number => {
+  if (questionType === QUESTION_TYPES.MCQ || subQuestions.length === 0) {
+    return marks
+  }
+
+  const calculateSubMarks = (subs: CreateSubQuestionDto[]): number => {
+    return subs.reduce((total, sub) => {
+      return total + (sub.marks || 0) + (sub.subQuestions?.length ? calculateSubMarks(sub.subQuestions) : 0)
+    }, 0)
+  }
+
+  return calculateSubMarks(subQuestions)
+}
+
+export const cleanQuestionFormData = (data: CreateQuestionFormData): CreateQuestionFormData => {
+  const cleanString = (str: string | undefined) => str?.trim() || undefined
+  
+  return {
+    ...data,
+    questionDescription: cleanString(data.questionDescription),
+    topic: cleanString(data.topic),
+    subtopic: cleanString(data.subtopic),
+    keywords: cleanString(data.keywords),
+    options: data.questionType === QUESTION_TYPES.MCQ ? data.options : [],
+    subQuestions: data.questionType === QUESTION_TYPES.MCQ ? [] : data.subQuestions,
+  }
+}
+
+export const mapQuestionToFormData = (question: Question): CreateQuestionFormData => ({
+  subjectId: question.subjectId,
+  questionText: question.questionText,
+  questionDescription: question.questionDescription || '',
+  questionType: question.questionType,
+  difficultyLevel: question.difficultyLevel,
+  marks: question.marks,
+  topic: question.topic || '',
+  subtopic: question.subtopic || '',
+  bloomsTaxonomy: question.bloomsTaxonomy,
+  keywords: question.keywords || '',
+  isPublic: question.isPublic,
+  options: question.options || [],
+  subQuestions: question.subQuestions || [],
+})
+```
+
+## File: src/features/questions/utils/subject-parser.ts
+```typescript
+export const parseSubjectData = (subjectId: string) => {
+  try {
+    if (typeof subjectId === 'string' && subjectId.includes('_id:')) {
+      const idMatch = subjectId.match(/_id:\s*new ObjectId\('([^']+)'\)/)
+      const codeMatch = subjectId.match(/subjectCode:\s*'([^']+)'/)
+      const nameMatch = subjectId.match(/subjectName:\s*'([^']+)'/)
+      
+      if (idMatch && codeMatch && nameMatch) {
+        return {
+          id: idMatch[1],
+          code: codeMatch[1],
+          name: nameMatch[1]
+        }
+      }
+    }
+    
+    if (typeof subjectId === 'string' && subjectId.startsWith('{')) {
+      const cleaned = subjectId.replace(/\n/g, '').replace(/\s+/g, ' ')
+      const parsed = JSON.parse(cleaned)
+      return {
+        id: parsed._id,
+        code: parsed.subjectCode,
+        name: parsed.subjectName
+      }
+    }
+    
+    return {
+      id: subjectId,
+      code: 'N/A',
+      name: 'Subject not found'
+    }
+  } catch (error) {
+    return {
+      id: subjectId,
+      code: 'N/A',
+      name: 'Subject not found'
+    }
+  }
+}
+
+export const extractSubjectId = (subjectId: string): string => {
+  const parsed = parseSubjectData(subjectId)
+  return parsed.id
+}
+```
+
 ## File: src/features/questions/components/question-details.tsx
 ```typescript
-// src/features/questions/components/question-details.tsx
 'use client'
 
 import { Badge } from '@/components/ui/badge'
@@ -18,29 +164,26 @@ type QuestionDetailsProps = {
   question: Question
 }
 
-const getLevelColors = (level: number) => {
-  const colors = [
-    'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
-    'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
-    'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950'
-  ]
-  return colors[level] || colors[0]
-}
+const LEVEL_COLORS = [
+  'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
+  'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
+  'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950'
+]
 
-const getLevelBadgeColors = (level: number) => {
-  const colors = [
-    'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-  ]
-  return colors[level] || colors[0]
-}
+const LEVEL_BADGE_COLORS = [
+  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+]
+
+const getLevelColors = (level: number) => LEVEL_COLORS[level] || LEVEL_COLORS[0]
+const getLevelBadgeColors = (level: number) => LEVEL_BADGE_COLORS[level] || LEVEL_BADGE_COLORS[0]
 
 export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
   const renderSubQuestions = (subQuestions: SubQuestion[], level: number = 0, parentLabel: string = ''): JSX.Element => {
     return (
       <div className={cn("space-y-3", level > 0 && "ml-6 mt-3")}>
-        {subQuestions.map((sq, idx) => {
+        {subQuestions.map((sq) => {
           const fullLabel = parentLabel ? `${parentLabel}.${sq.subQuestionLabel}` : sq.subQuestionLabel
           
           return (
@@ -166,7 +309,7 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
             <>
               <Separator />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Bloom&apos;s Taxonomy</p>
+                <p className="text-sm font-medium text-muted-foreground">Bloom&#39;s Taxonomy</p>
                 <Badge variant="secondary" className="mt-1">
                   {question.bloomsTaxonomy.charAt(0).toUpperCase() + question.bloomsTaxonomy.slice(1)}
                 </Badge>
@@ -271,239 +414,28 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
 }
 ```
 
-## File: src/features/questions/components/question-view-dialog.tsx
-```typescript
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-'use client'
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Card, CardContent } from '@/components/ui/card'
-import type { Question } from '../types/questions'
-import { CheckCircleIcon, CircleIcon, ListTreeIcon } from 'lucide-react'
-
-type QuestionViewDialogProps = {
-  question: Question | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export const QuestionViewDialog = ({ question, open, onOpenChange }: QuestionViewDialogProps) => {
-  if (!question) return null
-
-  const formatQuestionType = (type: string) => {
-    const typeMap: Record<string, string> = {
-      mcq: 'Multiple Choice (MCQ)',
-      structured: 'Structured Question',
-      essay: 'Essay Question',
-      short_answer: 'Short Answer',
-      long_answer: 'Long Answer',
-      fill_blank: 'Fill in the Blank',
-    }
-    return typeMap[type] || type
-  }
-
-  const renderSubQuestions = (subQuestions: any[], level = 1) => {
-    if (!subQuestions || subQuestions.length === 0) return null
-
-    return (
-      <div className={`space-y-3 ${level > 1 ? 'ml-6 border-l-2 pl-4' : ''}`}>
-        {subQuestions.map((subQ, index) => (
-          <Card key={subQ._id || index} className="border-l-4">
-            <CardContent className="pt-4">
-              <div className="flex items-start justify-between mb-2">
-                <Badge variant="outline" className="font-mono">
-                  {subQ.subQuestionLabel}
-                </Badge>
-                <Badge variant="secondary">{subQ.marks} marks</Badge>
-              </div>
-              <p className="text-sm font-medium mb-2">{subQ.questionText}</p>
-              {subQ.questionDescription && (
-                <p className="text-xs text-muted-foreground mb-2">
-                  {subQ.questionDescription}
-                </p>
-              )}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="outline" className="text-xs">
-                  {formatQuestionType(subQ.questionType)}
-                </Badge>
-                <span>Level {subQ.subQuestionLevel}</span>
-              </div>
-              
-              {subQ.subQuestions && subQ.subQuestions.length > 0 && (
-                <div className="mt-4">
-                  {renderSubQuestions(subQ.subQuestions, level + 1)}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Question Details
-            {question.hasSubQuestions && (
-              <Badge variant="outline" className="ml-2">
-                <ListTreeIcon className="h-3 w-3 mr-1" />
-                Has Sub-questions
-              </Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Question</h3>
-              <p className="text-sm">{question.questionText}</p>
-              {question.questionDescription && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  {question.questionDescription}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{formatQuestionType(question.questionType)}</Badge>
-              <Badge variant="outline">{question.difficultyLevel}</Badge>
-              <Badge variant="default">{question.marks} marks</Badge>
-              {question.isPublic ? (
-                <Badge variant="default">Public</Badge>
-              ) : (
-                <Badge variant="secondary">Private</Badge>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* MCQ Options */}
-          {question.questionType === 'mcq' && question.options && question.options.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold">Answer Options</h3>
-              <div className="space-y-2">
-                {question.options.map((option, index) => (
-                  <div
-                    key={option._id || index}
-                    className={`flex items-center gap-2 p-3 rounded-lg border ${
-                      option.isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''
-                    }`}
-                  >
-                    {option.isCorrect ? (
-                      <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <CircleIcon className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <span className="text-sm">{option.optionText}</span>
-                    {option.isCorrect && (
-                      <Badge variant="default" className="ml-auto">Correct</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sub-questions */}
-          {question.hasSubQuestions && question.subQuestions && question.subQuestions.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ListTreeIcon className="h-5 w-5" />
-                Sub-Questions
-              </h3>
-              {renderSubQuestions(question.subQuestions)}
-            </div>
-          )}
-
-          {/* Metadata */}
-          <Separator />
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {question.subjectCode && (
-              <div>
-                <span className="text-muted-foreground">Subject:</span>
-                <p className="font-medium">{question.subjectCode} - {question.subjectName}</p>
-              </div>
-            )}
-            {question.topic && (
-              <div>
-                <span className="text-muted-foreground">Topic:</span>
-                <p className="font-medium">{question.topic}</p>
-              </div>
-            )}
-            {question.subtopic && (
-              <div>
-                <span className="text-muted-foreground">Subtopic:</span>
-                <p className="font-medium">{question.subtopic}</p>
-              </div>
-            )}
-            {question.bloomsTaxonomy && (
-              <div>
-                <span className="text-muted-foreground">Bloom's Level:</span>
-                <p className="font-medium capitalize">{question.bloomsTaxonomy}</p>
-              </div>
-            )}
-            {question.keywords && (
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Keywords:</span>
-                <p className="font-medium">{question.keywords}</p>
-              </div>
-            )}
-            <div>
-              <span className="text-muted-foreground">Usage Count:</span>
-              <p className="font-medium">{question.usageCount} times</p>
-            </div>
-            {question.createdByName && (
-              <div>
-                <span className="text-muted-foreground">Created By:</span>
-                <p className="font-medium">{question.createdByName}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-```
-
 ## File: src/features/questions/hooks/use-question-mutations.ts
 ```typescript
-'use client'
-
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { questionsService } from './use-questions'
 import type { CreateQuestionDto, UpdateQuestionDto } from '../types/questions'
 import type { ApiError } from '@/types/common'
 import { toast } from 'sonner'
 
+export { useQuestionQuery } from './use-questions-query'
+
 export const useCreateQuestion = () => {
   const queryClient = useQueryClient()
-
+  
   return useMutation({
     mutationFn: (data: CreateQuestionDto) => questionsService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] })
-      toast.success('Question Created', {
-        description: 'Question has been added to the question bank.'
-      })
+      toast.success('Question created successfully')
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Create Question', {
-        description: error.message || 'An error occurred while creating the question.'
+      toast.error('Failed to create question', {
+        description: error.message || 'An error occurred.'
       })
     }
   })
@@ -511,19 +443,17 @@ export const useCreateQuestion = () => {
 
 export const useUpdateQuestion = () => {
   const queryClient = useQueryClient()
-
+  
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateQuestionDto }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateQuestionDto }) => 
       questionsService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] })
-      toast.success('Question Updated', {
-        description: 'Question has been updated successfully.'
-      })
+      toast.success('Question updated successfully')
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Update Question', {
-        description: error.message || 'An error occurred while updating the question.'
+      toast.error('Failed to update question', {
+        description: error.message || 'An error occurred.'
       })
     }
   })
@@ -531,18 +461,16 @@ export const useUpdateQuestion = () => {
 
 export const useDeleteQuestion = () => {
   const queryClient = useQueryClient()
-
+  
   return useMutation({
     mutationFn: (id: string) => questionsService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] })
-      toast.success('Question Deleted', {
-        description: 'Question has been removed from the question bank.'
-      })
+      toast.success('Question deleted successfully')
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Delete Question', {
-        description: error.message || 'An error occurred while deleting the question.'
+      toast.error('Failed to delete question', {
+        description: error.message || 'An error occurred.'
       })
     }
   })
@@ -1023,23 +951,24 @@ import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, ListTreeIcon } from '
 import type { Question } from '../types/questions'
 import { cn } from '@/lib/utils'
 import type { QuestionType, DifficultyLevel } from '@/constants/roles'
+import { parseSubjectData } from '../utils/subject-parser'
 
 const getQuestionTypeBadge = (type: QuestionType | string) => {
-  const typeStyles = {
+  const styles = {
     mcq: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
     structured: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
     essay: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   } as const
-  return typeStyles[type as keyof typeof typeStyles] || 'bg-muted'
+  return styles[type as keyof typeof styles] || 'bg-muted'
 }
 
 const getDifficultyBadge = (level: DifficultyLevel | string) => {
-  const difficultyStyles = {
+  const styles = {
     easy: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
     hard: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
   } as const
-  return difficultyStyles[level as keyof typeof difficultyStyles] || 'bg-muted'
+  return styles[level as keyof typeof styles] || 'bg-muted'
 }
 
 const formatQuestionType = (type: string) => {
@@ -1051,9 +980,7 @@ const formatQuestionType = (type: string) => {
   return typeMap[type] || type.toUpperCase()
 }
 
-const formatDifficulty = (level: string) => {
-  return level.charAt(0).toUpperCase() + level.slice(1)
-}
+const formatDifficulty = (level: string) => level.charAt(0).toUpperCase() + level.slice(1)
 
 type QuestionColumnsProps = {
   onEdit: (question: Question) => void
@@ -1086,12 +1013,15 @@ export const getQuestionColumns = ({ onEdit, onDelete, onView }: QuestionColumns
   {
     accessorKey: 'subjectCode',
     header: 'Subject',
-    cell: ({ row }) => (
-      <div>
-        <p className="font-medium">{row.original.subjectCode}</p>
-        <p className="text-xs text-muted-foreground line-clamp-1">{row.original.subjectName}</p>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const subjectData = parseSubjectData(row.original.subjectId)
+      return (
+        <div>
+          <p className="font-medium">{subjectData.code}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">{subjectData.name}</p>
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'questionType',
@@ -1422,9 +1352,61 @@ export type BackendQuestionsListResponse = {
 }
 ```
 
+## File: src/features/questions/hooks/use-questions.ts
+```typescript
+import { apiClient } from '@/lib/api/client'
+import type { 
+  Question, 
+  CreateQuestionDto, 
+  UpdateQuestionDto, 
+  QuestionStats, 
+  GetQuestionsParams,
+  BackendQuestionsListResponse
+} from '../types/questions'
+import type { PaginatedResponse, ApiResponse } from '@/types/common'
+
+export const questionsService = {
+  getAll: async (params?: GetQuestionsParams): Promise<PaginatedResponse<Question>> => {
+    const response = await apiClient.get<BackendQuestionsListResponse>('/api/v1/questions', { params })
+    return {
+      data: response.questions || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1
+    }
+  },
+
+  getById: async (id: string): Promise<ApiResponse<Question>> => {
+    const question = await apiClient.get<Question>(`/api/v1/questions/${id}`)
+    return { data: question }
+  },
+
+  getBySubject: async (subjectId: string, params?: { includePrivate?: boolean }): Promise<ApiResponse<Question[]>> => {
+    const questions = await apiClient.get<Question[]>(`/api/v1/questions/subject/${subjectId}`, { params })
+    return { data: Array.isArray(questions) ? questions : [] }
+  },
+
+  getStats: (): Promise<ApiResponse<QuestionStats>> =>
+    apiClient.get('/api/v1/questions/stats'),
+
+  create: async (data: CreateQuestionDto): Promise<ApiResponse<Question>> => {
+    const question = await apiClient.post<Question>('/api/v1/questions', data)
+    return { data: question }
+  },
+
+  update: async (id: string, data: UpdateQuestionDto): Promise<ApiResponse<Question>> => {
+    const question = await apiClient.patch<Question>(`/api/v1/questions/${id}`, data)
+    return { data: question }
+  },
+
+  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
+    apiClient.delete(`/api/v1/questions/${id}`)
+}
+```
+
 ## File: src/features/questions/validations/question-schemas.ts
 ```typescript
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod'
 import { QUESTION_TYPES, SUB_QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY } from '@/constants/roles'
 
@@ -1434,7 +1416,7 @@ const questionOptionSchema = z.object({
   optionOrder: z.number().int().min(1)
 })
 
-const subQuestionSchema: z.ZodType<any> = z.lazy(() =>
+const subQuestionSchema = z.lazy(() =>
   z.object({
     questionText: z.string().min(3, 'Question text must be at least 3 characters'),
     questionDescription: z.string().optional(),
@@ -1448,27 +1430,21 @@ const subQuestionSchema: z.ZodType<any> = z.lazy(() =>
     marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
     subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
     subQuestionOrder: z.number().int().min(1),
-    subQuestions: z.array(subQuestionSchema).optional()
+    subQuestions: z.array(z.lazy(() => subQuestionSchema)).optional()
   })
 )
 
-export const createQuestionSchema = z.object({
+type SubQuestionFormData = z.infer<typeof subQuestionSchema>
+
+const baseQuestionSchema = z.object({
   subjectId: z.string().min(1, 'Subject is required'),
   questionText: z.string().min(10, 'Question text must be at least 10 characters'),
-  questionDescription: z.string().optional(),
-  questionType: z.enum([
-    QUESTION_TYPES.MCQ,
-    QUESTION_TYPES.STRUCTURED,
-    QUESTION_TYPES.ESSAY
-  ]),
-  difficultyLevel: z.enum([
-    DIFFICULTY_LEVELS.EASY,
-    DIFFICULTY_LEVELS.MEDIUM,
-    DIFFICULTY_LEVELS.HARD
-  ]),
+  questionDescription: z.string().optional().or(z.literal('')),
+  questionType: z.enum([QUESTION_TYPES.MCQ, QUESTION_TYPES.STRUCTURED, QUESTION_TYPES.ESSAY]),
+  difficultyLevel: z.enum([DIFFICULTY_LEVELS.EASY, DIFFICULTY_LEVELS.MEDIUM, DIFFICULTY_LEVELS.HARD]),
   marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
-  topic: z.string().optional(),
-  subtopic: z.string().optional(),
+  topic: z.string().optional().or(z.literal('')),
+  subtopic: z.string().optional().or(z.literal('')),
   bloomsTaxonomy: z.enum([
     BLOOMS_TAXONOMY.REMEMBER,
     BLOOMS_TAXONOMY.UNDERSTAND,
@@ -1477,60 +1453,64 @@ export const createQuestionSchema = z.object({
     BLOOMS_TAXONOMY.EVALUATE,
     BLOOMS_TAXONOMY.CREATE
   ]).optional(),
-  keywords: z.string().optional(),
+  keywords: z.string().optional().or(z.literal('')),
   isPublic: z.boolean().optional(),
   options: z.array(questionOptionSchema).optional(),
   subQuestions: z.array(subQuestionSchema).optional()
-}).refine((data) => {
-  // MCQ must have at least 2 options
-  if (data.questionType === QUESTION_TYPES.MCQ) {
-    return data.options && data.options.length >= 2
-  }
-  return true
-}, {
-  message: "MCQ questions must have at least 2 options",
-  path: ["options"]
-}).refine((data) => {
-  // MCQ must have exactly one correct answer
-  if (data.questionType === QUESTION_TYPES.MCQ && data.options) {
-    const correctCount = data.options.filter(opt => opt.isCorrect).length
-    return correctCount === 1
-  }
-  return true
-}, {
-  message: "MCQ must have exactly one correct answer",
-  path: ["options"]
-}).refine((data) => {
-  // MCQ cannot have sub-questions
-  if (data.questionType === QUESTION_TYPES.MCQ) {
-    return !data.subQuestions || data.subQuestions.length === 0
-  }
-  return true
-}, {
-  message: "MCQ questions cannot have sub-questions",
-  path: ["subQuestions"]
-}).refine((data) => {
-  // STRUCTURED and ESSAY cannot have MCQ options
-  if (data.questionType === QUESTION_TYPES.STRUCTURED || data.questionType === QUESTION_TYPES.ESSAY) {
-    return !data.options || data.options.length === 0
-  }
-  return true
-}, {
-  message: "STRUCTURED and ESSAY questions cannot have MCQ options",
-  path: ["options"]
 })
 
-export const updateQuestionSchema = createQuestionSchema.partial().omit({ subjectId: true }).extend({
+export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) => {
+  if (data.questionType === QUESTION_TYPES.MCQ) {
+    if (!data.options || data.options.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "MCQ questions must have at least 2 options",
+        path: ["options"]
+      })
+      return
+    }
+
+    const correctCount = data.options.filter(opt => opt.isCorrect).length
+    if (correctCount !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "MCQ must have exactly one correct answer",
+        path: ["options"]
+      })
+      return
+    }
+
+    if (data.subQuestions?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "MCQ questions cannot have sub-questions",
+        path: ["subQuestions"]
+      })
+    }
+  }
+
+  if ([QUESTION_TYPES.STRUCTURED, QUESTION_TYPES.ESSAY].includes(data.questionType)) {
+    if (data.options?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "STRUCTURED and ESSAY questions cannot have MCQ options",
+        path: ["options"]
+      })
+    }
+  }
+})
+
+export const updateQuestionSchema = baseQuestionSchema.partial().omit({ subjectId: true }).extend({
   isActive: z.boolean().optional()
 })
 
 export type CreateQuestionFormData = z.infer<typeof createQuestionSchema>
 export type UpdateQuestionFormData = z.infer<typeof updateQuestionSchema>
+export type CreateSubQuestionDto = SubQuestionFormData
 ```
 
 ## File: src/features/questions/components/question-form.tsx
 ```typescript
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useEffect } from 'react'
@@ -1562,11 +1542,20 @@ import { Separator } from '@/components/ui/separator'
 import {
   createQuestionSchema,
   type CreateQuestionFormData,
+ 
 } from '../validations/question-schemas'
 import type { Question } from '../types/questions'
 import { useMySubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY, SUB_QUESTION_TYPES } from '@/constants/roles'
-import { PlusIcon, TrashIcon, ChevronRightIcon, ListTreeIcon } from 'lucide-react'
+import { PlusIcon, TrashIcon, ListTreeIcon } from 'lucide-react'
+import {
+  getDefaultQuestionFormData,
+  getDefaultMcqOptions,
+  getDefaultSubQuestion,
+  calculateTotalMarks,
+  cleanQuestionFormData,
+  mapQuestionToFormData,
+} from '../utils/question-utils'
 
 type QuestionFormProps = {
   question?: Question
@@ -1575,76 +1564,215 @@ type QuestionFormProps = {
   isLoading?: boolean
 }
 
+type SubQuestionFieldsProps = {
+  form: any
+  parentPath: string
+  level: number
+  onRemove: () => void
+}
+
+const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFieldsProps) => {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: `${parentPath}.subQuestions`,
+  })
+
+  const addNestedSubQuestion = () => {
+    append(getDefaultSubQuestion(fields.length))
+  }
+
+  const subQuestionLabel = form.watch(`${parentPath}.subQuestionLabel`)
+  const marks = form.watch(`${parentPath}.marks`)
+
+  return (
+    <Card className="border-l-4 border-l-blue-500">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono">
+              {subQuestionLabel}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              Level {level}
+            </Badge>
+            <Badge variant="default" className="text-xs">
+              {marks || 0} marks
+            </Badge>
+          </div>
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+            <TrashIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <FormField
+              control={form.control}
+              name={`${parentPath}.questionText`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Question Text *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter question text..."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name={`${parentPath}.questionType`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={SUB_QUESTION_TYPES.SHORT_ANSWER}>Short Answer</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.LONG_ANSWER}>Long Answer</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.FILL_BLANK}>Fill in Blank</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.ESSAY}>Essay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`${parentPath}.marks`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Marks *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0.5"
+                      max="100"
+                      step="0.5"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <FormField
+          control={form.control}
+          name={`${parentPath}.questionDescription`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Instructions (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Additional context..."
+                  rows={2}
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {level < 3 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ListTreeIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Nested Sub-questions</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addNestedSubQuestion}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Sub-part
+                </Button>
+              </div>
+
+              {fields.length > 0 && (
+                <div className="space-y-3 ml-4 border-l-2 pl-4">
+                  {fields.map((field, index) => (
+                    <SubQuestionFields
+                      key={field.id}
+                      form={form}
+                      parentPath={`${parentPath}.subQuestions.${index}`}
+                      level={level + 1}
+                      onRemove={() => remove(index)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: QuestionFormProps) => {
   const isEditMode = !!question
-  
-  // Use useMySubjectsQuery for faculty to get their assigned subjects
   const { data: subjectsData, isLoading: isSubjectsLoading } = useMySubjectsQuery()
 
   const form = useForm<CreateQuestionFormData>({
     resolver: zodResolver(createQuestionSchema),
-    defaultValues: {
-      subjectId: '',
-      questionText: '',
-      questionDescription: '',
-      questionType: QUESTION_TYPES.MCQ,
-      difficultyLevel: DIFFICULTY_LEVELS.MEDIUM,
-      marks: 1,
-      topic: '',
-      subtopic: '',
-      bloomsTaxonomy: undefined,
-      keywords: '',
-      isPublic: false,
-      options: [
-        { optionText: '', isCorrect: false, optionOrder: 1 },
-        { optionText: '', isCorrect: false, optionOrder: 2 },
-      ],
-      subQuestions: [],
-    },
+    defaultValues: getDefaultQuestionFormData(),
   })
 
   const questionType = form.watch('questionType')
 
-  // Options field array for MCQ
   const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
     control: form.control,
     name: 'options',
   })
 
-  // Sub-questions field array for STRUCTURED/ESSAY
   const { fields: subQuestionFields, append: appendSubQuestion, remove: removeSubQuestion } = useFieldArray({
     control: form.control,
     name: 'subQuestions',
   })
 
   useEffect(() => {
+    if (questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) {
+      form.setValue('options', [])
+    } else if (questionType === QUESTION_TYPES.MCQ && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
+      form.setValue('options', getDefaultMcqOptions())
+    }
+  }, [questionType, form])
+
+  useEffect(() => {
     if (isEditMode && question) {
-      form.reset({
-        subjectId: question.subjectId,
-        questionText: question.questionText,
-        questionDescription: question.questionDescription,
-        questionType: question.questionType,
-        difficultyLevel: question.difficultyLevel,
-        marks: question.marks,
-        topic: question.topic,
-        subtopic: question.subtopic,
-        bloomsTaxonomy: question.bloomsTaxonomy,
-        keywords: question.keywords,
-        isPublic: question.isPublic,
-        options: question.options || [],
-        subQuestions: question.subQuestions || [],
-      })
+      form.reset(mapQuestionToFormData(question))
     }
   }, [isEditMode, question, form])
 
   const handleSubmit = (data: CreateQuestionFormData) => {
-    // Clean up data based on question type
-    if (data.questionType === QUESTION_TYPES.MCQ) {
-      data.subQuestions = []
-    } else {
-      data.options = []
-    }
-    onSubmit(data)
+    const cleanedData = cleanQuestionFormData(data)
+    onSubmit(cleanedData)
   }
 
   const addOption = () => {
@@ -1656,51 +1784,17 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   }
 
   const addSubQuestion = () => {
-    const nextLabel = String.fromCharCode(65 + subQuestionFields.length) // A, B, C, ...
-    appendSubQuestion({
-      questionText: '',
-      questionDescription: '',
-      questionType: SUB_QUESTION_TYPES.SHORT_ANSWER,
-      marks: 1,
-      subQuestionLabel: nextLabel,
-      subQuestionOrder: subQuestionFields.length + 1,
-      subQuestions: [],
-    })
+    appendSubQuestion(getDefaultSubQuestion(subQuestionFields.length))
   }
 
-  const calculateTotalMarks = () => {
-    if (questionType === QUESTION_TYPES.MCQ) {
-      return form.getValues('marks')
-    }
-    
-    const subQuestions = form.getValues('subQuestions') || []
-    if (subQuestions.length === 0) {
-      return form.getValues('marks')
-    }
-
-    const calculateMarks = (subs: any[]): number => {
-      let total = 0
-      for (const sub of subs) {
-        total += sub.marks || 0
-        if (sub.subQuestions && sub.subQuestions.length > 0) {
-          total += calculateMarks(sub.subQuestions)
-        }
-      }
-      return total
-    }
-
-    return calculateMarks(subQuestions)
-  }
-
-  const totalMarks = calculateTotalMarks()
-
-  // Get subjects array safely
+  const watchedMarks = form.watch('marks')
+  const watchedSubQuestions = form.watch('subQuestions')
+  const totalMarks = calculateTotalMarks(questionType, watchedMarks, watchedSubQuestions)
   const subjects = subjectsData?.data || []
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Basic Information */}
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -1712,11 +1806,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Subject *</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value} 
-                    disabled={isSubjectsLoading}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubjectsLoading || isEditMode}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isSubjectsLoading ? "Loading subjects..." : "Select subject"} />
@@ -1740,13 +1830,11 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       )}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    {subjects.length === 0 && !isSubjectsLoading && (
-                      <span className="text-orange-600">
-                        You don&#39;t have any subjects assigned. Please contact admin.
-                      </span>
-                    )}
-                  </FormDescription>
+                  {isEditMode && (
+                    <FormDescription>
+                      Subject cannot be changed when editing
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -1766,15 +1854,15 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem key="mcq" value={QUESTION_TYPES.MCQ}>Multiple Choice (MCQ)</SelectItem>
-                        <SelectItem key="structured" value={QUESTION_TYPES.STRUCTURED}>Structured Question</SelectItem>
-                        <SelectItem key="essay" value={QUESTION_TYPES.ESSAY}>Essay Question</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.MCQ}>Multiple Choice (MCQ)</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured Question</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.ESSAY}>Essay Question</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
                       {field.value === QUESTION_TYPES.MCQ && 'Single correct answer with multiple options'}
-                      {field.value === QUESTION_TYPES.STRUCTURED && 'Question with multiple sub-parts (A, B, C, etc.)'}
-                      {field.value === QUESTION_TYPES.ESSAY && 'Long-form answer with optional sub-parts'}
+                      {field.value === QUESTION_TYPES.STRUCTURED && 'Question with multiple sub-parts with nested levels'}
+                      {field.value === QUESTION_TYPES.ESSAY && 'Long-form answer with optional nested sub-parts'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1794,9 +1882,9 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem key="easy" value={DIFFICULTY_LEVELS.EASY}>Easy</SelectItem>
-                        <SelectItem key="medium" value={DIFFICULTY_LEVELS.MEDIUM}>Medium</SelectItem>
-                        <SelectItem key="hard" value={DIFFICULTY_LEVELS.HARD}>Hard</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.EASY}>Easy</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.MEDIUM}>Medium</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.HARD}>Hard</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1834,6 +1922,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       placeholder="Any additional context or instructions for students..."
                       className="min-h-[80px]"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -1882,7 +1971,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </CardContent>
         </Card>
 
-        {/* MCQ Options */}
         {questionType === QUESTION_TYPES.MCQ && (
           <Card>
             <CardHeader>
@@ -1948,7 +2036,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </Card>
         )}
 
-        {/* Sub-questions for STRUCTURED/ESSAY */}
         {(questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) && (
           <Card>
             <CardHeader>
@@ -1959,7 +2046,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                     Sub-Questions
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Add parts (A, B, C, etc.) with nested sub-questions
+                    Add parts (A, B, C, etc.) with up to 3 levels of nesting (A, A.i, A.i.a)
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addSubQuestion}>
@@ -1973,21 +2060,25 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <div className="text-center py-8 text-muted-foreground">
                   <ListTreeIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>No sub-questions added yet.</p>
-                  <p className="text-sm">Click &#34;Add Part&#34; to create structured sub-questions.</p>
+                  <p className="text-sm">Click &quot;Add Part&quot; to create structured sub-questions.</p>
                 </div>
               ) : (
-                <SubQuestionBuilder
-                  form={form}
-                  fields={subQuestionFields}
-                  remove={removeSubQuestion}
-                  nestingLevel={0}
-                />
+                <div className="space-y-4">
+                  {subQuestionFields.map((field, index) => (
+                    <SubQuestionFields
+                      key={field.id}
+                      form={form}
+                      parentPath={`subQuestions.${index}`}
+                      level={1}
+                      onRemove={() => removeSubQuestion(index)}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         )}
 
-        {/* Metadata */}
         <Card>
           <CardHeader>
             <CardTitle>Additional Information</CardTitle>
@@ -2001,7 +2092,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Data Structures" {...field} />
+                      <Input placeholder="e.g., Data Structures" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -2015,7 +2106,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Subtopic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Binary Trees" {...field} />
+                      <Input placeholder="e.g., Binary Trees" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -2028,20 +2119,20 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               name="bloomsTaxonomy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bloom&lsquo;s Taxonomy Level</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Bloom&#39;s Taxonomy Level</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select level (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem key="remember" value={BLOOMS_TAXONOMY.REMEMBER}>Remember</SelectItem>
-                      <SelectItem key="understand" value={BLOOMS_TAXONOMY.UNDERSTAND}>Understand</SelectItem>
-                      <SelectItem key="apply" value={BLOOMS_TAXONOMY.APPLY}>Apply</SelectItem>
-                      <SelectItem key="analyze" value={BLOOMS_TAXONOMY.ANALYZE}>Analyze</SelectItem>
-                      <SelectItem key="evaluate" value={BLOOMS_TAXONOMY.EVALUATE}>Evaluate</SelectItem>
-                      <SelectItem key="create" value={BLOOMS_TAXONOMY.CREATE}>Create</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.REMEMBER}>Remember</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.UNDERSTAND}>Understand</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.APPLY}>Apply</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.ANALYZE}>Analyze</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.EVALUATE}>Evaluate</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.CREATE}>Create</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -2056,7 +2147,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <FormItem>
                   <FormLabel>Keywords</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., sorting, algorithm, complexity" {...field} />
+                    <Input placeholder="e.g., sorting, algorithm, complexity" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormDescription>
                     Comma-separated keywords for search and filtering
@@ -2089,9 +2180,8 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </CardContent>
         </Card>
 
-        {/* Form Actions */}
         <div className="flex items-center justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading || subjects.length === 0}>
@@ -2101,271 +2191,5 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
       </form>
     </Form>
   )
-}
-
-// Sub-component for nested sub-questions
-type SubQuestionBuilderProps = {
-  form: any
-  fields: any[]
-  remove: (index: number) => void
-  nestingLevel: number
-  parentPath?: string
-}
-
-const SubQuestionBuilder = ({ form, fields, remove, nestingLevel, parentPath = 'subQuestions' }: SubQuestionBuilderProps) => {
-  const maxNestingLevel = 3
-
-  const addNestedSubQuestion = (parentIndex: number) => {
-    const currentSubs = form.getValues(`${parentPath}.${parentIndex}.subQuestions`) || []
-    const nextLabel = getSubQuestionLabel(nestingLevel + 1, currentSubs.length)
-    
-    form.setValue(`${parentPath}.${parentIndex}.subQuestions`, [
-      ...currentSubs,
-      {
-        questionText: '',
-        questionDescription: '',
-        questionType: SUB_QUESTION_TYPES.SHORT_ANSWER,
-        marks: 1,
-        subQuestionLabel: nextLabel,
-        subQuestionOrder: currentSubs.length + 1,
-        subQuestions: [],
-      },
-    ])
-  }
-
-  const removeNestedSubQuestion = (parentIndex: number, childIndex: number) => {
-    const currentSubs = form.getValues(`${parentPath}.${parentIndex}.subQuestions`) || []
-    form.setValue(
-      `${parentPath}.${parentIndex}.subQuestions`,
-      currentSubs.filter((_: any, i: number) => i !== childIndex)
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {fields.map((field, index) => {
-        const nestedSubs = form.watch(`${parentPath}.${index}.subQuestions`) || []
-        const canAddNested = nestingLevel < maxNestingLevel
-
-        return (
-          <Card key={field.id} className={`${nestingLevel > 0 ? 'ml-6 border-l-4' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-mono">
-                    {form.watch(`${parentPath}.${index}.subQuestionLabel`)}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    Level {nestingLevel + 1}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => remove(index)}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.questionText`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Question Text *</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter question text..."
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.questionType`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem key={`${parentPath}-${index}-short`} value={SUB_QUESTION_TYPES.SHORT_ANSWER}>Short Answer</SelectItem>
-                            <SelectItem key={`${parentPath}-${index}-long`} value={SUB_QUESTION_TYPES.LONG_ANSWER}>Long Answer</SelectItem>
-                            <SelectItem key={`${parentPath}-${index}-fill`} value={SUB_QUESTION_TYPES.FILL_BLANK}>Fill in Blank</SelectItem>
-                            {canAddNested && (
-                              <>
-                                <SelectItem key={`${parentPath}-${index}-struct`} value={SUB_QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
-                                <SelectItem key={`${parentPath}-${index}-essay`} value={SUB_QUESTION_TYPES.ESSAY}>Essay</SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.marks`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marks *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0.5"
-                            max="100"
-                            step="0.5"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <FormField
-                control={form.control}
-                name={`${parentPath}.${index}.questionDescription`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instructions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional context..."
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Nested sub-questions */}
-              {nestedSubs.length > 0 && (
-                <div className="mt-4">
-                  <Separator className="mb-4" />
-                  <div className="flex items-center gap-2 mb-3">
-                    <ChevronRightIcon className="h-4 w-4" />
-                    <span className="text-sm font-medium">Nested Sub-questions</span>
-                  </div>
-                  <SubQuestionBuilder
-                    form={form}
-                    fields={nestedSubs.map((_, i) => ({ id: `${field.id}-${i}`, ..._ }))}
-                    remove={(childIndex) => removeNestedSubQuestion(index, childIndex)}
-                    nestingLevel={nestingLevel + 1}
-                    parentPath={`${parentPath}.${index}.subQuestions`}
-                  />
-                </div>
-              )}
-
-              {canAddNested && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNestedSubQuestion(index)}
-                  className="w-full mt-2"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Nested Sub-question
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
-  )
-}
-
-// Helper function to generate sub-question labels
-const getSubQuestionLabel = (level: number, index: number): string => {
-  if (level === 0) {
-    // First level: A, B, C, ...
-    return String.fromCharCode(65 + index)
-  } else if (level === 1) {
-    // Second level: i, ii, iii, ...
-    return ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'][index] || `${index + 1}`
-  } else {
-    // Third level: a, b, c, ...
-    return String.fromCharCode(97 + index)
-  }
-}
-```
-
-## File: src/features/questions/hooks/use-questions.ts
-```typescript
-import { apiClient } from '@/lib/api/client'
-import type { 
-  Question, 
-  CreateQuestionDto, 
-  UpdateQuestionDto, 
-  QuestionStats, 
-  GetQuestionsParams,
-  BackendQuestionsListResponse
-} from '../types/questions'
-import type { PaginatedResponse, ApiResponse } from '@/types/common'
-
-export const questionsService = {
-  getAll: async (params?: GetQuestionsParams): Promise<PaginatedResponse<Question>> => {
-    const response = await apiClient.get<BackendQuestionsListResponse>('/api/v1/questions', { params })
-    return {
-      data: response.questions || [],
-      total: response.total || 0,
-      page: response.page || 1,
-      limit: response.limit || 10,
-      totalPages: response.totalPages || 1
-    }
-  },
-
-  getById: async (id: string): Promise<ApiResponse<Question>> => {
-    const question = await apiClient.get<Question>(`/api/v1/questions/${id}`)
-    return { data: question }
-  },
-
-  getBySubject: async (subjectId: string, params?: { includePrivate?: boolean }): Promise<ApiResponse<Question[]>> => {
-    const questions = await apiClient.get<Question[]>(`/api/v1/questions/subject/${subjectId}`, { params })
-    return {
-      data: Array.isArray(questions) ? questions : []
-    }
-  },
-
-  getStats: (): Promise<ApiResponse<QuestionStats>> =>
-    apiClient.get('/api/v1/questions/stats'),
-
-  create: async (data: CreateQuestionDto): Promise<ApiResponse<Question>> => {
-    const question = await apiClient.post<Question>('/api/v1/questions', data)
-    return { data: question }
-  },
-
-  update: async (id: string, data: UpdateQuestionDto): Promise<ApiResponse<Question>> => {
-    const question = await apiClient.patch<Question>(`/api/v1/questions/${id}`, data)
-    return { data: question }
-  },
-
-  delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/questions/${id}`)
 }
 ```

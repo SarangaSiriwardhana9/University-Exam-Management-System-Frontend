@@ -28,9 +28,7 @@ export const questionsService = {
 
   getBySubject: async (subjectId: string, params?: { includePrivate?: boolean }): Promise<ApiResponse<Question[]>> => {
     const questions = await apiClient.get<Question[]>(`/api/v1/questions/subject/${subjectId}`, { params })
-    return {
-      data: Array.isArray(questions) ? questions : []
-    }
+    return { data: Array.isArray(questions) ? questions : [] }
   },
 
   getStats: (): Promise<ApiResponse<QuestionStats>> =>

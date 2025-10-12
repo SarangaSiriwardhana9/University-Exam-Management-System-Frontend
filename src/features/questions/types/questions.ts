@@ -14,6 +14,14 @@ export type SubQuestion = {
   updatedAt: string
 }
 
+export type QuestionOption = {
+  _id?: string
+  optionText: string
+  isCorrect: boolean
+  optionOrder: number
+  createdAt?: string
+}
+
 export type Question = {
   _id: string
   subjectId: string
@@ -41,14 +49,6 @@ export type Question = {
   updatedAt: string
 }
 
-export type QuestionOption = {
-  _id?: string
-  optionText: string
-  isCorrect: boolean
-  optionOrder: number
-  createdAt?: string
-}
-
 export type CreateSubQuestionDto = {
   questionText: string
   questionDescription?: string
@@ -71,11 +71,7 @@ export type CreateQuestionDto = {
   bloomsTaxonomy?: BloomsTaxonomy
   keywords?: string
   isPublic?: boolean
-  options?: Array<{
-    optionText: string
-    isCorrect: boolean
-    optionOrder: number
-  }>
+  options?: Omit<QuestionOption, '_id' | 'createdAt'>[]
   subQuestions?: CreateSubQuestionDto[]
 }
 

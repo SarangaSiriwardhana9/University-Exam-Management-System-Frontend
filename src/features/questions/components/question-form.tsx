@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useEffect } from 'react'
@@ -30,11 +29,20 @@ import { Separator } from '@/components/ui/separator'
 import {
   createQuestionSchema,
   type CreateQuestionFormData,
+ 
 } from '../validations/question-schemas'
 import type { Question } from '../types/questions'
 import { useMySubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY, SUB_QUESTION_TYPES } from '@/constants/roles'
-import { PlusIcon, TrashIcon, ChevronRightIcon, ListTreeIcon } from 'lucide-react'
+import { PlusIcon, TrashIcon, ListTreeIcon } from 'lucide-react'
+import {
+  getDefaultQuestionFormData,
+  getDefaultMcqOptions,
+  getDefaultSubQuestion,
+  calculateTotalMarks,
+  cleanQuestionFormData,
+  mapQuestionToFormData,
+} from '../utils/question-utils'
 
 type QuestionFormProps = {
   question?: Question
@@ -43,97 +51,214 @@ type QuestionFormProps = {
   isLoading?: boolean
 }
 
+type SubQuestionFieldsProps = {
+  form: any
+  parentPath: string
+  level: number
+  onRemove: () => void
+}
+
+const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFieldsProps) => {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: `${parentPath}.subQuestions`,
+  })
+
+  const addNestedSubQuestion = () => {
+    append(getDefaultSubQuestion(fields.length))
+  }
+
+  const subQuestionLabel = form.watch(`${parentPath}.subQuestionLabel`)
+  const marks = form.watch(`${parentPath}.marks`)
+
+  return (
+    <Card className="border-l-4 border-l-blue-500">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono">
+              {subQuestionLabel}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              Level {level}
+            </Badge>
+            <Badge variant="default" className="text-xs">
+              {marks || 0} marks
+            </Badge>
+          </div>
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+            <TrashIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <FormField
+              control={form.control}
+              name={`${parentPath}.questionText`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Question Text *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter question text..."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name={`${parentPath}.questionType`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={SUB_QUESTION_TYPES.SHORT_ANSWER}>Short Answer</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.LONG_ANSWER}>Long Answer</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.FILL_BLANK}>Fill in Blank</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
+                      <SelectItem value={SUB_QUESTION_TYPES.ESSAY}>Essay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`${parentPath}.marks`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Marks *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0.5"
+                      max="100"
+                      step="0.5"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <FormField
+          control={form.control}
+          name={`${parentPath}.questionDescription`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Instructions (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Additional context..."
+                  rows={2}
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {level < 3 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ListTreeIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Nested Sub-questions</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addNestedSubQuestion}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Sub-part
+                </Button>
+              </div>
+
+              {fields.length > 0 && (
+                <div className="space-y-3 ml-4 border-l-2 pl-4">
+                  {fields.map((field, index) => (
+                    <SubQuestionFields
+                      key={field.id}
+                      form={form}
+                      parentPath={`${parentPath}.subQuestions.${index}`}
+                      level={level + 1}
+                      onRemove={() => remove(index)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: QuestionFormProps) => {
   const isEditMode = !!question
-  
-  // Use useMySubjectsQuery for faculty to get their assigned subjects
   const { data: subjectsData, isLoading: isSubjectsLoading } = useMySubjectsQuery()
 
   const form = useForm<CreateQuestionFormData>({
     resolver: zodResolver(createQuestionSchema),
-    defaultValues: {
-      subjectId: '',
-      questionText: '',
-      questionDescription: '',
-      questionType: QUESTION_TYPES.MCQ,
-      difficultyLevel: DIFFICULTY_LEVELS.MEDIUM,
-      marks: 1,
-      topic: '',
-      subtopic: '',
-      bloomsTaxonomy: undefined,
-      keywords: '',
-      isPublic: false,
-      options: [],
-      subQuestions: [],
-    },
+    defaultValues: getDefaultQuestionFormData(),
   })
 
   const questionType = form.watch('questionType')
 
-  // Options field array for MCQ
   const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
     control: form.control,
     name: 'options',
   })
 
-  // Sub-questions field array for STRUCTURED/ESSAY
   const { fields: subQuestionFields, append: appendSubQuestion, remove: removeSubQuestion } = useFieldArray({
     control: form.control,
     name: 'subQuestions',
   })
 
-  // Clear options when switching to non-MCQ types
   useEffect(() => {
     if (questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) {
       form.setValue('options', [])
     } else if (questionType === QUESTION_TYPES.MCQ && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
-      // Initialize with default options for MCQ if none exist
-      form.setValue('options', [
-        { optionText: '', isCorrect: false, optionOrder: 1 },
-        { optionText: '', isCorrect: false, optionOrder: 2 },
-      ])
+      form.setValue('options', getDefaultMcqOptions())
     }
   }, [questionType, form])
 
   useEffect(() => {
     if (isEditMode && question) {
-      form.reset({
-        subjectId: question.subjectId,
-        questionText: question.questionText,
-        questionDescription: question.questionDescription || '',
-        questionType: question.questionType,
-        difficultyLevel: question.difficultyLevel,
-        marks: question.marks,
-        topic: question.topic || '',
-        subtopic: question.subtopic || '',
-        bloomsTaxonomy: question.bloomsTaxonomy,
-        keywords: question.keywords || '',
-        isPublic: question.isPublic,
-        options: question.options || [],
-        subQuestions: question.subQuestions || [],
-      })
+      form.reset(mapQuestionToFormData(question))
     }
   }, [isEditMode, question, form])
 
   const handleSubmit = (data: CreateQuestionFormData) => {
-    // Clean up empty strings to undefined for optional fields
-    const cleanedData = {
-      ...data,
-      questionDescription: data.questionDescription || undefined,
-      topic: data.topic || undefined,
-      subtopic: data.subtopic || undefined,
-      bloomsTaxonomy: data.bloomsTaxonomy || undefined,
-      keywords: data.keywords || undefined,
-    }
-
-    // Clean up data based on question type
-    if (cleanedData.questionType === QUESTION_TYPES.MCQ) {
-      cleanedData.subQuestions = []
-    } else {
-      cleanedData.options = []
-    }
-
-    console.log('Submitting question data:', cleanedData)
+    const cleanedData = cleanQuestionFormData(data)
     onSubmit(cleanedData)
   }
 
@@ -146,80 +271,17 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   }
 
   const addSubQuestion = () => {
-    const nextLabel = String.fromCharCode(65 + subQuestionFields.length) // A, B, C, ...
-    appendSubQuestion({
-      questionText: '',
-      questionDescription: '',
-      questionType: SUB_QUESTION_TYPES.SHORT_ANSWER,
-      marks: 1,
-      subQuestionLabel: nextLabel,
-      subQuestionOrder: subQuestionFields.length + 1,
-      subQuestions: [],
-    })
+    appendSubQuestion(getDefaultSubQuestion(subQuestionFields.length))
   }
 
-  const calculateTotalMarks = () => {
-    if (questionType === QUESTION_TYPES.MCQ) {
-      return form.getValues('marks')
-    }
-    
-    const subQuestions = form.getValues('subQuestions') || []
-    if (subQuestions.length === 0) {
-      return form.getValues('marks')
-    }
-
-    const calculateMarks = (subs: any[]): number => {
-      let total = 0
-      for (const sub of subs) {
-        total += sub.marks || 0
-        if (sub.subQuestions && sub.subQuestions.length > 0) {
-          total += calculateMarks(sub.subQuestions)
-        }
-      }
-      return total
-    }
-
-    return calculateMarks(subQuestions)
-  }
-
-  const totalMarks = calculateTotalMarks()
-
-  // Get subjects array safely
+  const watchedMarks = form.watch('marks')
+  const watchedSubQuestions = form.watch('subQuestions')
+  const totalMarks = calculateTotalMarks(questionType, watchedMarks, watchedSubQuestions)
   const subjects = subjectsData?.data || []
-
-  // Debug form state
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      console.log('Form changed:', { name, type, value })
-      console.log('Form errors:', form.formState.errors)
-      console.log('Is valid:', form.formState.isValid)
-    })
-    return () => subscription.unsubscribe()
-  }, [form])
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Debug Info - Remove in production */}
-        {process.env.NODE_ENV === 'development' && (
-          <Card className="bg-muted">
-            <CardHeader>
-              <CardTitle className="text-sm">Debug Info</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs space-y-1">
-              <p>Form Valid: {form.formState.isValid ? 'Yes' : 'No'}</p>
-              <p>Question Type: {questionType}</p>
-              <p>Errors: {Object.keys(form.formState.errors).length}</p>
-              {Object.keys(form.formState.errors).length > 0 && (
-                <pre className="mt-2 p-2 bg-background rounded">
-                  {JSON.stringify(form.formState.errors, null, 2)}
-                </pre>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Basic Information */}
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -231,11 +293,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Subject *</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value} 
-                    disabled={isSubjectsLoading}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubjectsLoading || isEditMode}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isSubjectsLoading ? "Loading subjects..." : "Select subject"} />
@@ -259,13 +317,11 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       )}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    {subjects.length === 0 && !isSubjectsLoading && (
-                      <span className="text-orange-600">
-                        You don&#39;t have any subjects assigned. Please contact admin.
-                      </span>
-                    )}
-                  </FormDescription>
+                  {isEditMode && (
+                    <FormDescription>
+                      Subject cannot be changed when editing
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -285,15 +341,15 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem key="mcq" value={QUESTION_TYPES.MCQ}>Multiple Choice (MCQ)</SelectItem>
-                        <SelectItem key="structured" value={QUESTION_TYPES.STRUCTURED}>Structured Question</SelectItem>
-                        <SelectItem key="essay" value={QUESTION_TYPES.ESSAY}>Essay Question</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.MCQ}>Multiple Choice (MCQ)</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured Question</SelectItem>
+                        <SelectItem value={QUESTION_TYPES.ESSAY}>Essay Question</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
                       {field.value === QUESTION_TYPES.MCQ && 'Single correct answer with multiple options'}
-                      {field.value === QUESTION_TYPES.STRUCTURED && 'Question with multiple sub-parts (A, B, C, etc.)'}
-                      {field.value === QUESTION_TYPES.ESSAY && 'Long-form answer with optional sub-parts'}
+                      {field.value === QUESTION_TYPES.STRUCTURED && 'Question with multiple sub-parts with nested levels'}
+                      {field.value === QUESTION_TYPES.ESSAY && 'Long-form answer with optional nested sub-parts'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -313,9 +369,9 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem key="easy" value={DIFFICULTY_LEVELS.EASY}>Easy</SelectItem>
-                        <SelectItem key="medium" value={DIFFICULTY_LEVELS.MEDIUM}>Medium</SelectItem>
-                        <SelectItem key="hard" value={DIFFICULTY_LEVELS.HARD}>Hard</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.EASY}>Easy</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.MEDIUM}>Medium</SelectItem>
+                        <SelectItem value={DIFFICULTY_LEVELS.HARD}>Hard</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -402,7 +458,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </CardContent>
         </Card>
 
-        {/* MCQ Options */}
         {questionType === QUESTION_TYPES.MCQ && (
           <Card>
             <CardHeader>
@@ -468,7 +523,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </Card>
         )}
 
-        {/* Sub-questions for STRUCTURED/ESSAY */}
         {(questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) && (
           <Card>
             <CardHeader>
@@ -479,7 +533,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                     Sub-Questions
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Add parts (A, B, C, etc.) with nested sub-questions
+                    Add parts (A, B, C, etc.) with up to 3 levels of nesting (A, A.i, A.i.a)
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addSubQuestion}>
@@ -493,21 +547,25 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <div className="text-center py-8 text-muted-foreground">
                   <ListTreeIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>No sub-questions added yet.</p>
-                  <p className="text-sm">Click &#34;Add Part&#34; to create structured sub-questions.</p>
+                  <p className="text-sm">Click &quot;Add Part&quot; to create structured sub-questions.</p>
                 </div>
               ) : (
-                <SubQuestionBuilder
-                  form={form}
-                  fields={subQuestionFields}
-                  remove={removeSubQuestion}
-                  nestingLevel={0}
-                />
+                <div className="space-y-4">
+                  {subQuestionFields.map((field, index) => (
+                    <SubQuestionFields
+                      key={field.id}
+                      form={form}
+                      parentPath={`subQuestions.${index}`}
+                      level={1}
+                      onRemove={() => removeSubQuestion(index)}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         )}
 
-        {/* Metadata */}
         <Card>
           <CardHeader>
             <CardTitle>Additional Information</CardTitle>
@@ -548,7 +606,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               name="bloomsTaxonomy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Bloom&lsquo;s Taxonomy Level</FormLabel>
+                  <FormLabel>Bloom&#39;s Taxonomy Level</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
@@ -556,12 +614,12 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem key="remember" value={BLOOMS_TAXONOMY.REMEMBER}>Remember</SelectItem>
-                      <SelectItem key="understand" value={BLOOMS_TAXONOMY.UNDERSTAND}>Understand</SelectItem>
-                      <SelectItem key="apply" value={BLOOMS_TAXONOMY.APPLY}>Apply</SelectItem>
-                      <SelectItem key="analyze" value={BLOOMS_TAXONOMY.ANALYZE}>Analyze</SelectItem>
-                      <SelectItem key="evaluate" value={BLOOMS_TAXONOMY.EVALUATE}>Evaluate</SelectItem>
-                      <SelectItem key="create" value={BLOOMS_TAXONOMY.CREATE}>Create</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.REMEMBER}>Remember</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.UNDERSTAND}>Understand</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.APPLY}>Apply</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.ANALYZE}>Analyze</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.EVALUATE}>Evaluate</SelectItem>
+                      <SelectItem value={BLOOMS_TAXONOMY.CREATE}>Create</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -609,9 +667,8 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           </CardContent>
         </Card>
 
-        {/* Form Actions */}
         <div className="flex items-center justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading || subjects.length === 0}>
@@ -621,216 +678,4 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
       </form>
     </Form>
   )
-}
-
-// Sub-component for nested sub-questions
-type SubQuestionBuilderProps = {
-  form: any
-  fields: any[]
-  remove: (index: number) => void
-  nestingLevel: number
-  parentPath?: string
-}
-
-const SubQuestionBuilder = ({ form, fields, remove, nestingLevel, parentPath = 'subQuestions' }: SubQuestionBuilderProps) => {
-  const maxNestingLevel = 3
-
-  const addNestedSubQuestion = (parentIndex: number) => {
-    const currentSubs = form.getValues(`${parentPath}.${parentIndex}.subQuestions`) || []
-    const nextLabel = getSubQuestionLabel(nestingLevel + 1, currentSubs.length)
-    
-    form.setValue(`${parentPath}.${parentIndex}.subQuestions`, [
-      ...currentSubs,
-      {
-        questionText: '',
-        questionDescription: '',
-        questionType: SUB_QUESTION_TYPES.SHORT_ANSWER,
-        marks: 1,
-        subQuestionLabel: nextLabel,
-        subQuestionOrder: currentSubs.length + 1,
-        subQuestions: [],
-      },
-    ])
-  }
-
-  const removeNestedSubQuestion = (parentIndex: number, childIndex: number) => {
-    const currentSubs = form.getValues(`${parentPath}.${parentIndex}.subQuestions`) || []
-    form.setValue(
-      `${parentPath}.${parentIndex}.subQuestions`,
-      currentSubs.filter((_: any, i: number) => i !== childIndex)
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {fields.map((field, index) => {
-        const nestedSubs = form.watch(`${parentPath}.${index}.subQuestions`) || []
-        const canAddNested = nestingLevel < maxNestingLevel
-
-        return (
-          <Card key={field.id} className={`${nestingLevel > 0 ? 'ml-6 border-l-4' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-mono">
-                    {form.watch(`${parentPath}.${index}.subQuestionLabel`)}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    Level {nestingLevel + 1}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => remove(index)}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.questionText`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Question Text *</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter question text..."
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.questionType`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem key={`${parentPath}-${index}-short`} value={SUB_QUESTION_TYPES.SHORT_ANSWER}>Short Answer</SelectItem>
-                            <SelectItem key={`${parentPath}-${index}-long`} value={SUB_QUESTION_TYPES.LONG_ANSWER}>Long Answer</SelectItem>
-                            <SelectItem key={`${parentPath}-${index}-fill`} value={SUB_QUESTION_TYPES.FILL_BLANK}>Fill in Blank</SelectItem>
-                            {canAddNested && (
-                              <>
-                                <SelectItem key={`${parentPath}-${index}-struct`} value={SUB_QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
-                                <SelectItem key={`${parentPath}-${index}-essay`} value={SUB_QUESTION_TYPES.ESSAY}>Essay</SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`${parentPath}.${index}.marks`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marks *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0.5"
-                            max="100"
-                            step="0.5"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <FormField
-                control={form.control}
-                name={`${parentPath}.${index}.questionDescription`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instructions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional context..."
-                        rows={2}
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Nested sub-questions */}
-              {nestedSubs.length > 0 && (
-                <div className="mt-4">
-                  <Separator className="mb-4" />
-                  <div className="flex items-center gap-2 mb-3">
-                    <ChevronRightIcon className="h-4 w-4" />
-                    <span className="text-sm font-medium">Nested Sub-questions</span>
-                  </div>
-                  <SubQuestionBuilder
-                    form={form}
-                    fields={nestedSubs.map((item: any, i: number) => ({ id: `${field.id}-${i}`, ...item }))}
-                    remove={(childIndex) => removeNestedSubQuestion(index, childIndex)}
-                    nestingLevel={nestingLevel + 1}
-                    parentPath={`${parentPath}.${index}.subQuestions`}
-                  />
-                </div>
-              )}
-
-              {canAddNested && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNestedSubQuestion(index)}
-                  className="w-full mt-2"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Nested Sub-question
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
-  )
-}
-
-// Helper function to generate sub-question labels
-const getSubQuestionLabel = (level: number, index: number): string => {
-  if (level === 0) {
-    // First level: A, B, C, ...
-    return String.fromCharCode(65 + index)
-  } else if (level === 1) {
-    // Second level: i, ii, iii, ...
-    return ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'][index] || `${index + 1}`
-  } else {
-    // Third level: a, b, c, ...
-    return String.fromCharCode(97 + index)
-  }
 }

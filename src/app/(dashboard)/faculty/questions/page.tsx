@@ -1,25 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable } from '@/components/data-display/data-table'
-import { QuestionForm } from '@/features/questions/components/question-form'
-import { QuestionViewDialog } from '@/features/questions/components/question-view-dialog'
+import { PlusIcon } from 'lucide-react'
 import { getQuestionColumns } from '@/features/questions/components/question-columns'
 import { useQuestionsQuery } from '@/features/questions/hooks/use-questions-query'
-import {
-  useCreateQuestion,
-  useUpdateQuestion,
-  useDeleteQuestion,
-} from '@/features/questions/hooks/use-question-mutations'
+import { useDeleteQuestion } from '@/features/questions/hooks/use-question-mutations'
 import type { Question } from '@/features/questions/types/questions'
-import type { CreateQuestionFormData } from '@/features/questions/validations/question-schemas'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import type { QuestionType } from '@/constants/roles'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,144 +21,124 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { PlusIcon } from 'lucide-react'
-import type { PaginationState } from '@tanstack/react-table'
+
+type QuestionFilters = {
+  questionType: string
+  subjectId: string
+}
 
 export default function QuestionsPage() {
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
+  const router = useRouter()
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
+  const [filters, setFilters] = useState<QuestionFilters>({
+    questionType: 'all',
+    subjectId: 'all'
   })
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
-  const [viewingQuestion, setViewingQuestion] = useState<Question | null>(null)
-  const [deletingQuestion, setDeletingQuestion] = useState<Question | null>(null)
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
 
-  const { data, isLoading } = useQuestionsQuery({ 
-    page: pagination.pageIndex + 1, 
-    limit: pagination.pageSize 
+  const { data, isLoading } = useQuestionsQuery({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    questionType: filters.questionType && filters.questionType !== 'all' 
+      ? (filters.questionType as QuestionType) 
+      : undefined,
+    subjectId: filters.subjectId && filters.subjectId !== 'all' 
+      ? filters.subjectId 
+      : undefined,
   })
-  
-  const createMutation = useCreateQuestion()
-  const updateMutation = useUpdateQuestion()
+
   const deleteMutation = useDeleteQuestion()
 
-  const handleCreate = (formData: CreateQuestionFormData) => {
-    createMutation.mutate(formData, {
-      onSuccess: () => {
-        setIsCreateDialogOpen(false)
-      },
-    })
+  const handleEdit = (question: Question) => {
+    router.push(`/faculty/questions/${question._id}/edit`)
   }
 
-  const handleUpdate = (formData: CreateQuestionFormData) => {
-    if (!editingQuestion) return
-    updateMutation.mutate(
-      { id: editingQuestion._id, data: formData },
-      {
-        onSuccess: () => {
-          setEditingQuestion(null)
-        },
-      }
-    )
+  const handleView = (question: Question) => {
+    router.push(`/faculty/questions/${question._id}`)
   }
 
-  const handleDelete = () => {
-    if (!deletingQuestion) return
-    deleteMutation.mutate(deletingQuestion._id, {
-      onSuccess: () => {
-        setDeletingQuestion(null)
-      },
-    })
+  const handleDelete = (question: Question) => {
+    setQuestionToDelete(question)
+  }
+
+  const confirmDelete = async () => {
+    if (!questionToDelete) return
+    await deleteMutation.mutateAsync(questionToDelete._id)
+    setQuestionToDelete(null)
   }
 
   const columns = getQuestionColumns({
-    onEdit: setEditingQuestion,
-    onDelete: setDeletingQuestion,
-    onView: setViewingQuestion,
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onView: handleView,
   })
 
+  const questions = data?.data || []
+  const totalPages = data?.totalPages || 0
+
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Question Bank</h1>
-          <p className="text-muted-foreground">
-            Manage your questions for exam papers
-          </p>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Question Bank</h1>
+            <p className="text-muted-foreground">
+              Manage your questions for exam papers
+            </p>
+          </div>
+          <Button onClick={() => router.push('/faculty/questions/new')}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Create Question
+          </Button>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Question
-        </Button>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>All Questions</CardTitle>
+            <CardDescription>
+              {isLoading ? 'Loading questions...' : `${questions.length} question(s) found`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+                  <p className="mt-2 text-sm text-muted-foreground">Loading questions...</p>
+                </div>
+              </div>
+            ) : (
+              <DataTable
+                columns={columns}
+                data={questions}
+                pageCount={totalPages}
+                pagination={pagination}
+                onPaginationChange={setPagination}
+              />
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data?.data || []}
-        searchKey="questionText"
-        searchPlaceholder="Search questions..."
-        showColumnVisibility={true}
-        pageCount={data?.totalPages}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-      />
-
-      {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Question</DialogTitle>
-          </DialogHeader>
-          <QuestionForm
-            onSubmit={handleCreate}
-            onCancel={() => setIsCreateDialogOpen(false)}
-            isLoading={createMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editingQuestion} onOpenChange={(open) => !open && setEditingQuestion(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Question</DialogTitle>
-          </DialogHeader>
-          {editingQuestion && (
-            <QuestionForm
-              question={editingQuestion}
-              onSubmit={handleUpdate}
-              onCancel={() => setEditingQuestion(null)}
-              isLoading={updateMutation.isPending}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* View Dialog */}
-      <QuestionViewDialog
-        question={viewingQuestion}
-        open={!!viewingQuestion}
-        onOpenChange={(open) => !open && setViewingQuestion(null)}
-      />
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingQuestion} onOpenChange={(open) => !open && setDeletingQuestion(null)}>
+      <AlertDialog open={!!questionToDelete} onOpenChange={() => setQuestionToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Question</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this question? This action cannot be undone.
+              This will permanently delete this question. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

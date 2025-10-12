@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod'
 import { QUESTION_TYPES, SUB_QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY } from '@/constants/roles'
 
@@ -8,7 +7,18 @@ const questionOptionSchema = z.object({
   optionOrder: z.number().int().min(1)
 })
 
-const subQuestionSchema: z.ZodType<any> = z.lazy(() =>
+// Fix: Explicit type annotation for recursive schema
+type SubQuestionSchemaType = {
+  questionText: string
+  questionDescription?: string
+  questionType: 'short_answer' | 'long_answer' | 'fill_blank' | 'structured' | 'essay'
+  marks: number
+  subQuestionLabel: string
+  subQuestionOrder: number
+  subQuestions?: SubQuestionSchemaType[]
+}
+
+const subQuestionSchema: z.ZodType<SubQuestionSchemaType> = z.lazy(() =>
   z.object({
     questionText: z.string().min(3, 'Question text must be at least 3 characters'),
     questionDescription: z.string().optional(),
@@ -22,24 +32,18 @@ const subQuestionSchema: z.ZodType<any> = z.lazy(() =>
     marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
     subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
     subQuestionOrder: z.number().int().min(1),
-    subQuestions: z.array(z.lazy(() => subQuestionSchema)).optional()
+    subQuestions: z.array(subQuestionSchema).optional()
   })
 )
+
+export type CreateSubQuestionDto = SubQuestionSchemaType
 
 const baseQuestionSchema = z.object({
   subjectId: z.string().min(1, 'Subject is required'),
   questionText: z.string().min(10, 'Question text must be at least 10 characters'),
   questionDescription: z.string().optional().or(z.literal('')),
-  questionType: z.enum([
-    QUESTION_TYPES.MCQ,
-    QUESTION_TYPES.STRUCTURED,
-    QUESTION_TYPES.ESSAY
-  ]),
-  difficultyLevel: z.enum([
-    DIFFICULTY_LEVELS.EASY,
-    DIFFICULTY_LEVELS.MEDIUM,
-    DIFFICULTY_LEVELS.HARD
-  ]),
+  questionType: z.enum([QUESTION_TYPES.MCQ, QUESTION_TYPES.STRUCTURED, QUESTION_TYPES.ESSAY]),
+  difficultyLevel: z.enum([DIFFICULTY_LEVELS.EASY, DIFFICULTY_LEVELS.MEDIUM, DIFFICULTY_LEVELS.HARD]),
   marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
   topic: z.string().optional().or(z.literal('')),
   subtopic: z.string().optional().or(z.literal('')),
@@ -50,7 +54,7 @@ const baseQuestionSchema = z.object({
     BLOOMS_TAXONOMY.ANALYZE,
     BLOOMS_TAXONOMY.EVALUATE,
     BLOOMS_TAXONOMY.CREATE
-  ]).optional().or(z.literal('')),
+  ]).optional(),
   keywords: z.string().optional().or(z.literal('')),
   isPublic: z.boolean().optional(),
   options: z.array(questionOptionSchema).optional(),
@@ -58,9 +62,7 @@ const baseQuestionSchema = z.object({
 })
 
 export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) => {
-  // MCQ validation
   if (data.questionType === QUESTION_TYPES.MCQ) {
-    // Must have at least 2 options
     if (!data.options || data.options.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -70,7 +72,6 @@ export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) =
       return
     }
 
-    // Must have exactly one correct answer
     const correctCount = data.options.filter(opt => opt.isCorrect).length
     if (correctCount !== 1) {
       ctx.addIssue({
@@ -81,8 +82,7 @@ export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) =
       return
     }
 
- 
-    if (data.subQuestions && data.subQuestions.length > 0) {
+    if (data.subQuestions?.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "MCQ questions cannot have sub-questions",
@@ -91,17 +91,15 @@ export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) =
     }
   }
 
- 
+  // Fix: Use type assertion to check if questionType is STRUCTURED or ESSAY
   if (data.questionType === QUESTION_TYPES.STRUCTURED || data.questionType === QUESTION_TYPES.ESSAY) {
- 
-    if (data.options && data.options.length > 0) {
+    if (data.options?.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "STRUCTURED and ESSAY questions cannot have MCQ options",
         path: ["options"]
       })
     }
- 
   }
 })
 

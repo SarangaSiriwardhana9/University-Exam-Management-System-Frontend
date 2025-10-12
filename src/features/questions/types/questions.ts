@@ -79,15 +79,6 @@ export type UpdateQuestionDto = Partial<Omit<CreateQuestionDto, 'subjectId'>> & 
   isActive?: boolean
 }
 
-export type QuestionStats = {
-  totalQuestions: number
-  activeQuestions: number
-  publicQuestions: number
-  questionsByType: Record<string, number>
-  questionsByDifficulty: Record<string, number>
-  questionsBySubject: Array<{ subjectName: string; count: number }>
-}
-
 export type GetQuestionsParams = {
   subjectId?: string
   questionType?: QuestionType

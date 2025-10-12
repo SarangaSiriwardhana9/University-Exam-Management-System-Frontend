@@ -1,4 +1,10 @@
-export const parseSubjectData = (subjectId: string) => {
+type SubjectData = {
+  id: string
+  code: string
+  name: string
+}
+
+export const parseSubjectData = (subjectId: string): SubjectData => {
   try {
     if (typeof subjectId === 'string' && subjectId.includes('_id:')) {
       const idMatch = subjectId.match(/_id:\s*new ObjectId\('([^']+)'\)/)
@@ -29,7 +35,7 @@ export const parseSubjectData = (subjectId: string) => {
       code: 'N/A',
       name: 'Subject not found'
     }
-  } catch (error) {
+  } catch {
     return {
       id: subjectId,
       code: 'N/A',

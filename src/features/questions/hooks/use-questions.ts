@@ -2,8 +2,7 @@ import { apiClient } from '@/lib/api/client'
 import type { 
   Question, 
   CreateQuestionDto, 
-  UpdateQuestionDto, 
-  QuestionStats, 
+  UpdateQuestionDto,
   GetQuestionsParams,
   BackendQuestionsListResponse
 } from '../types/questions'
@@ -30,9 +29,6 @@ export const questionsService = {
     const questions = await apiClient.get<Question[]>(`/api/v1/questions/subject/${subjectId}`, { params })
     return { data: Array.isArray(questions) ? questions : [] }
   },
-
-  getStats: (): Promise<ApiResponse<QuestionStats>> =>
-    apiClient.get('/api/v1/questions/stats'),
 
   create: async (data: CreateQuestionDto): Promise<ApiResponse<Question>> => {
     const question = await apiClient.post<Question>('/api/v1/questions', data)

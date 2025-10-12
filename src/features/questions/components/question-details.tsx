@@ -16,16 +16,16 @@ const LEVEL_COLORS = [
   'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
   'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
   'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950'
-]
+] as const
 
 const LEVEL_BADGE_COLORS = [
   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
   'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-]
+] as const
 
-const getLevelColors = (level: number) => LEVEL_COLORS[level] || LEVEL_COLORS[0]
-const getLevelBadgeColors = (level: number) => LEVEL_BADGE_COLORS[level] || LEVEL_BADGE_COLORS[0]
+const getLevelColors = (level: number): string => LEVEL_COLORS[level] || LEVEL_COLORS[0]
+const getLevelBadgeColors = (level: number): string => LEVEL_BADGE_COLORS[level] || LEVEL_BADGE_COLORS[0]
 
 export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
   const renderSubQuestions = (subQuestions: SubQuestion[], level: number = 0, parentLabel: string = ''): JSX.Element => {

@@ -7,8 +7,7 @@ const questionOptionSchema = z.object({
   optionOrder: z.number().int().min(1)
 })
 
-// Fix: Explicit type annotation for recursive schema
-type SubQuestionSchemaType = {
+export type SubQuestionSchemaType = {
   questionText: string
   questionDescription?: string
   questionType: 'short_answer' | 'long_answer' | 'fill_blank' | 'structured' | 'essay'
@@ -18,23 +17,28 @@ type SubQuestionSchemaType = {
   subQuestions?: SubQuestionSchemaType[]
 }
 
-const subQuestionSchema: z.ZodType<SubQuestionSchemaType> = z.lazy(() =>
-  z.object({
-    questionText: z.string().min(3, 'Question text must be at least 3 characters'),
-    questionDescription: z.string().optional(),
-    questionType: z.enum([
-      SUB_QUESTION_TYPES.SHORT_ANSWER,
-      SUB_QUESTION_TYPES.LONG_ANSWER,
-      SUB_QUESTION_TYPES.FILL_BLANK,
-      SUB_QUESTION_TYPES.STRUCTURED,
-      SUB_QUESTION_TYPES.ESSAY
-    ]),
-    marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
-    subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
-    subQuestionOrder: z.number().int().min(1),
-    subQuestions: z.array(subQuestionSchema).optional()
-  })
-)
+const subQuestionSchemaBase = z.object({
+  questionText: z.string().min(3, 'Question text must be at least 3 characters'),
+  questionDescription: z.string().optional(),
+  questionType: z.enum([
+    SUB_QUESTION_TYPES.SHORT_ANSWER,
+    SUB_QUESTION_TYPES.LONG_ANSWER,
+    SUB_QUESTION_TYPES.FILL_BLANK,
+    SUB_QUESTION_TYPES.STRUCTURED,
+    SUB_QUESTION_TYPES.ESSAY
+  ]),
+  marks: z.number().min(0.5, 'Marks must be at least 0.5').max(100, 'Marks cannot exceed 100'),
+  subQuestionLabel: z.string().min(1, 'Sub-question label is required'),
+  subQuestionOrder: z.number().int().min(1),
+})
+
+type SubQuestionSchemaInput = z.infer<typeof subQuestionSchemaBase> & {
+  subQuestions?: SubQuestionSchemaInput[]
+}
+
+const subQuestionSchema: z.ZodType<SubQuestionSchemaInput> = subQuestionSchemaBase.extend({
+  subQuestions: z.lazy(() => z.array(subQuestionSchema).optional()) as any
+}) as any
 
 export type CreateSubQuestionDto = SubQuestionSchemaType
 
@@ -91,7 +95,6 @@ export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) =
     }
   }
 
-  // Fix: Use type assertion to check if questionType is STRUCTURED or ESSAY
   if (data.questionType === QUESTION_TYPES.STRUCTURED || data.questionType === QUESTION_TYPES.ESSAY) {
     if (data.options?.length) {
       ctx.addIssue({

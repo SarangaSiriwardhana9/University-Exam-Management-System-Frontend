@@ -36,11 +36,3 @@ export const useQuestionsBySubjectQuery = (subjectId: string | undefined, includ
     retry: 1,
   })
 }
-
-export const useQuestionStatsQuery = () => {
-  return useQuery({
-    queryKey: ['questions', 'stats'],
-    queryFn: () => questionsService.getStats(),
-    staleTime: 60000,
-  })
-}

@@ -17,25 +17,25 @@ import { cn } from '@/lib/utils'
 import type { QuestionType, DifficultyLevel } from '@/constants/roles'
 import { parseSubjectData } from '../utils/subject-parser'
 
-const getQuestionTypeBadge = (type: QuestionType | string) => {
-  const styles = {
+const getQuestionTypeBadge = (type: QuestionType | string): string => {
+  const styles: Record<string, string> = {
     mcq: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
     structured: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
     essay: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  } as const
-  return styles[type as keyof typeof styles] || 'bg-muted'
+  }
+  return styles[type] || 'bg-muted'
 }
 
-const getDifficultyBadge = (level: DifficultyLevel | string) => {
-  const styles = {
+const getDifficultyBadge = (level: DifficultyLevel | string): string => {
+  const styles: Record<string, string> = {
     easy: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
     medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
     hard: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-  } as const
-  return styles[level as keyof typeof styles] || 'bg-muted'
+  }
+  return styles[level] || 'bg-muted'
 }
 
-const formatQuestionType = (type: string) => {
+const formatQuestionType = (type: string): string => {
   const typeMap: Record<string, string> = {
     mcq: 'MCQ',
     structured: 'STRUCTURED',
@@ -44,7 +44,7 @@ const formatQuestionType = (type: string) => {
   return typeMap[type] || type.toUpperCase()
 }
 
-const formatDifficulty = (level: string) => level.charAt(0).toUpperCase() + level.slice(1)
+const formatDifficulty = (level: string): string => level.charAt(0).toUpperCase() + level.slice(1)
 
 type QuestionColumnsProps = {
   onEdit: (question: Question) => void

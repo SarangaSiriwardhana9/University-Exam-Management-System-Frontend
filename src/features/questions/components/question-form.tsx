@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, type UseFormReturn, type FieldValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
@@ -29,7 +29,6 @@ import { Separator } from '@/components/ui/separator'
 import {
   createQuestionSchema,
   type CreateQuestionFormData,
- 
 } from '../validations/question-schemas'
 import type { Question } from '../types/questions'
 import { useMySubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
@@ -52,7 +51,7 @@ type QuestionFormProps = {
 }
 
 type SubQuestionFieldsProps = {
-  form: any
+  form: UseFormReturn<CreateQuestionFormData>
   parentPath: string
   level: number
   onRemove: () => void
@@ -61,15 +60,15 @@ type SubQuestionFieldsProps = {
 const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFieldsProps) => {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: `${parentPath}.subQuestions`,
+    name: `${parentPath}.subQuestions` as 'subQuestions',
   })
 
   const addNestedSubQuestion = () => {
     append(getDefaultSubQuestion(fields.length))
   }
 
-  const subQuestionLabel = form.watch(`${parentPath}.subQuestionLabel`)
-  const marks = form.watch(`${parentPath}.marks`)
+  const subQuestionLabel = form.watch(`${parentPath}.subQuestionLabel` as any)
+  const marks = form.watch(`${parentPath}.marks` as any)
 
   return (
     <Card className="border-l-4 border-l-blue-500">
@@ -96,7 +95,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
           <div className="md:col-span-2">
             <FormField
               control={form.control}
-              name={`${parentPath}.questionText`}
+              name={`${parentPath}.questionText` as any}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Question Text *</FormLabel>
@@ -116,7 +115,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name={`${parentPath}.questionType`}
+              name={`${parentPath}.questionType` as any}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type *</FormLabel>
@@ -141,7 +140,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
 
             <FormField
               control={form.control}
-              name={`${parentPath}.marks`}
+              name={`${parentPath}.marks` as any}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Marks *</FormLabel>
@@ -164,7 +163,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
 
         <FormField
           control={form.control}
-          name={`${parentPath}.questionDescription`}
+          name={`${parentPath}.questionDescription` as any}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Instructions (Optional)</FormLabel>
@@ -226,10 +225,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   const isEditMode = !!question
   const { data: subjectsData, isLoading: isSubjectsLoading } = useMySubjectsQuery()
 
-  const form = useForm<CreateQuestionFormData>({
-    resolver: zodResolver(createQuestionSchema),
+  const form = useForm({
+    resolver: zodResolver(createQuestionSchema) as any,
     defaultValues: getDefaultQuestionFormData(),
-  })
+  }) as UseFormReturn<CreateQuestionFormData>
 
   const questionType = form.watch('questionType')
 

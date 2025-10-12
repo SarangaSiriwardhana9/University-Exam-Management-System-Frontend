@@ -63,10 +63,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
       bloomsTaxonomy: undefined,
       keywords: '',
       isPublic: false,
-      options: [
-        { optionText: '', isCorrect: false, optionOrder: 1 },
-        { optionText: '', isCorrect: false, optionOrder: 2 },
-      ],
+      options: [],
       subQuestions: [],
     },
   })
@@ -85,19 +82,32 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
     name: 'subQuestions',
   })
 
+  // Clear options when switching to non-MCQ types
+  useEffect(() => {
+    if (questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) {
+      form.setValue('options', [])
+    } else if (questionType === QUESTION_TYPES.MCQ && (!form.getValues('options') || form.getValues('options')?.length === 0)) {
+      // Initialize with default options for MCQ if none exist
+      form.setValue('options', [
+        { optionText: '', isCorrect: false, optionOrder: 1 },
+        { optionText: '', isCorrect: false, optionOrder: 2 },
+      ])
+    }
+  }, [questionType, form])
+
   useEffect(() => {
     if (isEditMode && question) {
       form.reset({
         subjectId: question.subjectId,
         questionText: question.questionText,
-        questionDescription: question.questionDescription,
+        questionDescription: question.questionDescription || '',
         questionType: question.questionType,
         difficultyLevel: question.difficultyLevel,
         marks: question.marks,
-        topic: question.topic,
-        subtopic: question.subtopic,
+        topic: question.topic || '',
+        subtopic: question.subtopic || '',
         bloomsTaxonomy: question.bloomsTaxonomy,
-        keywords: question.keywords,
+        keywords: question.keywords || '',
         isPublic: question.isPublic,
         options: question.options || [],
         subQuestions: question.subQuestions || [],
@@ -106,13 +116,25 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   }, [isEditMode, question, form])
 
   const handleSubmit = (data: CreateQuestionFormData) => {
-    // Clean up data based on question type
-    if (data.questionType === QUESTION_TYPES.MCQ) {
-      data.subQuestions = []
-    } else {
-      data.options = []
+    // Clean up empty strings to undefined for optional fields
+    const cleanedData = {
+      ...data,
+      questionDescription: data.questionDescription || undefined,
+      topic: data.topic || undefined,
+      subtopic: data.subtopic || undefined,
+      bloomsTaxonomy: data.bloomsTaxonomy || undefined,
+      keywords: data.keywords || undefined,
     }
-    onSubmit(data)
+
+    // Clean up data based on question type
+    if (cleanedData.questionType === QUESTION_TYPES.MCQ) {
+      cleanedData.subQuestions = []
+    } else {
+      cleanedData.options = []
+    }
+
+    console.log('Submitting question data:', cleanedData)
+    onSubmit(cleanedData)
   }
 
   const addOption = () => {
@@ -165,9 +187,38 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   // Get subjects array safely
   const subjects = subjectsData?.data || []
 
+  // Debug form state
+  useEffect(() => {
+    const subscription = form.watch((value, { name, type }) => {
+      console.log('Form changed:', { name, type, value })
+      console.log('Form errors:', form.formState.errors)
+      console.log('Is valid:', form.formState.isValid)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* Debug Info - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <Card className="bg-muted">
+            <CardHeader>
+              <CardTitle className="text-sm">Debug Info</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs space-y-1">
+              <p>Form Valid: {form.formState.isValid ? 'Yes' : 'No'}</p>
+              <p>Question Type: {questionType}</p>
+              <p>Errors: {Object.keys(form.formState.errors).length}</p>
+              {Object.keys(form.formState.errors).length > 0 && (
+                <pre className="mt-2 p-2 bg-background rounded">
+                  {JSON.stringify(form.formState.errors, null, 2)}
+                </pre>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -302,6 +353,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       placeholder="Any additional context or instructions for students..."
                       className="min-h-[80px]"
                       {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -469,7 +521,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Data Structures" {...field} />
+                      <Input placeholder="e.g., Data Structures" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -483,7 +535,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Subtopic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Binary Trees" {...field} />
+                      <Input placeholder="e.g., Binary Trees" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -497,7 +549,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bloom&lsquo;s Taxonomy Level</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select level (optional)" />
@@ -524,7 +576,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <FormItem>
                   <FormLabel>Keywords</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., sorting, algorithm, complexity" {...field} />
+                    <Input placeholder="e.g., sorting, algorithm, complexity" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormDescription>
                     Comma-separated keywords for search and filtering
@@ -723,6 +775,7 @@ const SubQuestionBuilder = ({ form, fields, remove, nestingLevel, parentPath = '
                         placeholder="Additional context..."
                         rows={2}
                         {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -740,7 +793,7 @@ const SubQuestionBuilder = ({ form, fields, remove, nestingLevel, parentPath = '
                   </div>
                   <SubQuestionBuilder
                     form={form}
-                    fields={nestedSubs.map((_, i) => ({ id: `${field.id}-${i}`, ..._ }))}
+                    fields={nestedSubs.map((item: any, i: number) => ({ id: `${field.id}-${i}`, ...item }))}
                     remove={(childIndex) => removeNestedSubQuestion(index, childIndex)}
                     nestingLevel={nestingLevel + 1}
                     parentPath={`${parentPath}.${index}.subQuestions`}

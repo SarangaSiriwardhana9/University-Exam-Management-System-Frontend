@@ -63,6 +63,15 @@ export const getSubjectColumns = ({ onEdit, onDelete, onView }: SubjectColumnsPr
     ),
   },
   {
+    accessorKey: 'semester',
+    header: 'Semester',
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-mono">
+        Sem {row.original.semester}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: 'credits',
     header: 'Credits',
     cell: ({ row }) => (

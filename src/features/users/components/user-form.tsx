@@ -50,13 +50,12 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
 
   const { data: departmentsResponse, isLoading: isDepartmentsLoading } = useDepartmentsQuery({
     page: 1,
-    limit: 100,  
+    limit: 100,
   })
 
-  const extractId = (v?: string | { _id?: string; id?: string } | null): string | undefined => {
+  const extractId = (v?: string | { _id?: string } | null): string | undefined => {
     if (!v) return undefined
-    if (typeof v === 'string') return v
-    return v._id ?? v.id ?? undefined
+    return typeof v === 'string' ? v : v._id
   }
 
   const userDepartmentId = extractId(user?.departmentId)
@@ -100,18 +99,12 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
   useEffect(() => {
     if (!isEditMode || !user) return
 
-    console.log('User data received:', user)
-    console.log('User department ID:', userDepartmentId)
-    console.log('Departments loading:', isDepartmentsLoading)
-    console.log('User department loading:', isUserDepartmentLoading)
-    console.log('Department options:', departmentOptions)
-
     const readyToReset = 
       !isDepartmentsLoading &&
       (!userDepartmentId || !isUserDepartmentLoading)
 
     if (readyToReset) {
-      const resetData = {
+      form.reset({
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -127,30 +120,18 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         departmentId: userDepartmentId || '',
         year: user.year,
         semester: user.semester
-      }
-      console.log('Resetting form with data:', resetData)
-      form.reset(resetData)
+      })
     }
-  }, [
-    isEditMode,
-    user,
-    isDepartmentsLoading,
-    isUserDepartmentLoading,
-    userDepartmentId,
-    departmentOptions,
-    form
-  ])
+  }, [isEditMode, user, isDepartmentsLoading, isUserDepartmentLoading, userDepartmentId, form])
 
   const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
     const submissionData = { ...data }
     
-    // Remove year and semester if not a student
     if (submissionData.role !== USER_ROLES.STUDENT) {
       delete submissionData.year
       delete submissionData.semester
     }
     
-    // Remove departmentId if empty string
     if (submissionData.departmentId === '') {
       delete submissionData.departmentId
     }

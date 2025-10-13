@@ -59,10 +59,6 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
     )
   }
 
-  if (error) {
-    console.error('Error fetching user:', error)
-  }
-
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -205,12 +201,20 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
                     </div>
                     
                     {isStudent && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
-                        <p className="mt-1">
-                          {getYearLabel(user.year)}
-                        </p>
-                      </div>
+                      <>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
+                          <p className="mt-1">
+                            {getYearLabel(user.year)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Semester</p>
+                          <p className="mt-1">
+                            {user.semester ? `Semester ${user.semester}` : '—'}
+                          </p>
+                        </div>
+                      </>
                     )}
                   </div>
                   

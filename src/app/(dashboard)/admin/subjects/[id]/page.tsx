@@ -100,6 +100,9 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
                     Year {subject.year}
                   </Badge>
                   <Badge variant="outline">
+                    Sem {subject.semester}
+                  </Badge>
+                  <Badge variant="outline">
                     {subject.credits} Credits
                   </Badge>
                 </div>
@@ -130,13 +133,27 @@ const ViewSubjectPage = ({ params }: ViewSubjectPageProps) => {
                     <p className="mt-1">{subject.departmentName || '—'}</p>
                   </div>
                   <div>
+                    <p className="text-sm font-medium text-muted-foreground">LIC</p>
+                    <p className="mt-1">{subject.licName || '—'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
                     <p className="mt-1">Year {subject.year}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Semester</p>
+                    <p className="mt-1">Semester {subject.semester}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Credits</p>
                     <p className="mt-1">{subject.credits}</p>
                   </div>
+                  {subject.lecturers && subject.lecturers.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-sm font-medium text-muted-foreground">Lecturers</p>
+                      <p className="mt-1">{subject.lecturers.map(l => l.fullName).join(', ')}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -24,63 +24,35 @@ type BackendSubject = Omit<Subject, 'departmentId' | 'departmentName' | 'licId' 
   lecturerIds?: (string | { _id: string; fullName: string; email: string })[]
 }
 
-// Helper to extract ID from string or object
 const extractId = (value: string | { _id: string } | null | undefined): string | undefined => {
   if (!value) return undefined
-  if (typeof value === 'string') return value
-  return value._id
+  return typeof value === 'string' ? value : value._id
 }
 
-// Helper to extract name from object
 const extractName = (value: { fullName?: string; departmentName?: string } | null | undefined): string | undefined => {
   if (!value || typeof value !== 'object') return undefined
   return value.fullName || value.departmentName
 }
 
-// Transform backend subject to frontend format
-const transformSubject = (subj: BackendSubject): Subject => {
-  console.log('Transforming subject:', subj)
-  
-  const departmentId = extractId(subj.departmentId)
-  const departmentName = typeof subj.departmentId === 'object' ? subj.departmentId.departmentName : undefined
-  
-  const licId = extractId(subj.licId)
-  const licName = typeof subj.licId === 'object' ? extractName(subj.licId) : undefined
-  
-  let lecturerIds: string[] | undefined = undefined
-  let lecturers: { _id: string; fullName: string }[] | undefined = undefined
-  
-  if (Array.isArray(subj.lecturerIds)) {
-    lecturerIds = subj.lecturerIds.map(l => extractId(l)).filter(Boolean) as string[]
-    lecturers = subj.lecturerIds
-      .filter(l => typeof l === 'object' && l._id)
-      .map(l => ({
-        _id: (l as { _id: string })._id,
-        fullName: (l as { fullName: string }).fullName
-      }))
-  }
-
-  const transformed = {
+const transformSubject = (subj: any): Subject => {
+  return {
     _id: subj._id,
     subjectCode: subj.subjectCode,
     subjectName: subj.subjectName,
-    departmentId: departmentId || '',
-    departmentName,
+    departmentId: typeof subj.departmentId === 'string' ? subj.departmentId : subj.departmentId?._id || '',
+    departmentName: subj.departmentName || (typeof subj.departmentId === 'object' ? subj.departmentId?.departmentName : undefined),
     year: subj.year,
     semester: subj.semester,
     credits: subj.credits,
     description: subj.description,
-    licId,
-    licName,
-    lecturerIds,
-    lecturers,
+    licId: typeof subj.licId === 'string' ? subj.licId : subj.licId?._id,
+    licName: subj.licName || (typeof subj.licId === 'object' ? subj.licId?.fullName : undefined),
+    lecturerIds: subj.lecturerIds?.map((l: any) => typeof l === 'string' ? l : l._id).filter(Boolean),
+    lecturers: subj.lecturers || subj.lecturerIds?.filter((l: any) => typeof l === 'object').map((l: any) => ({ _id: l._id, fullName: l.fullName })),
     isActive: subj.isActive,
     createdAt: subj.createdAt,
     updatedAt: subj.updatedAt
   }
-  
-  console.log('Transformed subject:', transformed)
-  return transformed
 }
 
 export const subjectsService = {

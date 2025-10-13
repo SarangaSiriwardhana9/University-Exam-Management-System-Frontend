@@ -120,13 +120,12 @@ export default function StudentExamsPage() {
 
   const canRegisterForSession = (session: ExamSession) => {
     const now = new Date()
-    const examDate = new Date(session.examDateTime)
-    const registrationDeadline = addDays(examDate, -1)
+    const endTime = new Date(session.endTime)
 
     return (
       session.status === 'scheduled' &&
       session.registeredStudents < session.maxStudents &&
-      isFuture(registrationDeadline)
+      now < endTime
     )
   }
 
@@ -156,7 +155,19 @@ export default function StudentExamsPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Registered Exams</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{registrations.filter(r => r.status !== 'cancelled').length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total registrations
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Upcoming Exams</CardTitle>
@@ -244,17 +255,21 @@ export default function StudentExamsPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {availableSessions.map((session) => (
-                <AvailableSessionCard
-                  key={session._id}
-                  session={session}
-                  canRegister={canRegisterForSession(session)}
-                  onRegister={(s) => {
-                    setSelectedSession(s)
-                    setIsRegisterDialogOpen(true)
-                  }}
-                />
-              ))}
+              {availableSessions.map((session) => {
+                const isRegistered = registeredSessionIds.has(session._id)
+                return (
+                  <AvailableSessionCard
+                    key={session._id}
+                    session={session}
+                    canRegister={canRegisterForSession(session)}
+                    isRegistered={isRegistered}
+                    onRegister={(s) => {
+                      setSelectedSession(s)
+                      setIsRegisterDialogOpen(true)
+                    }}
+                  />
+                )
+              })}
             </div>
           )}
         </TabsContent>
@@ -376,70 +391,70 @@ function ExamRegistrationCard({
   const isPastExam = examDate && isPast(examDate)
   const isTodayExam = examDate && isToday(examDate)
 
-  const statusColors = {
-    registered: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    confirmed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    cancelled: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-  }
-
   return (
     <Card className={cn(
       'transition-all hover:shadow-md',
-      isTodayExam && 'border-primary',
+      isTodayExam && 'border-primary border-2',
       registration.status === 'cancelled' && 'opacity-60'
     )}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{registration.examTitle}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <BookOpenIcon className="h-4 w-4" />
-              Subject Information
-            </CardDescription>
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <CardTitle className="text-xl">{registration.examTitle || 'Exam'}</CardTitle>
+            {registration.subjectCode && registration.subjectName && (
+              <p className="text-sm text-muted-foreground">
+                {registration.subjectCode} - {registration.subjectName}
+              </p>
+            )}
           </div>
-          <Badge className={statusColors[registration.status as keyof typeof statusColors]}>
+          <Badge variant={registration.status === 'cancelled' ? 'destructive' : registration.status === 'confirmed' ? 'default' : 'secondary'}>
             {registration.status}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            {examDate && (
-              <>
-                <div className="flex items-center gap-2 text-sm">
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(examDate, 'PPP')}</span>
-                  {isTodayExam && (
-                    <Badge variant="destructive" className="ml-2">Today</Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <ClockIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(examDate, 'p')}</span>
-                </div>
-              </>
-            )}
-            {registration.roomNumber && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{registration.roomNumber}</span>
+        <div className="space-y-3">
+          {examDate ? (
+            <>
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm">{format(examDate, 'PPPP')}</span>
+                {isTodayExam && (
+                  <Badge variant="destructive" className="ml-auto">Today</Badge>
+                )}
               </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {registration.seatNumber && (
-              <div className="flex items-center gap-2 text-sm">
-                <InfoIcon className="h-4 w-4 text-muted-foreground" />
-                <span>Seat: <strong>{registration.seatNumber}</strong></span>
+              <div className="flex items-center gap-3">
+                <ClockIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm">
+                  {format(examDate, 'p')}
+                  {registration.formattedDuration && ` • ${registration.formattedDuration}`}
+                </span>
               </div>
-            )}
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-              <span>Registered: {format(new Date(registration.registrationDate), 'PP')}</span>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm text-muted-foreground">Exam date not scheduled yet</span>
             </div>
-          </div>
+          )}
+          {registration.roomNumber && (
+            <div className="flex items-center gap-3">
+              <MapPinIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium">{registration.roomNumber}</span>
+            </div>
+          )}
+          {registration.seatNumber && (
+            <div className="flex items-center gap-3">
+              <InfoIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm">Seat Number: <strong>{registration.seatNumber}</strong></span>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Registered on {format(new Date(registration.registrationDate), 'PP')}</span>
         </div>
 
         {registration.specialRequirements && (
@@ -482,14 +497,16 @@ function ExamRegistrationCard({
 function AvailableSessionCard({
   session,
   canRegister,
+  isRegistered,
   onRegister,
 }: {
   session: ExamSession
   canRegister: boolean
+  isRegistered: boolean
   onRegister: (session: ExamSession) => void
 }) {
   const examDate = new Date(session.examDateTime)
-  const registrationDeadline = addDays(examDate, -1)
+  const endTime = new Date(session.endTime)
   const availableSeats = session.maxStudents - session.registeredStudents
   const isFull = availableSeats <= 0
   const isAlmostFull = availableSeats <= 5 && availableSeats > 0
@@ -500,20 +517,28 @@ function AvailableSessionCard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="text-lg">{session.examTitle}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <BookOpenIcon className="h-4 w-4" />
-              {session.subjectCode} - {session.subjectName}
-            </CardDescription>
+            {session.subjectCode && session.subjectName && (
+              <CardDescription className="flex items-center gap-2">
+                <BookOpenIcon className="h-4 w-4" />
+                {session.subjectCode} - {session.subjectName}
+              </CardDescription>
+            )}
           </div>
-          {isFull ? (
-            <Badge variant="destructive">Full</Badge>
-          ) : isAlmostFull ? (
-            <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-              Almost Full
-            </Badge>
-          ) : (
-            <Badge variant="secondary">Available</Badge>
-          )}
+          <div className="flex gap-2">
+            {isRegistered && (
+              <Badge variant="default">
+                <CheckCircle2Icon className="h-3 w-3 mr-1" />
+                Enrolled
+              </Badge>
+            )}
+            {isFull ? (
+              <Badge variant="destructive">Full</Badge>
+            ) : isAlmostFull ? (
+              <Badge variant="outline">Almost Full</Badge>
+            ) : (
+              <Badge variant="secondary">Available</Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -527,10 +552,12 @@ function AvailableSessionCard({
               <ClockIcon className="h-4 w-4 text-muted-foreground" />
               <span>{format(examDate, 'p')} ({session.formattedDuration})</span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{session.roomNumber} - {session.building}</span>
-            </div>
+            {session.roomNumber && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                <span>{session.roomNumber}</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -544,7 +571,7 @@ function AvailableSessionCard({
             </div>
             <div className="flex items-center gap-2 text-sm">
               <AlertCircleIcon className="h-4 w-4 text-muted-foreground" />
-              <span>Deadline: {format(registrationDeadline, 'PP')}</span>
+              <span>Register before: {format(endTime, 'PPp')}</span>
             </div>
           </div>
         </div>
@@ -562,10 +589,10 @@ function AvailableSessionCard({
         <div className="flex justify-end pt-2">
           <Button
             onClick={() => onRegister(session)}
-            disabled={!canRegister || isFull}
+            disabled={!canRegister || isFull || isRegistered}
           >
             <CheckCircle2Icon className="h-4 w-4 mr-2" />
-            {isFull ? 'Session Full' : 'Register for Exam'}
+            {isRegistered ? 'Already Enrolled' : isFull ? 'Session Full' : 'Register for Exam'}
           </Button>
         </div>
       </CardContent>

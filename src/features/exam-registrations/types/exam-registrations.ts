@@ -19,6 +19,10 @@ export type ExamRegistration = {
   examTitle?: string
   examDateTime?: string
   roomNumber?: string
+  subjectCode?: string
+  subjectName?: string
+  durationMinutes?: number
+  formattedDuration?: string
   studentId: string
   studentName?: string
   studentEmail?: string

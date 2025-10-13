@@ -132,14 +132,14 @@ const extractBuilding = (roomId: RawExamSession['roomId']): string | undefined =
   return undefined
 }
 
-const transformExamSession = (session: RawExamSession): ExamSession => {
+const transformExamSession = (session: any): ExamSession => {
   const paperId = extractPaperId(session.paperId)
-  const paperTitle = extractPaperTitle(session.paperId)
-  const subjectCode = extractSubjectCode(session.paperId)
-  const subjectName = extractSubjectName(session.paperId)
+  const paperTitle = session.paperTitle || extractPaperTitle(session.paperId)
+  const subjectCode = session.subjectCode || extractSubjectCode(session.paperId)
+  const subjectName = session.subjectName || extractSubjectName(session.paperId)
   const roomId = extractRoomId(session.roomId)
-  const roomNumber = extractRoomNumber(session.roomId)
-  const building = extractBuilding(session.roomId)
+  const roomNumber = session.roomNumber || extractRoomNumber(session.roomId)
+  const building = session.building || extractBuilding(session.roomId)
   
   return {
     ...session,

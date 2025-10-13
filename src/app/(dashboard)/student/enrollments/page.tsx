@@ -68,7 +68,7 @@ const StudentEnrollmentsPage = () => {
             <h1 className="text-3xl font-bold text-gray-900">My Enrollments</h1>
             <p className="text-muted-foreground mt-1">View and manage your course enrollments</p>
           </div>
-          <Button onClick={() => setShowEnrollPanel((v) => !v)} className="bg-gradient-to-r from-student to-student/80 hover:from-student/90 hover:to-student/70">
+          <Button onClick={() => setShowEnrollPanel((v) => !v)}>
             <PlusIcon className="mr-2 h-4 w-4" />
             Enroll in Subject
           </Button>

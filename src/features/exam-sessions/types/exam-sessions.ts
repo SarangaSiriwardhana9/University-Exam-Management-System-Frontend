@@ -15,6 +15,9 @@ export type ExamSession = {
   subjectName?: string
   examTitle: string
   examDateTime: string
+  examDate: string
+  startTime: string
+  endTime: string
   durationMinutes: number
   formattedDuration: string
   roomId: string
@@ -35,8 +38,9 @@ export type ExamSession = {
 export type CreateExamSessionDto = {
   paperId: string
   examTitle: string
-  examDateTime: string
-  durationMinutes: number
+  examDate: string
+  startTime: string
+  endTime: string
   roomId: string
   maxStudents: number
   instructions?: string

@@ -78,8 +78,9 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
     defaultValues: {
       paperId: '',
       examTitle: '',
-      examDateTime: '',
-      durationMinutes: 120,
+      examDate: '',
+      startTime: '09:00',
+      endTime: '12:00',
       roomId: '',
       maxStudents: 30,
       instructions: '',
@@ -98,14 +99,19 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
       (!sessionRoomId || !isLoadingSessionRoom)
 
     if (readyToReset) {
-      const examDateTime = session.examDateTime ? 
-        new Date(session.examDateTime).toISOString().slice(0, 16) : ''
+      const examDate = session.examDate ? 
+        new Date(session.examDate).toISOString().slice(0, 10) : ''
+      const startTime = session.startTime ?
+        new Date(session.startTime).toTimeString().slice(0, 5) : '09:00'
+      const endTime = session.endTime ?
+        new Date(session.endTime).toTimeString().slice(0, 5) : '12:00'
       
       form.reset({
         paperId: session.paperId,
         examTitle: session.examTitle,
-        examDateTime,
-        durationMinutes: session.durationMinutes,
+        examDate,
+        startTime,
+        endTime,
         roomId: session.roomId,
         maxStudents: session.maxStudents,
         instructions: session.instructions || '',
@@ -194,30 +200,30 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="examTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Exam Title *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter exam title" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="examTitle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Exam Title *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter exam title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="examDateTime"
+                name="examDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Exam Date & Time *</FormLabel>
+                    <FormLabel>Exam Date *</FormLabel>
                     <FormControl>
                       <Input 
-                        type="datetime-local" 
+                        type="date" 
                         {...field} 
                       />
                     </FormControl>
@@ -225,21 +231,17 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="durationMinutes"
+                name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (Minutes) *</FormLabel>
+                    <FormLabel>Start Time *</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        placeholder="120" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        type="time" 
+                        {...field} 
                       />
                     </FormControl>
                     <FormMessage />
@@ -247,6 +249,28 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Students can register until this time
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="maxStudents"

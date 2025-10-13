@@ -60,11 +60,17 @@ const ExamPapersPage = () => {
   };
 
   const handleDuplicate = (paper: ExamPaper) => {
-    duplicateMutation.mutate(paper._id, {
-      onSuccess: (response) => {
-        router.push(`/faculty/exam-papers/${response.data._id}/edit`);
+    duplicateMutation.mutate(
+      { 
+        id: paper._id, 
+        newTitle: `${paper.paperTitle} (Copy)` 
       },
-    });
+      {
+        onSuccess: (response) => {
+          router.push(`/faculty/exam-papers/${response.data._id}/edit`);
+        },
+      }
+    );
   };
 
   const handleFinalize = () => {

@@ -6,10 +6,9 @@ export const createExamSessionSchema = z.object({
   examTitle: z.string()
     .min(3, 'Exam title must be at least 3 characters')
     .max(100, 'Exam title must be less than 100 characters'),
-  examDateTime: z.string().min(1, 'Exam date and time is required'),
-  durationMinutes: z.number()
-    .min(15, 'Duration must be at least 15 minutes')
-    .max(480, 'Duration cannot exceed 8 hours'),
+  examDate: z.string().min(1, 'Exam date is required'),
+  startTime: z.string().min(1, 'Start time is required'),
+  endTime: z.string().min(1, 'End time is required'),
   roomId: z.string().min(1, 'Room is required'),
   maxStudents: z.number()
     .min(1, 'Maximum students must be at least 1')
@@ -23,6 +22,15 @@ export const createExamSessionSchema = z.object({
     .int('Semester must be an integer')
     .min(1, 'Semester must be 1 or 2')
     .max(2, 'Semester must be 1 or 2')
+}).refine((data) => {
+  const [startHour, startMin] = data.startTime.split(':').map(Number)
+  const [endHour, endMin] = data.endTime.split(':').map(Number)
+  const startMinutes = startHour * 60 + startMin
+  const endMinutes = endHour * 60 + endMin
+  return startMinutes < endMinutes
+}, {
+  message: 'Start time must be before end time',
+  path: ['endTime']
 })
 
 export const updateExamSessionSchema = createExamSessionSchema.partial().extend({

@@ -72,11 +72,18 @@ const ViewExamPaperPage = ({ params }: ViewExamPaperPageProps) => {
   }
 
   const handleDuplicate = () => {
-    duplicateMutation.mutate(paperId, {
-      onSuccess: (response) => {
-        router.push(`/faculty/exam-papers/${response.data._id}/edit`)
+    if (!paperResponse?.data) return
+    duplicateMutation.mutate(
+      { 
+        id: paperId, 
+        newTitle: `${paperResponse.data.paperTitle} (Copy)` 
+      },
+      {
+        onSuccess: (response) => {
+          router.push(`/faculty/exam-papers/${response.data._id}/edit`)
+        }
       }
-    })
+    )
   }
 
   const handleFinalize = () => {
@@ -308,9 +315,9 @@ const ViewExamPaperPage = ({ params }: ViewExamPaperPageProps) => {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="font-semibold">Q{index + 1}.</span>
-                                {question.section && (
+                                {question.partLabel && (
                                   <Badge variant="outline" className="text-xs">
-                                    Section {question.section}
+                                    Part {question.partLabel}
                                   </Badge>
                                 )}
                                 {question.isOptional && (

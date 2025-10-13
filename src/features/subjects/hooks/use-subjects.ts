@@ -166,10 +166,10 @@ export const subjectsService = {
   assignFaculty: (id: string, data: AssignFacultyDto): Promise<ApiResponse<FacultyAssignment>> =>
     apiClient.post(`/api/v1/subjects/${id}/assign-faculty`, data),
 
-  getFacultyAssignments: (id: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
+  getFacultyAssignments: (id: string, params?: { year?: number; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
     apiClient.get(`/api/v1/subjects/${id}/faculty`, { params }),
 
-  getMyAssignments: (params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
+  getMyAssignments: (params?: { year?: number; semester?: number }): Promise<ApiResponse<FacultyAssignment[]>> =>
     apiClient.get('/api/v1/subjects/my', { params }),
 
   getMySubjects: async (params?: GetSubjectsParams, userId?: string): Promise<PaginatedResponse<Subject>> => {

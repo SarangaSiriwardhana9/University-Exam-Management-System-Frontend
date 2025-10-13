@@ -83,7 +83,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
       roomId: '',
       maxStudents: 30,
       instructions: '',
-      academicYear: new Date().getFullYear().toString(),
+      year: 1,
       semester: 1
     }
   }) as UseFormReturn<CreateExamSessionFormData>
@@ -109,7 +109,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
         roomId: session.roomId,
         maxStudents: session.maxStudents,
         instructions: session.instructions || '',
-        academicYear: session.academicYear,
+        year: session.year,
         semester: session.semester
       })
     }
@@ -299,13 +299,27 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="academicYear"
+                name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Academic Year *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="2024" {...field} />
-                    </FormControl>
+                    <FormLabel>Year *</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4].map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            Year {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Year level (1-4)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -324,13 +338,16 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                        {[1, 2].map((sem) => (
                           <SelectItem key={sem} value={sem.toString()}>
                             Semester {sem}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      Semester (1 or 2)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

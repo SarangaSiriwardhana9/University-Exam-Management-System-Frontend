@@ -5,6 +5,7 @@ export type Subject = {
   departmentId: string
   departmentName?: string
   year: number
+  semester: number
   credits: number
   description?: string
   isActive: boolean
@@ -21,6 +22,7 @@ export type CreateSubjectDto = {
   subjectName: string
   departmentId: string
   year: number
+  semester: number
   credits?: number
   description?: string
   licId?: string
@@ -33,7 +35,7 @@ export type UpdateSubjectDto = Partial<Omit<CreateSubjectDto, 'subjectCode'>> & 
 
 export type AssignFacultyDto = {
   facultyId: string
-  academicYear: string
+  year: number
   semester: number
   isCoordinator: boolean
   assignedDate: string
@@ -43,7 +45,7 @@ export type FacultyAssignment = {
   _id: string
   facultyId: string
   facultyName: string
-  academicYear: string
+  year: number
   semester: number
   isCoordinator: boolean
   assignedDate: string
@@ -58,6 +60,7 @@ export type SubjectStats = {
 export type GetSubjectsParams = {
   departmentId?: string
   year?: number
+  semester?: number
   isActive?: boolean
   limit?: number
   page?: number

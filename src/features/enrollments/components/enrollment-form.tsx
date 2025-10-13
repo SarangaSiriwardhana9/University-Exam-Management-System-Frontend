@@ -61,13 +61,13 @@ export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: En
   const form = useForm<CreateEnrollmentFormData | UpdateEnrollmentFormData>({
     resolver: zodResolver(isEditMode ? updateEnrollmentSchema : createEnrollmentSchema) as any,
     defaultValues: isEditMode ? {
-      academicYear: '',
+      year: 1,
       semester: 1,
       enrollmentDate: new Date().toISOString().split('T')[0],
     } : {
       studentId: '',
       subjectId: '',
-      academicYear: '',
+      year: 1,
       semester: 1,
       enrollmentDate: new Date().toISOString().split('T')[0],
     }
@@ -76,7 +76,7 @@ export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: En
   useEffect(() => {
     if (enrollment) {
       form.reset({
-        academicYear: enrollment.academicYear,
+        year: enrollment.year,
         semester: enrollment.semester,
         enrollmentDate: new Date(enrollment.enrollmentDate).toISOString().split('T')[0],
         status: enrollment.status,
@@ -93,13 +93,6 @@ export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: En
   }
 
  
-  const currentYear = new Date().getFullYear()
-  const academicYears = [
-    `${currentYear}-${currentYear + 1}`,
-    `${currentYear - 1}-${currentYear}`,
-    `${currentYear + 1}-${currentYear + 2}`,
-  ]
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -181,26 +174,29 @@ export const EnrollmentForm = ({ enrollment, onSubmit, onCancel, isLoading }: En
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
-              name="academicYear"
+              name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Academic Year *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <FormLabel>Year *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    value={field.value?.toString()}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select year" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {academicYears.map((year) => (
-                        <SelectItem key={year} value={year}>
-                          {year}
+                      {[1, 2, 3, 4].map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          Year {year}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Academic year for enrollment
+                    Student year level (1-4)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

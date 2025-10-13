@@ -15,10 +15,14 @@ export const createExamSessionSchema = z.object({
     .min(1, 'Maximum students must be at least 1')
     .max(500, 'Maximum students cannot exceed 500'),
   instructions: z.string().optional(),
-  academicYear: z.string().min(1, 'Academic year is required'),
+  year: z.number()
+    .int('Year must be an integer')
+    .min(1, 'Year must be at least 1')
+    .max(4, 'Year must be at most 4'),
   semester: z.number()
-    .min(1, 'Semester must be at least 1')
-    .max(8, 'Semester cannot exceed 8')
+    .int('Semester must be an integer')
+    .min(1, 'Semester must be 1 or 2')
+    .max(2, 'Semester must be 1 or 2')
 })
 
 export const updateExamSessionSchema = createExamSessionSchema.partial().extend({

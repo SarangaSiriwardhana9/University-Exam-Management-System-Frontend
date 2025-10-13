@@ -16,7 +16,7 @@ export type StudentEnrollment = {
   subjectCode?: string
   subjectName?: string
   subjectCredits?: number
-  academicYear: string
+  year: number
   semester: number
   enrollmentDate: string
   status: EnrollmentStatus
@@ -28,12 +28,12 @@ export type StudentEnrollment = {
   updatedAt: string
 }
 
-
 export type AvailableSubject = {
   _id: string
   subjectCode: string
   subjectName: string
   year: number
+  semester: number
   credits: number
   description?: string
   departmentId: string
@@ -45,20 +45,19 @@ export type AvailableSubject = {
 export type CreateEnrollmentDto = {
   studentId: string
   subjectId: string
-  academicYear: string
+  year: number
   semester: number
   enrollmentDate?: string
 }
 
-
 export type SelfEnrollmentDto = {
   subjectId: string
-  academicYear: string
+  year: number
   semester: number
 }
 
 export type UpdateEnrollmentDto = {
-  academicYear?: string
+  year?: number
   semester?: number
   enrollmentDate?: string
   status?: EnrollmentStatus
@@ -78,7 +77,7 @@ export type EnrollmentStats = {
 export type GetEnrollmentsParams = {
   studentId?: string
   subjectId?: string
-  academicYear?: string
+  year?: number
   semester?: number
   status?: EnrollmentStatus
   page?: number

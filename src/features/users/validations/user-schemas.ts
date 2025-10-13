@@ -31,17 +31,18 @@ export const createUserSchema = z.object({
   postalCode: z.string().max(10).optional().or(z.literal('')),
   country: z.string().max(50).optional().or(z.literal('')),
   departmentId: z.string().optional().or(z.literal('')),
-  year: z.number().int().min(1).max(4).optional()
+  year: z.number().int().min(1).max(4).optional(),
+  semester: z.number().int().min(1).max(2).optional()
 }).refine(
   (data) => {
-    // If role is student, year must be provided
+    // If role is student, year and semester must be provided
     if (data.role === USER_ROLES.STUDENT) {
-      return data.year !== undefined
+      return data.year !== undefined && data.semester !== undefined
     }
     return true
   },
   {
-    message: "Year is required for students",
+    message: "Year and semester are required for students",
     path: ["year"]
   }
 )
@@ -72,20 +73,9 @@ export const updateUserSchema = z.object({
   country: z.string().max(50).optional().or(z.literal('')),
   departmentId: z.string().optional().or(z.literal('')),
   isActive: z.boolean().optional(),
-  year: z.number().int().min(1).max(4).optional()
-}).refine(
-  (data) => {
-    // If role is being updated to student, year must be provided
-    if (data.role === USER_ROLES.STUDENT) {
-      return data.year !== undefined
-    }
-    return true
-  },
-  {
-    message: "Year is required for students",
-    path: ["year"]
-  }
-)
+  year: z.number().int().min(1).max(4).optional(),
+  semester: z.number().int().min(1).max(2).optional()
+})
 
 export type CreateUserFormData = z.infer<typeof createUserSchema>
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>

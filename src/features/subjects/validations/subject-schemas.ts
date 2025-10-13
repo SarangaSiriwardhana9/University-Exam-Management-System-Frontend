@@ -13,14 +13,17 @@ export const createSubjectSchema = z.object({
   year: z.coerce.number()
     .int('Year must be an integer')
     .min(1, 'Year must be at least 1')
-    .max(6, 'Year must be at most 6'),
+    .max(4, 'Year must be at most 4'),
+  semester: z.coerce.number()
+    .int('Semester must be an integer')
+    .min(1, 'Semester must be 1 or 2')
+    .max(2, 'Semester must be 1 or 2'),
   credits: z.coerce.number()
     .min(0, 'Credits must be at least 0')
     .max(10, 'Credits must be at most 10')
     .optional()
     .default(3),
-  description: z.string().optional()
-  ,
+  description: z.string().optional(),
   licId: z.string().optional(),
   lecturerIds: z.array(z.string()).optional()
 })

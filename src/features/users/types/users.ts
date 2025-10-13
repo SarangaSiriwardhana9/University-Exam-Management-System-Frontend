@@ -1,5 +1,4 @@
- 
-import type { UserRole } from '@/constants/roles'
+ import type { UserRole } from '@/constants/roles'
 
 export type User = {
   _id: string
@@ -18,7 +17,8 @@ export type User = {
   country?: string
   profileImage?: string
   departmentId?: string
-  year?: number   
+  year?: number
+  semester?: number
   createdAt: string
   updatedAt: string
   lastLoginAt?: string
@@ -39,7 +39,8 @@ export type CreateUserDto = {
   postalCode?: string
   country?: string
   departmentId?: string
-  year?: number 
+  year?: number
+  semester?: number
 }
 
 export type UpdateUserDto = Partial<Omit<CreateUserDto, 'username' | 'password'>> & {
@@ -61,7 +62,8 @@ export type GetUsersParams = {
   role?: UserRole
   isActive?: boolean
   departmentId?: string
-  year?: number   
+  year?: number
+  semester?: number
   limit?: number
   page?: number
   search?: string

@@ -89,6 +89,7 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
           subjectName: '',
           departmentId: '',
           year: 1,
+          semester: 1,
           credits: 3,
           description: '',
           licId: undefined,
@@ -99,6 +100,7 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
           subjectName: '',
           departmentId: '',
           year: 1,
+          semester: 1,
           credits: 3,
           description: '',
           licId: undefined,
@@ -141,6 +143,7 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
         subjectName: subject.subjectName,
         departmentId: subjectDepartmentId ?? '',
         year: subject.year,
+        semester: subject.semester,
         credits: subject.credits,
         description: subject.description || '',
         licId: subjectLicId ?? undefined,
@@ -368,13 +371,13 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Academic Year *</FormLabel>
+                  <FormLabel>Year *</FormLabel>
                   <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString() ?? undefined}>
                     <FormControl>
                       <SelectTrigger>
@@ -382,14 +385,37 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((year) => (
+                      {[1, 2, 3, 4].map((year) => (
                         <SelectItem key={year} value={year.toString()}>
                           Year {year}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>Which year is this subject offered in</FormDescription>
+                  <FormDescription>Year level (1-4)</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="semester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Semester *</FormLabel>
+                  <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString() ?? undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">Semester 1</SelectItem>
+                      <SelectItem value="2">Semester 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>Semester (1 or 2)</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -412,7 +438,7 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       placeholder="3"
                     />
                   </FormControl>
-                  <FormDescription>Credit hours for this subject</FormDescription>
+                  <FormDescription>Credit hours</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

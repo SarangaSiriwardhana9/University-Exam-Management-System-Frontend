@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -25,7 +25,8 @@ import {
 import { USER_ROLES } from '@/constants/roles'
 import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
 import type { User } from '../types/users'
-import { useDepartmentsQuery } from '@/features/departments/hooks/use-departments-query'
+import type { Department } from '@/features/departments/types/departments'
+import { useDepartmentsQuery, useDepartmentQuery } from '@/features/departments/hooks/use-departments-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 
 type CreateUserFormProps = {
@@ -47,11 +48,21 @@ type UserFormProps = CreateUserFormProps | UpdateUserFormProps
 export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps) => {
   const isEditMode = !!user
 
- 
   const { data: departmentsResponse, isLoading: isDepartmentsLoading } = useDepartmentsQuery({
     page: 1,
     limit: 100,  
   })
+
+  const extractId = (v?: string | { _id?: string; id?: string } | null): string | undefined => {
+    if (!v) return undefined
+    if (typeof v === 'string') return v
+    return v._id ?? v.id ?? undefined
+  }
+
+  const userDepartmentId = extractId(user?.departmentId)
+  const { data: userDepartmentResponse, isLoading: isUserDepartmentLoading } = useDepartmentQuery(
+    isEditMode ? userDepartmentId : undefined
+  )
 
   const form = useForm<CreateUserFormData | UpdateUserFormData>({
     resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
@@ -70,12 +81,36 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
       postalCode: '',
       country: '',
       departmentId: '',
-      year: undefined
+      year: undefined,
+      semester: undefined
     }
   })
 
+  const departmentOptions = useMemo(() => {
+    const map = new Map<string, Department>()
+    ;(departmentsResponse?.data || []).forEach((d) => map.set(d._id, d))
+    if (userDepartmentResponse?.data) map.set(userDepartmentResponse.data._id, userDepartmentResponse.data)
+    if (user?.departmentId && typeof user.departmentId === 'object') {
+      const deptObj = user.departmentId as Department
+      if (deptObj._id) map.set(deptObj._id, deptObj)
+    }
+    return Array.from(map.values())
+  }, [departmentsResponse?.data, userDepartmentResponse?.data, user?.departmentId])
+
   useEffect(() => {
-    if (user) {
+    if (!isEditMode || !user) return
+
+    console.log('User data received:', user)
+    console.log('User department ID:', userDepartmentId)
+    console.log('Departments loading:', isDepartmentsLoading)
+    console.log('User department loading:', isUserDepartmentLoading)
+    console.log('Department options:', departmentOptions)
+
+    const readyToReset = 
+      !isDepartmentsLoading &&
+      (!userDepartmentId || !isUserDepartmentLoading)
+
+    if (readyToReset) {
       const resetData = {
         username: user.username,
         email: user.email,
@@ -89,19 +124,30 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         state: user.state || '',
         postalCode: user.postalCode || '',
         country: user.country || '',
-        departmentId: user.departmentId || '',
-        year: user.role === USER_ROLES.STUDENT ? user.year : undefined
+        departmentId: userDepartmentId || '',
+        year: user.year,
+        semester: user.semester
       }
+      console.log('Resetting form with data:', resetData)
       form.reset(resetData)
     }
-  }, [user, form])
+  }, [
+    isEditMode,
+    user,
+    isDepartmentsLoading,
+    isUserDepartmentLoading,
+    userDepartmentId,
+    departmentOptions,
+    form
+  ])
 
   const handleSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
     const submissionData = { ...data }
     
-    // Remove year if not a student
+    // Remove year and semester if not a student
     if (submissionData.role !== USER_ROLES.STUDENT) {
       delete submissionData.year
+      delete submissionData.semester
     }
     
     // Remove departmentId if empty string
@@ -120,8 +166,12 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
   const isStudent = selectedRole === USER_ROLES.STUDENT
   const isFaculty = selectedRole === USER_ROLES.FACULTY
 
-  // Department is required for students and faculty
   const requiresDepartment = isStudent || isFaculty
+
+  const isLoadingInitialData = isEditMode && (
+    isDepartmentsLoading ||
+    (userDepartmentId && isUserDepartmentLoading)
+  )
 
   return (
     <Form {...form}>
@@ -129,6 +179,9 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
         {/* Basic Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Basic Information</h3>
+          {isLoadingInitialData && (
+            <div className="text-sm text-muted-foreground">Loading user data...</div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -233,12 +286,12 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {isDepartmentsLoading ? (
+                      {isDepartmentsLoading || (isEditMode && userDepartmentId && isUserDepartmentLoading) ? (
                         <div className="flex items-center justify-center py-4">
                           <LoadingSpinner size="sm" />
                         </div>
-                      ) : departmentsResponse?.data && departmentsResponse.data.length > 0 ? (
-                        departmentsResponse.data.map((dept) => (
+                      ) : departmentOptions.length > 0 ? (
+                        departmentOptions.map((dept) => (
                           <SelectItem key={dept._id} value={dept._id}>
                             {dept.departmentName} ({dept.departmentCode})
                           </SelectItem>
@@ -261,38 +314,69 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
             />
           )}
 
-          {/* Academic Year - Show only for Students */}
+          {/* Academic Year & Semester - Show only for Students */}
           {isStudent && (
-            <FormField
-              control={form.control}
-              name="year"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Academic Year *</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
-                    value={field.value?.toString() || ''}
-                    defaultValue={field.value?.toString() || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select academic year" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="1">Year 1</SelectItem>
-                      <SelectItem value="2">Year 2</SelectItem>
-                      <SelectItem value="3">Year 3</SelectItem>
-                      <SelectItem value="4">Year 4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the student&apos;s current academic year (required for enrollment)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year *</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                      value={field.value?.toString() || ''}
+                      defaultValue={field.value?.toString() || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">Year 1</SelectItem>
+                        <SelectItem value="2">Year 2</SelectItem>
+                        <SelectItem value="3">Year 3</SelectItem>
+                        <SelectItem value="4">Year 4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Student&apos;s current year level
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="semester"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Semester *</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                      value={field.value?.toString() || ''}
+                      defaultValue={field.value?.toString() || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select semester" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">Semester 1</SelectItem>
+                        <SelectItem value="2">Semester 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Current semester
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           )}
 
           {!isEditMode && (

@@ -38,7 +38,7 @@ export const studentEnrollmentsService = {
     }
   },
 
-  getByStudent: async (studentId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+  getByStudent: async (studentId: string, params?: { year?: number; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
     const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/student/${studentId}`, { params })
     return {
       data: Array.isArray(enrollments) ? enrollments : []
@@ -75,7 +75,7 @@ getMyEnrollments: async (params?: GetEnrollmentsParams): Promise<PaginatedRespon
     totalPages: response.totalPages || 1,
   };
 },
-  getBySubject: async (subjectId: string, params?: { academicYear?: string; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
+  getBySubject: async (subjectId: string, params?: { year?: number; semester?: number }): Promise<ApiResponse<StudentEnrollment[]>> => {
     const enrollments = await apiClient.get<StudentEnrollment[]>(`/api/v1/student-enrollments/subject/${subjectId}`, { params })
     return {
       data: Array.isArray(enrollments) ? enrollments : []
@@ -86,9 +86,9 @@ getMyEnrollments: async (params?: GetEnrollmentsParams): Promise<PaginatedRespon
     apiClient.get('/api/v1/student-enrollments/stats'),
 
 
-  getAvailableSubjects: async (academicYear: string, semester: number): Promise<ApiResponse<AvailableSubject[]>> => {
+  getAvailableSubjects: async (year: number, semester: number): Promise<ApiResponse<AvailableSubject[]>> => {
     const subjects = await apiClient.get<AvailableSubject[]>('/api/v1/student-enrollments/available-subjects', {
-      params: { academicYear, semester }
+      params: { year, semester }
     })
     return {
       data: Array.isArray(subjects) ? subjects : []

@@ -33,7 +33,7 @@ export const useSubjectStatsQuery = () => {
   })
 }
 
-export const useFacultyAssignmentsQuery = (subjectId: string | undefined, params?: { academicYear?: string; semester?: number }) => {
+export const useFacultyAssignmentsQuery = (subjectId: string | undefined, params?: { year?: number; semester?: number }) => {
   return useQuery({
     queryKey: ['subjects', subjectId, 'assignments', params],
     queryFn: async () => {

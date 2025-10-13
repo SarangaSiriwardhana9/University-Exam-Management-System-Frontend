@@ -63,16 +63,16 @@ export const useEnrollmentStatsQuery = () => {
 }
 
 
-export const useAvailableSubjectsQuery = (academicYear: string, semester: number) => {
+export const useAvailableSubjectsQuery = (year: number, semester: number) => {
   const { user } = useAuth()
   
   return useQuery({
-    queryKey: ['enrollments', 'available-subjects', academicYear, semester, user?._id],
+    queryKey: ['enrollments', 'available-subjects', year, semester, user?._id],
     queryFn: async () => {
-      if (!academicYear || !semester) throw new Error('Academic year and semester are required')
-      return await studentEnrollmentsService.getAvailableSubjects(academicYear, semester)
+      if (!year || !semester) throw new Error('Year and semester are required')
+      return await studentEnrollmentsService.getAvailableSubjects(year, semester)
     },
-    enabled: !!academicYear && !!semester && !!user?._id,
+    enabled: !!year && !!semester && !!user?._id,
     staleTime: 30000,
   })
 }

@@ -26,7 +26,7 @@ export type ExamSession = {
   status: ExamSessionStatus
   createdBy: string
   createdByName?: string
-  academicYear: string
+  year: number
   semester: number
   createdAt: string
   updatedAt: string
@@ -40,7 +40,7 @@ export type CreateExamSessionDto = {
   roomId: string
   maxStudents: number
   instructions?: string
-  academicYear: string
+  year: number
   semester: number
 }
 
@@ -59,7 +59,7 @@ export type GetExamSessionsParams = {
   paperId?: string
   roomId?: string
   status?: ExamSessionStatus
-  academicYear?: string
+  year?: number
   semester?: number
   dateFrom?: string
   dateTo?: string

@@ -25,6 +25,7 @@ export const createRoomSchema = z.object({
   examCapacity: z.number().min(1, 'Exam capacity must be at least 1'),
   facilities: roomFacilitiesSchema,
   equipment: roomEquipmentSchema,
+  isLab: z.boolean().optional(),
   isAccessible: z.boolean().optional(),
   description: z.string().optional()
 }).refine((data) => data.examCapacity <= data.capacity, {

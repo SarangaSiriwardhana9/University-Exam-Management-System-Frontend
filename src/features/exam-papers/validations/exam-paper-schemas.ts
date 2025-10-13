@@ -46,6 +46,7 @@ export const createExamPaperSchema = z.object({
   ]),
   totalMarks: z.number().min(1, 'Total marks must be at least 1'),
   durationMinutes: z.number().int().min(1, 'Duration must be at least 1 minute'),
+  deliveryMode: z.enum(['onsite', 'online']),
   instructions: z.string().optional(),
   parts: z.array(paperPartSchema).min(1, 'At least one part is required'),
   questions: z.array(paperQuestionSchema).min(1, 'At least one question is required')

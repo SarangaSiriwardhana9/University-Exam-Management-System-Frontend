@@ -9,7 +9,9 @@ export const createExamSessionSchema = z.object({
   examDate: z.string().min(1, 'Exam date is required'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
-  roomId: z.string().min(1, 'Room is required'),
+  deliveryMode: z.enum(['onsite', 'online']),
+  roomId: z.string().optional(),
+  enrollmentKey: z.string().optional(),
   maxStudents: z.number()
     .min(1, 'Maximum students must be at least 1')
     .max(500, 'Maximum students cannot exceed 500'),
@@ -31,6 +33,14 @@ export const createExamSessionSchema = z.object({
 }, {
   message: 'Start time must be before end time',
   path: ['endTime']
+}).refine((data) => {
+  if (data.deliveryMode === 'onsite' || data.deliveryMode === 'online') {
+    return !!data.roomId
+  }
+  return true
+}, {
+  message: 'Room is required for onsite and online exams',
+  path: ['roomId']
 })
 
 export const updateExamSessionSchema = createExamSessionSchema.partial().extend({

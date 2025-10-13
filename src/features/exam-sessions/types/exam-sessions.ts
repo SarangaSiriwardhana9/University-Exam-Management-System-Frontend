@@ -7,6 +7,8 @@ export const EXAM_SESSION_STATUS = {
 
 export type ExamSessionStatus = typeof EXAM_SESSION_STATUS[keyof typeof EXAM_SESSION_STATUS]
 
+export type DeliveryMode = 'onsite' | 'online'
+
 export type ExamSession = {
   _id: string
   paperId: string
@@ -20,9 +22,11 @@ export type ExamSession = {
   endTime: string
   durationMinutes: number
   formattedDuration: string
-  roomId: string
+  deliveryMode: DeliveryMode
+  roomId?: string
   roomNumber?: string
   building?: string
+  enrollmentKey?: string
   maxStudents: number
   registeredStudents: number
   instructions?: string
@@ -41,7 +45,9 @@ export type CreateExamSessionDto = {
   examDate: string
   startTime: string
   endTime: string
-  roomId: string
+  deliveryMode: DeliveryMode
+  roomId?: string
+  enrollmentKey?: string
   maxStudents: number
   instructions?: string
   year: number

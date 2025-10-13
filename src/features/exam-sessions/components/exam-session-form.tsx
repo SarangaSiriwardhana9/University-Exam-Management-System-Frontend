@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -38,6 +38,7 @@ type ExamSessionFormProps = {
 
 export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: ExamSessionFormProps) => {
   const isEditMode = !!session
+  const [deliveryMode, setDeliveryMode] = useState<'onsite' | 'online'>('onsite')
 
   const { data: examPapersData, isLoading: isLoadingPapers } = useExamPapersQuery({ 
     isFinalized: true, 
@@ -45,7 +46,8 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
   })
 
   const { data: roomsData, isLoading: isLoadingRooms } = useRoomsQuery({ 
-    isActive: true 
+    isActive: true,
+    isLab: deliveryMode === 'online' ? true : undefined
   })
 
   const sessionPaperId = session?.paperId
@@ -81,7 +83,9 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
       examDate: '',
       startTime: '09:00',
       endTime: '12:00',
+      deliveryMode: 'onsite' as const,
       roomId: '',
+      enrollmentKey: '',
       maxStudents: 30,
       instructions: '',
       year: 1,
@@ -112,7 +116,9 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
         examDate,
         startTime,
         endTime,
-        roomId: session.roomId,
+        deliveryMode: session.deliveryMode || 'onsite',
+        roomId: session.roomId || '',
+        enrollmentKey: session.enrollmentKey || '',
         maxStudents: session.maxStudents,
         instructions: session.instructions || '',
         year: session.year,
@@ -214,6 +220,40 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="deliveryMode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Mode *</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value)
+                      setDeliveryMode(value as 'onsite' | 'online')
+                      if (value === 'online') {
+                        form.setValue('roomId', '')
+                      }
+                    }} 
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="onsite">Onsite</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {field.value === 'online' ? 'Online exams must be conducted in computer labs' : 'Exam will be conducted in a physical room'}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -295,7 +335,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 name="roomId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Room *</FormLabel>
+                    <FormLabel>{deliveryMode === 'online' ? 'Computer Lab *' : 'Room *'}</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}
@@ -303,22 +343,54 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select room" />
+                          <SelectValue placeholder={deliveryMode === 'online' ? 'Select computer lab' : 'Select room'} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {rooms.map((room) => (
-                          <SelectItem key={room._id} value={room._id}>
-                            {room.roomNumber} - {room.building} (Cap: {room.capacity})
-                          </SelectItem>
-                        ))}
+                        {rooms.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            {deliveryMode === 'online' ? 'No computer labs available' : 'No rooms available'}
+                          </div>
+                        ) : (
+                          rooms.map((room) => (
+                            <SelectItem key={room._id} value={room._id}>
+                              {room.roomNumber} - {room.building} (Cap: {room.examCapacity})
+                              {room.isLab && ' 🖥️'}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      {deliveryMode === 'online' && 'Only computer labs are shown for online exams'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            {deliveryMode === 'online' && (
+              <FormField
+                control={form.control}
+                name="enrollmentKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Enrollment Key</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Leave empty to auto-generate" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Students will need this key to access the online exam. Leave empty to auto-generate a unique key.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

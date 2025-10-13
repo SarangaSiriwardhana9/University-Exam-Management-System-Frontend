@@ -74,6 +74,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       paperType: EXAM_TYPES.MIDTERM,
       totalMarks: 100,
       durationMinutes: 180,
+      deliveryMode: 'onsite' as const,
       instructions: '',
       parts: [{ partLabel: 'A', partTitle: 'Multiple Choice Questions', partOrder: 1 }],
       questions: []
@@ -108,6 +109,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
         paperType: paper.paperType,
         totalMarks: paper.totalMarks,
         durationMinutes: paper.durationMinutes,
+        deliveryMode: paper.deliveryMode || 'onsite',
         instructions: paper.instructions || '',
         parts: paper.parts.map(p => ({
           partLabel: p.partLabel,
@@ -316,6 +318,31 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                   <SelectItem value={EXAM_TYPES.ASSIGNMENT}>Assignment</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="deliveryMode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Delivery Mode *</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="onsite">Onsite</SelectItem>
+                                  <SelectItem value="online">Online</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Online exams require computer labs for exam sessions
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}

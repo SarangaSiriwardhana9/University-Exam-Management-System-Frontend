@@ -9,6 +9,8 @@ export const EXAM_TYPES = {
 
 export type ExamType = typeof EXAM_TYPES[keyof typeof EXAM_TYPES]
 
+export type DeliveryMode = 'onsite' | 'online'
+
 export type SubPaperQuestion = {
   _id: string
   questionId: string
@@ -60,6 +62,7 @@ export type ExamPaper = {
   totalMarks: number
   durationMinutes: number
   formattedDuration: string
+  deliveryMode: DeliveryMode
   instructions?: string
   createdBy: string
   createdByName?: string
@@ -109,6 +112,7 @@ export type CreateExamPaperDto = {
   paperType: ExamType
   totalMarks: number
   durationMinutes: number
+  deliveryMode: DeliveryMode
   instructions?: string
   parts: PaperPartDto[]
   questions: PaperQuestionDto[]

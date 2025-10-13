@@ -9,6 +9,7 @@ export type Room = {
   capacityRatio: number
   facilities?: RoomFacilities
   equipment?: RoomEquipment
+  isLab: boolean
   isAccessible: boolean
   isActive: boolean
   description?: string
@@ -41,6 +42,7 @@ export type CreateRoomDto = {
   examCapacity: number
   facilities?: RoomFacilities
   equipment?: RoomEquipment
+  isLab?: boolean
   isAccessible?: boolean
   description?: string
 }
@@ -82,6 +84,7 @@ export type GetRoomsParams = {
   building?: string
   minCapacity?: number
   maxCapacity?: number
+  isLab?: boolean
   isAccessible?: boolean
   isActive?: boolean
   hasFacility?: string

@@ -61,6 +61,7 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
         computers: 0,
         printers: 0
       },
+      isLab: false,
       isAccessible: false,
       description: ''
     }
@@ -76,6 +77,7 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
         examCapacity: room.examCapacity,
         facilities: room.facilities || {},
         equipment: room.equipment || {},
+        isLab: room.isLab || false,
         isAccessible: room.isAccessible || false,
         description: room.description || ''
       })
@@ -192,28 +194,53 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="isAccessible"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>
-                    Wheelchair Accessible
-                  </FormLabel>
-                  <FormDescription>
-                    This room has accessibility features for people with disabilities
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="isLab"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Computer Lab
+                    </FormLabel>
+                    <FormDescription>
+                      Mark this room as a computer lab for online exams
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isAccessible"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Wheelchair Accessible
+                    </FormLabel>
+                    <FormDescription>
+                      This room has accessibility features for people with disabilities
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         {/* Facilities */}

@@ -24,6 +24,7 @@ export const usersService = {
 
   getById: async (id: string): Promise<ApiResponse<User>> => {
     const user = await apiClient.get<User>(`/api/v1/users/${id}`)
+    console.log('User fetched from API:', user)
     // If backend returns user directly, wrap it
     return {
       data: user

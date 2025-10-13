@@ -11,110 +11,76 @@ import type {
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
 type BackendSubjectsListResponse = {
-  subjects: RawSubject[]
+  subjects: BackendSubject[]
   total: number
   page: number
   limit: number
   totalPages: number
 }
 
-type RawSubject = Omit<Subject, 'departmentId' | 'departmentName'> & {
+type BackendSubject = Omit<Subject, 'departmentId' | 'departmentName' | 'licId' | 'licName' | 'lecturerIds' | 'lecturers'> & {
   departmentId: string | { _id: string; departmentCode: string; departmentName: string }
+  licId?: string | { _id: string; fullName: string; email: string }
+  lecturerIds?: (string | { _id: string; fullName: string; email: string })[]
 }
 
-const extractDepartmentName = (departmentId: RawSubject['departmentId']): string | undefined => {
-  if (!departmentId) return undefined
-  
-  if (typeof departmentId === 'object' && '_id' in departmentId) {
-    return departmentId.departmentName
-  }
-  
-  if (typeof departmentId === 'string' && departmentId.includes('departmentName')) {
-    try {
-      const match = departmentId.match(/departmentName:\s*'([^']+)'/)
-      if (match?.[1]) return match[1]
-    } catch {
-      return undefined
-    }
-  }
-  
-  return undefined
+// Helper to extract ID from string or object
+const extractId = (value: string | { _id: string } | null | undefined): string | undefined => {
+  if (!value) return undefined
+  if (typeof value === 'string') return value
+  return value._id
 }
 
-const extractDepartmentId = (departmentId: RawSubject['departmentId']): string | undefined => {
-  if (!departmentId) return undefined
-  
-  if (typeof departmentId === 'string' && !departmentId.includes('{')) {
-    return departmentId
-  }
-  
-  if (typeof departmentId === 'object' && '_id' in departmentId) {
-    return departmentId._id
-  }
-  
-  if (typeof departmentId === 'string' && departmentId.includes('ObjectId')) {
-    try {
-      const match = departmentId.match(/ObjectId\('([^']+)'\)/)
-      if (match?.[1]) return match[1]
-    } catch {
-      return undefined
-    }
-  }
-  
-  return undefined
+// Helper to extract name from object
+const extractName = (value: { fullName?: string; departmentName?: string } | null | undefined): string | undefined => {
+  if (!value || typeof value !== 'object') return undefined
+  return value.fullName || value.departmentName
 }
 
-const transformSubject = (subj: RawSubject): Subject => {
-  const departmentId = extractDepartmentId(subj.departmentId)
-  const departmentName = (subj as Record<string, unknown>).departmentName as string | undefined || extractDepartmentName(subj.departmentId)
+// Transform backend subject to frontend format
+const transformSubject = (subj: BackendSubject): Subject => {
+  console.log('Transforming subject:', subj)
   
-  let licId: string | undefined = undefined
-  let licName: string | undefined = undefined
+  const departmentId = extractId(subj.departmentId)
+  const departmentName = typeof subj.departmentId === 'object' ? subj.departmentId.departmentName : undefined
   
-  if (subj['licId']) {
-    const lic = subj['licId'] as Record<string, unknown>
-    if (typeof lic === 'string') {
-      licId = lic
-    } else if (lic?._id) {
-      licId = lic._id as string
-      licName = lic.fullName as string
-    }
-  }
+  const licId = extractId(subj.licId)
+  const licName = typeof subj.licId === 'object' ? extractName(subj.licId) : undefined
   
-  if (!licName && (subj as Record<string, unknown>).licName) {
-    licName = (subj as Record<string, unknown>).licName as string
-  }
-
   let lecturerIds: string[] | undefined = undefined
   let lecturers: { _id: string; fullName: string }[] | undefined = undefined
   
-  if (Array.isArray(subj['lecturerIds'])) {
-    const arr = subj['lecturerIds'] as Record<string, unknown>[]
-    lecturerIds = arr.map((x) => (x?._id ? String(x._id) : String(x)))
-    
-    if (arr.length > 0 && arr[0]?._id) {
-      lecturers = arr.map((x) => ({ 
-        _id: String(x._id), 
-        fullName: x.fullName as string 
+  if (Array.isArray(subj.lecturerIds)) {
+    lecturerIds = subj.lecturerIds.map(l => extractId(l)).filter(Boolean) as string[]
+    lecturers = subj.lecturerIds
+      .filter(l => typeof l === 'object' && l._id)
+      .map(l => ({
+        _id: (l as { _id: string })._id,
+        fullName: (l as { fullName: string }).fullName
       }))
-    } else if ((subj as Record<string, unknown>).lecturers && Array.isArray((subj as Record<string, unknown>).lecturers)) {
-      const subjLecturers = (subj as Record<string, unknown>).lecturers as Record<string, unknown>[]
-      lecturers = subjLecturers.map((x) => ({ 
-        _id: x._id?.toString() ?? String(x._id), 
-        fullName: x.fullName as string 
-      }))
-    }
   }
 
-  return {
-    ...subj,
+  const transformed = {
+    _id: subj._id,
+    subjectCode: subj.subjectCode,
+    subjectName: subj.subjectName,
     departmentId: departmentId || '',
     departmentName,
+    year: subj.year,
+    semester: subj.semester,
+    credits: subj.credits,
+    description: subj.description,
     licId,
     licName,
     lecturerIds,
-    lecturers
+    lecturers,
+    isActive: subj.isActive,
+    createdAt: subj.createdAt,
+    updatedAt: subj.updatedAt
   }
+  
+  console.log('Transformed subject:', transformed)
+  return transformed
 }
 
 export const subjectsService = {
@@ -130,14 +96,14 @@ export const subjectsService = {
   },
 
   getById: async (id: string): Promise<ApiResponse<Subject>> => {
-    const subject = await apiClient.get<RawSubject>(`/api/v1/subjects/${id}`)
+    const subject = await apiClient.get<BackendSubject>(`/api/v1/subjects/${id}`)
     return {
       data: transformSubject(subject)
     }
   },
 
   getByDepartment: async (departmentId: string): Promise<ApiResponse<Subject[]>> => {
-    const subjects = await apiClient.get<RawSubject[]>(`/api/v1/subjects/department/${departmentId}`)
+    const subjects = await apiClient.get<BackendSubject[]>(`/api/v1/subjects/department/${departmentId}`)
     return {
       data: Array.isArray(subjects) ? subjects.map(transformSubject) : []
     }
@@ -147,14 +113,14 @@ export const subjectsService = {
     apiClient.get('/api/v1/subjects/stats'),
 
   create: async (data: CreateSubjectDto): Promise<ApiResponse<Subject>> => {
-    const subject = await apiClient.post<RawSubject>('/api/v1/subjects', data)
+    const subject = await apiClient.post<BackendSubject>('/api/v1/subjects', data)
     return {
       data: transformSubject(subject)
     }
   },
 
   update: async (id: string, data: UpdateSubjectDto): Promise<ApiResponse<Subject>> => {
-    const subject = await apiClient.patch<RawSubject>(`/api/v1/subjects/${id}`, data)
+    const subject = await apiClient.patch<BackendSubject>(`/api/v1/subjects/${id}`, data)
     return {
       data: transformSubject(subject)
     }
@@ -191,14 +157,15 @@ export const subjectsService = {
     } else {
       subjects = assignments.map((a: Record<string, unknown>) => {
         const s = (a.subjectId || {}) as Record<string, unknown>
-        const raw: RawSubject = {
+        const raw: BackendSubject = {
           _id: (s._id ?? s.subjectId ?? '') as string,
           subjectCode: (s.subjectCode ?? '') as string,
           subjectName: (s.subjectName ?? '') as string,
           departmentId: (s.departmentId && (typeof s.departmentId === 'string' || (s.departmentId as Record<string, unknown>)._id)) 
-            ? s.departmentId as RawSubject['departmentId']
+            ? s.departmentId as BackendSubject['departmentId']
             : '',
           year: (s.year ?? 0) as number,
+          semester: (s.semester ?? 1) as number,
           credits: (s.credits ?? 0) as number,
           description: s.description as string | undefined,
           isActive: (s.isActive ?? true) as boolean,

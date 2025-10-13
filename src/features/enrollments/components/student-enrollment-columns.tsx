@@ -53,10 +53,10 @@ export const getStudentEnrollmentColumns = ({
     ),
   },
   {
-    accessorKey: 'academicYear',
-    header: 'Academic Year',
+    accessorKey: 'year',
+    header: 'Year',
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.academicYear}</div>
+      <Badge variant="outline">Year {row.original.year}</Badge>
     ),
   },
   {

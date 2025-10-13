@@ -119,7 +119,7 @@ const ViewEnrollmentPage = ({ params }: ViewEnrollmentPageProps) => {
                     {formatStatus(enrollment.status)}
                   </Badge>
                   <Badge variant="outline" className="justify-center">
-                    {enrollment.academicYear}
+                    Year {enrollment.year}
                   </Badge>
                   <Badge variant="outline" className="justify-center">
                     Semester {enrollment.semester}
@@ -166,8 +166,8 @@ const ViewEnrollmentPage = ({ params }: ViewEnrollmentPageProps) => {
                     <p className="mt-1">{new Date(enrollment.enrollmentDate).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
-                    <p className="mt-1">{enrollment.academicYear}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Year</p>
+                    <p className="mt-1">Year {enrollment.year}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Semester</p>

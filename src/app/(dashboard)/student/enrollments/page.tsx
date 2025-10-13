@@ -43,11 +43,10 @@ const StudentEnrollmentsPage = () => {
   const [showEnrollPanel, setShowEnrollPanel] = useState(false)
 
   // Self-enroll controls
-  const currentYear = new Date().getFullYear()
-  const [academicYear, setAcademicYear] = useState<string>(`${currentYear}/${currentYear + 1}`)
+  const [year, setYear] = useState<number>(1)
   const [semester, setSemester] = useState<number>(1)
 
-  const { data: availableData, isLoading: isAvailableLoading, error: availableError } = useAvailableSubjectsQuery(academicYear, semester)
+  const { data: availableData, isLoading: isAvailableLoading, error: availableError } = useAvailableSubjectsQuery(year, semester)
   const enrollMutation = useSelfEnrollment()
   const availableSubjects = availableData?.data || []
 
@@ -55,7 +54,6 @@ const StudentEnrollmentsPage = () => {
     onView: (enrollment) => router.push(`/student/enrollments/${enrollment._id}`),
   });
 
- 
   const totalEnrollments = data?.total ?? 0;
   const activeEnrollments = data?.data?.filter((e) => e.status === ENROLLMENT_STATUS.ACTIVE).length ?? 0;
   const totalCredits = data?.data
@@ -158,15 +156,16 @@ const StudentEnrollmentsPage = () => {
               {/* Period selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label htmlFor="academic-year-select" className="text-sm font-medium mb-2 block">Academic Year</label>
-                  <Select value={academicYear} onValueChange={setAcademicYear}>
-                    <SelectTrigger id="academic-year-select">
+                  <label htmlFor="year-select" className="text-sm font-medium mb-2 block">Year</label>
+                  <Select value={year.toString()} onValueChange={(v) => setYear(Number(v))}>
+                    <SelectTrigger id="year-select">
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent>
-                      {[`${currentYear}/${currentYear + 1}`, `${currentYear - 1}/${currentYear}`, `${currentYear + 1}/${currentYear + 2}`].map((y) => (
-                        <SelectItem key={y} value={y}>{y}</SelectItem>
-                      ))}
+                      <SelectItem value="1">Year 1</SelectItem>
+                      <SelectItem value="2">Year 2</SelectItem>
+                      <SelectItem value="3">Year 3</SelectItem>
+                      <SelectItem value="4">Year 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -238,7 +237,7 @@ const StudentEnrollmentsPage = () => {
                           </div>
                         )}
 
-                        <Button className="w-full" disabled={subject.isEnrolled || enrollMutation.isPending} onClick={() => enrollMutation.mutate({ subjectId: subject._id, academicYear, semester }, { onSuccess: () => setShowEnrollPanel(false) })} variant={subject.isEnrolled ? 'outline' : 'default'}>
+                        <Button className="w-full" disabled={subject.isEnrolled || enrollMutation.isPending} onClick={() => enrollMutation.mutate({ subjectId: subject._id, year, semester }, { onSuccess: () => setShowEnrollPanel(false) })} variant={subject.isEnrolled ? 'outline' : 'default'}>
                           {enrollMutation.isPending ? (
                             <div className="flex items-center space-x-2"><div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> <span>Enrolling...</span></div>
                           ) : subject.isEnrolled ? (

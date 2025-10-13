@@ -98,12 +98,20 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   }, [partFields, activePartTab])
 
   useEffect(() => {
-    if (paper) {
+    console.log('=== DEBUG: Paper useEffect ===')
+    console.log('Paper:', paper)
+    console.log('Paper Questions:', paper?.questions)
+    
+    if (paper && paper.questions) {
+      console.log('Paper Questions Count:', paper.questions.length)
+      console.log('First Question Sample:', paper.questions[0])
+      
       setSelectedSubject(paper.subjectId)
-      const questionIds = new Set(paper.questions?.map(q => q.questionId) || [])
+      const questionIds = new Set(paper.questions.map(q => q.questionId))
+      console.log('Question IDs:', Array.from(questionIds))
       setSelectedQuestionIds(questionIds)
       
-      form.reset({
+      const formData = {
         subjectId: paper.subjectId,
         paperTitle: paper.paperTitle,
         paperType: paper.paperType,
@@ -119,15 +127,18 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           hasOptionalQuestions: p.hasOptionalQuestions,
           minimumQuestionsToAnswer: p.minimumQuestionsToAnswer
         })),
-        questions: paper.questions?.map(q => ({
+        questions: paper.questions.map(q => ({
           questionId: q.questionId,
           questionOrder: q.questionOrder,
           marksAllocated: q.marksAllocated,
           partLabel: q.partLabel,
           partTitle: q.partTitle,
-          isOptional: q.isOptional
-        })) || []
-      })
+          isOptional: q.isOptional || false
+        }))
+      }
+      
+      console.log('Form Data Questions:', formData.questions)
+      form.reset(formData)
       setCurrentStep(2)
     }
   }, [paper, form])
@@ -184,13 +195,64 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     [questions, searchTerm, questionTypeFilter, difficultyFilter]
   )
 
-  const getQuestionDetails = (questionId: string) => questions.find(q => q._id === questionId)
+  const getQuestionDetails = (questionId: string) => {
+    console.log('=== DEBUG: getQuestionDetails ===')
+    console.log('Looking for Question ID:', questionId)
+    console.log('Questions Bank Count:', questions.length)
+    console.log('Paper Questions Count:', paper?.questions?.length || 0)
+    
+    const fromBank = questions.find(q => q._id === questionId)
+    if (fromBank) {
+      console.log('Found in Bank:', fromBank.questionText)
+      return fromBank
+    }
+    
+    if (paper?.questions) {
+      const fromPaper = paper.questions.find(q => q.questionId === questionId)
+      console.log('Found in Paper:', fromPaper ? fromPaper.questionText : 'NOT FOUND')
+      
+      if (fromPaper) {
+        return {
+          _id: fromPaper.questionId,
+          questionText: fromPaper.questionText,
+          questionType: fromPaper.questionType,
+          difficultyLevel: fromPaper.difficultyLevel,
+          marks: fromPaper.marksAllocated,
+          hasSubQuestions: fromPaper.subQuestions && fromPaper.subQuestions.length > 0,
+          topic: undefined,
+          subtopic: undefined,
+          bloomsTaxonomy: undefined,
+          keywords: undefined,
+          usageCount: 0,
+          isPublic: false,
+          createdBy: '',
+          createdByName: undefined,
+          isActive: true,
+          subQuestionLevel: fromPaper.subQuestionLevel,
+          createdAt: fromPaper.createdAt,
+          updatedAt: fromPaper.createdAt,
+          subjectId: paper.subjectId,
+          subjectCode: paper.subjectCode,
+          subjectName: paper.subjectName
+        }
+      }
+    }
+    
+    console.log('Question NOT FOUND anywhere')
+    return undefined
+  }
 
   const questionsByPart = useMemo(() => {
+    console.log('=== DEBUG: questionsByPart ===')
+    console.log('Question Fields:', questionFields)
+    console.log('Part Fields:', partFields)
+    
     const grouped: Record<string, typeof questionFields> = {}
     partFields.forEach(part => {
       grouped[part.partLabel] = questionFields.filter(q => q.partLabel === part.partLabel)
     })
+    
+    console.log('Grouped Questions:', grouped)
     return grouped
   }, [questionFields, partFields])
 

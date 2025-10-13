@@ -23,7 +23,12 @@ export const examPapersService = {
   },
 
   getById: async (id: string, params?: { includeQuestions?: boolean }): Promise<ApiResponse<ExamPaper>> => {
+    console.log('=== DEBUG: examPapersService.getById ===')
+    console.log('ID:', id)
+    console.log('Params:', params)
     const paper = await apiClient.get<ExamPaper>(`/api/v1/exam-papers/${id}`, { params })
+    console.log('Response Paper:', paper)
+    console.log('Response Questions:', paper.questions)
     return { data: paper }
   },
 

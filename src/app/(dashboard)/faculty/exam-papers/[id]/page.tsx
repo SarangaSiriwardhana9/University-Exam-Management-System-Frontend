@@ -306,42 +306,84 @@ const ViewExamPaperPage = ({ params }: ViewExamPaperPageProps) => {
                   <div className="space-y-4">
                     {paper.questions
                       .sort((a, b) => a.questionOrder - b.questionOrder)
-                      .map((question, index) => (
-                        <div
-                          key={question._id}
-                          className="p-4 border rounded-lg"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-semibold">Q{index + 1}.</span>
-                                {question.partLabel && (
+                      .map((question, index) => {
+                        const questionData = typeof question.questionId === 'object' ? question.questionId : null
+                        const questionText = questionData?.questionText || question.questionText
+                        const questionType = questionData?.questionType || question.questionType
+                        const options = questionData?.options || []
+                        const isMCQ = questionType === 'mcq' || questionType === 'true_false'
+
+                        return (
+                          <div
+                            key={question._id}
+                            className="p-4 border rounded-lg"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-semibold">Q{index + 1}.</span>
+                                  {question.partLabel && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Part {question.partLabel}
+                                    </Badge>
+                                  )}
+                                  {question.isOptional && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Optional
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="font-medium mb-2 whitespace-pre-wrap">{questionText}</p>
+                                
+                                {/* MCQ Options */}
+                                {isMCQ && options.length > 0 && (
+                                  <div className="mt-3 ml-4 space-y-2">
+                                    {options
+                                      .sort((a: any, b: any) => a.optionOrder - b.optionOrder)
+                                      .map((option: any, optIdx: number) => (
+                                        <div 
+                                          key={option._id} 
+                                          className={cn(
+                                            "flex items-start gap-2 p-2 rounded",
+                                            option.isCorrect && "bg-green-50 dark:bg-green-950"
+                                          )}
+                                        >
+                                          <span className={cn(
+                                            "text-sm font-medium min-w-[24px]",
+                                            option.isCorrect ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                                          )}>
+                                            {String.fromCharCode(65 + optIdx)}.
+                                          </span>
+                                          <span className={cn(
+                                            "text-sm",
+                                            option.isCorrect && "text-green-700 dark:text-green-300 font-medium"
+                                          )}>
+                                            {option.optionText}
+                                            {option.isCorrect && (
+                                              <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ Correct</span>
+                                            )}
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
+
+                                <div className="flex gap-2 mt-3">
                                   <Badge variant="outline" className="text-xs">
-                                    Part {question.partLabel}
+                                    {questionType.replace('_', ' ').toUpperCase()}
                                   </Badge>
-                                )}
-                                {question.isOptional && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    Optional
+                                  <Badge variant="outline" className="text-xs">
+                                    {question.difficultyLevel}
                                   </Badge>
-                                )}
+                                </div>
                               </div>
-                              <p className="font-medium mb-2">{question.questionText}</p>
-                              <div className="flex gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {question.questionType.replace('_', ' ').toUpperCase()}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  {question.difficultyLevel}
-                                </Badge>
+                              <div className="text-right">
+                                <p className="text-sm font-semibold">{question.marksAllocated} marks</p>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-semibold">{question.marksAllocated} marks</p>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 </CardContent>
               </Card>

@@ -11,9 +11,23 @@ export type ExamType = typeof EXAM_TYPES[keyof typeof EXAM_TYPES]
 
 export type DeliveryMode = 'onsite' | 'online'
 
+export type QuestionOption = {
+  _id: string
+  optionText: string
+  optionOrder: number
+  isCorrect?: boolean
+}
+
 export type SubPaperQuestion = {
   _id: string
-  questionId: string
+  questionId: string | {
+    _id: string
+    questionText: string
+    questionType: string
+    difficultyLevel: string
+    marks: number
+    options?: QuestionOption[]
+  }
   questionText: string
   questionType: string
   difficultyLevel: string
@@ -27,7 +41,14 @@ export type SubPaperQuestion = {
 
 export type PaperQuestion = {
   _id: string
-  questionId: string
+  questionId: string | {
+    _id: string
+    questionText: string
+    questionType: string
+    difficultyLevel: string
+    marks: number
+    options?: QuestionOption[]
+  }
   questionText: string
   questionType: string
   difficultyLevel: string

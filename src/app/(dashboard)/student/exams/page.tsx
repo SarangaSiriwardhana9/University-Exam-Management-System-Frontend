@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { format, isPast, isFuture, isToday, addDays } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -403,12 +404,28 @@ function ExamRegistrationCard({
   registration: ExamRegistration
   onCancel: (reg: ExamRegistration) => void
 }) {
+  const router = useRouter()
   const examDate = registration.examDateTime ? new Date(registration.examDateTime) : null
   const isUpcoming = examDate && isFuture(examDate)
   const isPastExam = examDate && isPast(examDate)
   const isTodayExam = examDate && isToday(examDate)
 
   const isSessionCancelled = registration.sessionStatus === 'cancelled'
+  const isOnlineExam = registration.deliveryMode === 'online'
+
+  const getEnrollmentTimeMessage = () => {
+    if (!examDate || !isOnlineExam) return null
+    const now = new Date()
+    const bufferTime = 15 * 60 * 1000
+    const canEnrollFrom = new Date(examDate.getTime() - bufferTime)
+    
+    if (now < canEnrollFrom) {
+      return `Available from ${format(canEnrollFrom, 'p')}`
+    }
+    return null
+  }
+
+  const enrollmentMessage = getEnrollmentTimeMessage()
 
   return (
     <Card className={cn(
@@ -518,17 +535,56 @@ function ExamRegistrationCard({
           </>
         )}
 
-        {registration.status === 'registered' && isUpcoming && (
-          <div className="flex justify-end pt-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onCancel(registration)}
-            >
-              <XCircleIcon className="h-4 w-4 mr-2" />
-              Cancel Registration
-            </Button>
-          </div>
+        {registration.status === 'registered' && !isSessionCancelled && (
+          <>
+            {isOnlineExam && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={!registration.canEnroll}
+                    onClick={() => router.push(`/student/exam-enrollment/${registration._id}`)}
+                  >
+                    <MonitorIcon className="h-5 w-5 mr-2" />
+                    {registration.canEnroll ? 'Start Online Exam' : 'Online Exam'}
+                  </Button>
+                  {enrollmentMessage && (
+                    <Alert>
+                      <ClockIcon className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        <strong>Enrollment opens soon:</strong> {enrollmentMessage}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {registration.canEnroll && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <CheckCircle2Icon className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-sm text-green-800">
+                        <strong>Ready to start:</strong> Click the button above to enter your enrollment key and begin the exam.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </>
+            )}
+            {isUpcoming && (
+              <>
+                <Separator />
+                <div className="flex justify-end pt-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onCancel(registration)}
+                  >
+                    <XCircleIcon className="h-4 w-4 mr-2" />
+                    Cancel Registration
+                  </Button>
+                </div>
+              </>
+            )}
+          </>
         )}
 
         {registration.status === 'cancelled' && registration.cancellationReason && (

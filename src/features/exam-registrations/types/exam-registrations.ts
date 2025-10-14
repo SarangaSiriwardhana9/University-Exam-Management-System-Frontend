@@ -28,6 +28,8 @@ export type ExamRegistration = {
   formattedDuration?: string
   deliveryMode?: DeliveryMode
   sessionStatus?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  enrollmentKey?: string
+  canEnroll?: boolean
   studentId: string
   studentName?: string
   studentEmail?: string

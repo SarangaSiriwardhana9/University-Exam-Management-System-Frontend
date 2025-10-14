@@ -30,6 +30,8 @@ import {
   BookOpenIcon,
   InfoIcon,
   FileTextIcon,
+  MonitorIcon,
+  BuildingIcon,
 } from 'lucide-react'
 import { useMyExamRegistrationsQuery } from '@/features/exam-registrations/hooks/use-exam-registrations-query'
 import { useExamSessionsQuery } from '@/features/exam-sessions/hooks/use-exam-sessions-query'
@@ -288,6 +290,11 @@ export default function StudentExamsPage() {
             <div className="space-y-4">
               <div className="p-4 border rounded-lg space-y-2 bg-muted/50">
                 <h4 className="font-semibold">{selectedSession.examTitle}</h4>
+                {selectedSession.paperTitle && (
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Paper: {selectedSession.paperTitle}
+                  </p>
+                )}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <BookOpenIcon className="h-4 w-4" />
                   <span>{selectedSession.subjectCode} - {selectedSession.subjectName}</span>
@@ -301,9 +308,19 @@ export default function StudentExamsPage() {
                   <span>{format(new Date(selectedSession.examDateTime), 'p')} ({selectedSession.formattedDuration})</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPinIcon className="h-4 w-4" />
-                  <span>{selectedSession.roomNumber}</span>
+                  {selectedSession.deliveryMode === 'online' ? (
+                    <MonitorIcon className="h-4 w-4" />
+                  ) : (
+                    <BuildingIcon className="h-4 w-4" />
+                  )}
+                  <span className="capitalize">{selectedSession.deliveryMode}</span>
                 </div>
+                {selectedSession.roomNumber && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPinIcon className="h-4 w-4" />
+                    <span>{selectedSession.roomNumber}</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -391,28 +408,52 @@ function ExamRegistrationCard({
   const isPastExam = examDate && isPast(examDate)
   const isTodayExam = examDate && isToday(examDate)
 
+  const isSessionCancelled = registration.sessionStatus === 'cancelled'
+
   return (
     <Card className={cn(
       'transition-all hover:shadow-md',
       isTodayExam && 'border-primary border-2',
-      registration.status === 'cancelled' && 'opacity-60'
+      registration.status === 'cancelled' && 'opacity-60',
+      isSessionCancelled && 'border-destructive border-2 opacity-75'
     )}>
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2 flex-1">
             <CardTitle className="text-xl">{registration.examTitle || 'Exam'}</CardTitle>
+            {registration.paperTitle && (
+              <p className="text-sm font-medium text-muted-foreground">
+                Paper: {registration.paperTitle}
+              </p>
+            )}
             {registration.subjectCode && registration.subjectName && (
               <p className="text-sm text-muted-foreground">
                 {registration.subjectCode} - {registration.subjectName}
               </p>
             )}
           </div>
-          <Badge variant={registration.status === 'cancelled' ? 'destructive' : registration.status === 'confirmed' ? 'default' : 'secondary'}>
-            {registration.status}
-          </Badge>
+          <div className="flex flex-col gap-2 items-end">
+            {isSessionCancelled && (
+              <Badge variant="destructive">Exam Cancelled</Badge>
+            )}
+            <Badge variant={registration.status === 'cancelled' ? 'destructive' : registration.status === 'confirmed' ? 'default' : 'secondary'}>
+              {registration.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isSessionCancelled && (
+          <>
+            <Alert variant="destructive">
+              <AlertCircleIcon className="h-4 w-4" />
+              <AlertDescription>
+                This exam session has been cancelled by the coordinator. Please contact the exam office for more information.
+              </AlertDescription>
+            </Alert>
+            <Separator />
+          </>
+        )}
         <div className="space-y-3">
           {examDate ? (
             <>
@@ -435,6 +476,16 @@ function ExamRegistrationCard({
             <div className="flex items-center gap-3">
               <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-sm text-muted-foreground">Exam date not scheduled yet</span>
+            </div>
+          )}
+          {registration.deliveryMode && (
+            <div className="flex items-center gap-3">
+              {registration.deliveryMode === 'online' ? (
+                <MonitorIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              ) : (
+                <BuildingIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+              <span className="text-sm capitalize font-medium">{registration.deliveryMode}</span>
             </div>
           )}
           {registration.roomNumber && (
@@ -517,6 +568,11 @@ function AvailableSessionCard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="text-lg">{session.examTitle}</CardTitle>
+            {session.paperTitle && (
+              <CardDescription className="font-medium">
+                Paper: {session.paperTitle}
+              </CardDescription>
+            )}
             {session.subjectCode && session.subjectName && (
               <CardDescription className="flex items-center gap-2">
                 <BookOpenIcon className="h-4 w-4" />
@@ -551,6 +607,14 @@ function AvailableSessionCard({
             <div className="flex items-center gap-2 text-sm">
               <ClockIcon className="h-4 w-4 text-muted-foreground" />
               <span>{format(examDate, 'p')} ({session.formattedDuration})</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              {session.deliveryMode === 'online' ? (
+                <MonitorIcon className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <BuildingIcon className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="capitalize font-medium">{session.deliveryMode}</span>
             </div>
             {session.roomNumber && (
               <div className="flex items-center gap-2 text-sm">

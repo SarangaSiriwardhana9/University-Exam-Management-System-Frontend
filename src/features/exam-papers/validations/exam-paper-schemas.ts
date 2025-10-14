@@ -52,7 +52,20 @@ export const createExamPaperSchema = z.object({
   questions: z.array(paperQuestionSchema).min(1, 'At least one question is required')
 })
 
-export const updateExamPaperSchema = createExamPaperSchema.partial().extend({
+export const updateExamPaperSchema = createExamPaperSchema.omit({ subjectId: true }).extend({
+  paperTitle: z.string().min(5, 'Title must be at least 5 characters').optional(),
+  paperType: z.enum([
+    EXAM_TYPES.MIDTERM,
+    EXAM_TYPES.FINAL,
+    EXAM_TYPES.QUIZ,
+    EXAM_TYPES.ASSIGNMENT
+  ]).optional(),
+  totalMarks: z.number().min(1, 'Total marks must be at least 1').optional(),
+  durationMinutes: z.number().int().min(1, 'Duration must be at least 1 minute').optional(),
+  deliveryMode: z.enum(['onsite', 'online']).optional(),
+  instructions: z.string().optional(),
+  parts: z.array(paperPartSchema).min(1, 'At least one part is required').optional(),
+  questions: z.array(paperQuestionSchema).min(1, 'At least one question is required').optional(),
   isActive: z.boolean().optional()
 })
 

@@ -13,16 +13,21 @@ export const ATTENDANCE_STATUS = {
 export type RegistrationStatus = typeof REGISTRATION_STATUS[keyof typeof REGISTRATION_STATUS]
 export type AttendanceStatus = typeof ATTENDANCE_STATUS[keyof typeof ATTENDANCE_STATUS]
 
+export type DeliveryMode = 'onsite' | 'online'
+
 export type ExamRegistration = {
   _id: string
   sessionId: string
   examTitle?: string
+  paperTitle?: string
   examDateTime?: string
   roomNumber?: string
   subjectCode?: string
   subjectName?: string
   durationMinutes?: number
   formattedDuration?: string
+  deliveryMode?: DeliveryMode
+  sessionStatus?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
   studentId: string
   studentName?: string
   studentEmail?: string

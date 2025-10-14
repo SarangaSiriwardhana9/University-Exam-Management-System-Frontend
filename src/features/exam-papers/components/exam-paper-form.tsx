@@ -98,21 +98,12 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   }, [partFields, activePartTab])
 
   useEffect(() => {
-    console.log('=== DEBUG: Paper useEffect ===')
-    console.log('Paper:', paper)
-    console.log('Paper Questions:', paper?.questions)
-    
     if (paper && paper.questions) {
-      console.log('Paper Questions Count:', paper.questions.length)
-      console.log('First Question Sample:', paper.questions[0])
-      
       setSelectedSubject(paper.subjectId)
       const questionIds = new Set(paper.questions.map(q => q.questionId))
-      console.log('Question IDs:', Array.from(questionIds))
       setSelectedQuestionIds(questionIds)
       
-      const formData = {
-        subjectId: paper.subjectId,
+      const formData: any = {
         paperTitle: paper.paperTitle,
         paperType: paper.paperType,
         totalMarks: paper.totalMarks,
@@ -122,22 +113,25 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
         parts: paper.parts.map(p => ({
           partLabel: p.partLabel,
           partTitle: p.partTitle,
-          partInstructions: p.partInstructions,
+          partInstructions: p.partInstructions || '',
           partOrder: p.partOrder,
-          hasOptionalQuestions: p.hasOptionalQuestions,
-          minimumQuestionsToAnswer: p.minimumQuestionsToAnswer
+          hasOptionalQuestions: p.hasOptionalQuestions || false,
+          minimumQuestionsToAnswer: p.minimumQuestionsToAnswer || 0
         })),
         questions: paper.questions.map(q => ({
           questionId: q.questionId,
           questionOrder: q.questionOrder,
           marksAllocated: q.marksAllocated,
           partLabel: q.partLabel,
-          partTitle: q.partTitle,
+          partTitle: q.partTitle || '',
           isOptional: q.isOptional || false
         }))
       }
       
-      console.log('Form Data Questions:', formData.questions)
+      if (!paper._id) {
+        formData.subjectId = paper.subjectId
+      }
+      
       form.reset(formData)
       setCurrentStep(2)
     }
@@ -196,21 +190,11 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   )
 
   const getQuestionDetails = (questionId: string) => {
-    console.log('=== DEBUG: getQuestionDetails ===')
-    console.log('Looking for Question ID:', questionId)
-    console.log('Questions Bank Count:', questions.length)
-    console.log('Paper Questions Count:', paper?.questions?.length || 0)
-    
     const fromBank = questions.find(q => q._id === questionId)
-    if (fromBank) {
-      console.log('Found in Bank:', fromBank.questionText)
-      return fromBank
-    }
+    if (fromBank) return fromBank
     
     if (paper?.questions) {
       const fromPaper = paper.questions.find(q => q.questionId === questionId)
-      console.log('Found in Paper:', fromPaper ? fromPaper.questionText : 'NOT FOUND')
-      
       if (fromPaper) {
         return {
           _id: fromPaper.questionId,
@@ -238,27 +222,21 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       }
     }
     
-    console.log('Question NOT FOUND anywhere')
     return undefined
   }
 
   const questionsByPart = useMemo(() => {
-    console.log('=== DEBUG: questionsByPart ===')
-    console.log('Question Fields:', questionFields)
-    console.log('Part Fields:', partFields)
-    
     const grouped: Record<string, typeof questionFields> = {}
     partFields.forEach(part => {
       grouped[part.partLabel] = questionFields.filter(q => q.partLabel === part.partLabel)
     })
-    
-    console.log('Grouped Questions:', grouped)
     return grouped
   }, [questionFields, partFields])
 
   const handleSubmit = (data: CreateExamPaperFormData) => {
     if (isEditMode) {
-      onSubmit(data as UpdateExamPaperFormData)
+      const { subjectId, ...updateData } = data
+      onSubmit(updateData as UpdateExamPaperFormData)
     } else {
       onSubmit(data)
     }

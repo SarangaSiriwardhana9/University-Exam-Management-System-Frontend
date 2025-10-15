@@ -110,9 +110,20 @@ export default function ExamPaperPage() {
         // Convert saved answers to the format expected by the UI
         const answersMap: Record<string, { type: string; value: string }> = {}
         savedAnswers.forEach((answer: any) => {
-          answersMap[answer.paperQuestionId] = {
+          // Extract the ID as a string (handle both ObjectId and populated objects)
+          const questionId = typeof answer.paperQuestionId === 'object' 
+            ? answer.paperQuestionId._id?.toString() || answer.paperQuestionId.toString()
+            : answer.paperQuestionId.toString()
+          
+          const optionId = answer.selectedOptionId 
+            ? (typeof answer.selectedOptionId === 'object'
+                ? answer.selectedOptionId._id?.toString() || answer.selectedOptionId.toString()
+                : answer.selectedOptionId.toString())
+            : ''
+          
+          answersMap[questionId] = {
             type: answer.questionType,
-            value: answer.selectedOptionId || answer.answerText || ''
+            value: optionId || answer.answerText || ''
           }
         })
         
@@ -169,9 +180,13 @@ export default function ExamPaperPage() {
   }
 
   const autoSaveAnswers = async () => {
-    if (!sessionId || Object.keys(answers).length === 0) return
+    if (!sessionId || Object.keys(answers).length === 0) {
+      console.log('⏭️ Skipping auto-save: no session or no answers')
+      return
+    }
 
     try {
+      console.log('💾 Auto-saving answers...', Object.keys(answers).length, 'answers')
       for (const [paperQuestionId, answer] of Object.entries(answers)) {
         const answerDto: SaveAnswerDto = {
           registrationId: sessionId,
@@ -183,8 +198,9 @@ export default function ExamPaperPage() {
         }
         await studentAnswersApi.saveAnswer(answerDto)
       }
+      console.log('✅ Auto-save completed successfully')
     } catch (error) {
-      console.error('Auto-save failed:', error)
+      console.error('❌ Auto-save failed:', error)
     }
   }
 
@@ -214,7 +230,26 @@ export default function ExamPaperPage() {
   }
 
   const handleAnswerChange = async (questionId: string, answer: string, questionType: string) => {
+    // Update local state immediately for UI responsiveness
     setAnswers(prev => ({ ...prev, [questionId]: { type: questionType, value: answer } }))
+    
+    // Save to backend immediately
+    if (!sessionId) return
+    
+    try {
+      const answerDto: SaveAnswerDto = {
+        registrationId: sessionId,
+        paperQuestionId: questionId,
+        questionType: questionType,
+        ...(questionType === 'mcq' || questionType === 'true_false'
+          ? { selectedOptionId: answer }
+          : { answerText: answer }),
+      }
+      await studentAnswersApi.saveAnswer(answerDto)
+      console.log('✅ Answer saved:', questionId)
+    } catch (error) {
+      console.error('❌ Failed to save answer:', error)
+    }
   }
 
   const handleClearAnswer = (questionId: string) => {

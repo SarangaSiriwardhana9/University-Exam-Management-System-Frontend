@@ -56,8 +56,8 @@ export const examRegistrationsService = {
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/exam-registrations/${id}`),
 
-  verifyEnrollmentKey: async (id: string, enrollmentKey: string): Promise<ApiResponse<{ verified: boolean; sessionId: string; paperId: string }>> => {
-    const result = await apiClient.post<{ verified: boolean; sessionId: string; paperId: string }>(`/api/v1/exam-registrations/${id}/verify-enrollment`, { enrollmentKey })
+  verifyEnrollmentKey: async (id: string, enrollmentKey: string): Promise<ApiResponse<{ verified: boolean; registrationId: string; sessionId: string; paperId: string }>> => {
+    const result = await apiClient.post<{ verified: boolean; registrationId: string; sessionId: string; paperId: string }>(`/api/v1/exam-registrations/${id}/verify-enrollment`, { enrollmentKey })
     return { data: result }
   }
 }

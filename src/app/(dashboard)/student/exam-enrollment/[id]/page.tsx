@@ -42,7 +42,8 @@ export default function ExamEnrollmentPage() {
       
       if (result.data.verified) {
         toast.success('Enrollment verified successfully!')
-        router.push(`/student/exam-paper/${result.data.paperId}?session=${result.data.sessionId}`)
+        // Use registrationId instead of sessionId
+        router.push(`/student/exam-paper/${result.data.paperId}?session=${result.data.registrationId}`)
       }
     } catch (err: any) {
       setError(err.message || 'Invalid enrollment key. Please try again.')

@@ -413,6 +413,14 @@ function ExamRegistrationCard({
   const isSessionCancelled = registration.sessionStatus === 'cancelled'
   const isOnlineExam = registration.deliveryMode === 'online'
 
+  // Check if exam has started
+  const hasStarted = registration.examStartTime != null
+  
+  // Check if exam time has expired (past exam end time)
+  const isExpired = examDate && registration.durationMinutes ? 
+    isPast(new Date(examDate.getTime() + registration.durationMinutes * 60 * 1000)) : 
+    false
+
   const getEnrollmentTimeMessage = () => {
     if (!examDate || !isOnlineExam) return null
     const now = new Date()
@@ -426,6 +434,11 @@ function ExamRegistrationCard({
   }
 
   const enrollmentMessage = getEnrollmentTimeMessage()
+
+  const handleStartOrContinueExam = () => {
+    // Navigate directly to exam paper with registration ID
+    router.push(`/student/exam-paper/${registration.paperId}?session=${registration._id}`)
+  }
 
   return (
     <Card className={cn(
@@ -453,8 +466,22 @@ function ExamRegistrationCard({
             {isSessionCancelled && (
               <Badge variant="destructive">Exam Cancelled</Badge>
             )}
-            <Badge variant={registration.status === 'cancelled' ? 'destructive' : registration.status === 'confirmed' ? 'default' : 'secondary'}>
-              {registration.status}
+            {isExpired && !hasStarted && (
+              <Badge variant="destructive">Expired</Badge>
+            )}
+            {hasStarted && !isExpired && (
+              <Badge variant="default" className="bg-blue-600">In Progress</Badge>
+            )}
+            {hasStarted && isExpired && (
+              <Badge variant="outline">Time Expired</Badge>
+            )}
+            <Badge variant={
+              registration.status === 'cancelled' ? 'destructive' : 
+              registration.status === 'confirmed' ? 'default' : 
+              registration.status === 'in_progress' ? 'default' : 
+              'secondary'
+            }>
+              {registration.status === 'in_progress' ? 'In Progress' : registration.status}
             </Badge>
           </div>
         </div>
@@ -535,41 +562,77 @@ function ExamRegistrationCard({
           </>
         )}
 
-        {registration.status === 'registered' && !isSessionCancelled && (
+        {(registration.status === 'registered' || registration.status === 'in_progress') && !isSessionCancelled && (
           <>
             {isOnlineExam && (
               <>
                 <Separator />
                 <div className="space-y-3">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    disabled={!registration.canEnroll}
-                    onClick={() => router.push(`/student/exam-enrollment/${registration._id}`)}
-                  >
-                    <MonitorIcon className="h-5 w-5 mr-2" />
-                    {registration.canEnroll ? 'Start Online Exam' : 'Online Exam'}
-                  </Button>
-                  {enrollmentMessage && (
-                    <Alert>
-                      <ClockIcon className="h-4 w-4" />
-                      <AlertDescription className="text-sm">
-                        <strong>Enrollment opens soon:</strong> {enrollmentMessage}
+                  {/* Show different button states based on exam status */}
+                  {isExpired && !hasStarted ? (
+                    <Alert variant="destructive">
+                      <AlertCircleIcon className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Exam Expired:</strong> The time to start this exam has passed.
                       </AlertDescription>
                     </Alert>
-                  )}
-                  {registration.canEnroll && (
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle2Icon className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-sm text-green-800">
-                        <strong>Ready to start:</strong> Click the button above to enter your enrollment key and begin the exam.
+                  ) : hasStarted && !isExpired ? (
+                    <>
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        size="lg"
+                        onClick={handleStartOrContinueExam}
+                      >
+                        <MonitorIcon className="h-5 w-5 mr-2" />
+                        Continue Exam
+                      </Button>
+                      <Alert className="border-blue-200 bg-blue-50">
+                        <InfoIcon className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-sm text-blue-800">
+                          <strong>Exam in progress:</strong> Click to continue your exam. Your progress has been saved.
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  ) : hasStarted && isExpired ? (
+                    <Alert variant="destructive">
+                      <AlertCircleIcon className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Time Expired:</strong> The exam time has ended. Your answers have been auto-submitted.
                       </AlertDescription>
                     </Alert>
+                  ) : (
+                    <>
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        disabled={!registration.canEnroll}
+                        onClick={handleStartOrContinueExam}
+                      >
+                        <MonitorIcon className="h-5 w-5 mr-2" />
+                        {registration.canEnroll ? 'Start Online Exam' : 'Online Exam'}
+                      </Button>
+                      {enrollmentMessage && (
+                        <Alert>
+                          <ClockIcon className="h-4 w-4" />
+                          <AlertDescription className="text-sm">
+                            <strong>Enrollment opens soon:</strong> {enrollmentMessage}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      {registration.canEnroll && (
+                        <Alert className="border-green-200 bg-green-50">
+                          <CheckCircle2Icon className="h-4 w-4 text-green-600" />
+                          <AlertDescription className="text-sm text-green-800">
+                            <strong>Ready to start:</strong> Click the button above to begin the exam.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
                   )}
                 </div>
               </>
             )}
-            {isUpcoming && (
+            {isUpcoming && !hasStarted && (
               <>
                 <Separator />
                 <div className="flex justify-end pt-2">

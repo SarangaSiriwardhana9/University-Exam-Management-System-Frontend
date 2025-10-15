@@ -35,20 +35,20 @@ export interface StudentAnswer {
 
 export const studentAnswersApi = {
   saveAnswer: async (data: SaveAnswerDto) => {
-    return apiClient.post('/student-answers/save', data)
+    return apiClient.post('/api/v1/student-answers/save', data)
   },
 
   submitExam: async (data: SubmitExamDto) => {
-    return apiClient.post('/student-answers/submit', data)
+    return apiClient.post('/api/v1/student-answers/submit', data)
   },
 
   getAnswers: async (registrationId: string) => {
-    return apiClient.get<{ answers: StudentAnswer[] }>(`/student-answers/registration/${registrationId}`)
+    return apiClient.get<{ answers: StudentAnswer[] }>(`/api/v1/student-answers/registration/${registrationId}`)
   },
 
   getStats: async (registrationId: string) => {
     return apiClient.get<{ totalAnswered: number; markedForReview: number }>(
-      `/student-answers/registration/${registrationId}/stats`
+      `/api/v1/student-answers/registration/${registrationId}/stats`
     )
   },
 }

@@ -1,6 +1,7 @@
 export const REGISTRATION_STATUS = {
   REGISTERED: 'registered',
   CONFIRMED: 'confirmed',
+  IN_PROGRESS: 'in_progress',
   CANCELLED: 'cancelled'
 } as const
 
@@ -18,6 +19,7 @@ export type DeliveryMode = 'onsite' | 'online'
 export type ExamRegistration = {
   _id: string
   sessionId: string
+  paperId?: string
   examTitle?: string
   paperTitle?: string
   examDateTime?: string
@@ -42,6 +44,13 @@ export type ExamRegistration = {
   registeredByName?: string
   cancelledAt?: string
   cancellationReason?: string
+  // Online exam tracking fields
+  examStartTime?: string
+  examEndTime?: string
+  actualSubmitTime?: string
+  isAutoSubmitted?: boolean
+  lastActivityAt?: string
+  timeSpentSeconds?: number
   createdAt: string
   updatedAt: string
 }

@@ -12,6 +12,7 @@ import { ClockIcon, AlertCircleIcon, FileTextIcon, CheckCircle2Icon } from 'luci
 import { useExamPaperQuery } from '@/features/exam-papers/hooks/use-exam-papers-query'
 import type { ExamPaper, PaperQuestion, QuestionOption } from '@/features/exam-papers/types/exam-papers'
 import { studentAnswersApi, SaveAnswerDto } from '@/features/student-answers/api/student-answers'
+import { examRegistrationsApi } from '@/features/exam-registrations/api/exam-registrations'
 import { format } from 'date-fns'
 
 export default function ExamPaperPage() {
@@ -25,20 +26,55 @@ export default function ExamPaperPage() {
   const [answers, setAnswers] = useState<Record<string, { type: string; value: string }>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [examStatus, setExamStatus] = useState<any>(null)
+  const [hasStarted, setHasStarted] = useState(false)
+  const [isStarting, setIsStarting] = useState(false)
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
 
   const { data: paperResponse, isLoading } = useExamPaperQuery(paperId, true)
   const paper = paperResponse?.data
 
+  // Fetch exam status
   useEffect(() => {
-    if (!paper) return
+    if (!sessionId) {
+      console.warn('⚠️ No session/registration ID provided in URL')
+      return
+    }
 
-    const duration = paper.durationMinutes * 60
-    setTimeRemaining(duration)
+    console.log('📋 Fetching exam status for session/registration ID:', sessionId)
+    console.log('💡 Note: This should be a REGISTRATION ID, not a SESSION ID')
+    console.log('💡 Check your database: exam_registrations collection for a document with sessionId:', sessionId)
+
+    const fetchStatus = async () => {
+      try {
+        const status = await examRegistrationsApi.getExamStatus(sessionId)
+        console.log('✅ Exam status received:', status)
+        setExamStatus(status)
+        
+        if (status.examStartTime) {
+          setHasStarted(true)
+          setTimeRemaining(status.timeRemainingSeconds)
+        }
+      } catch (error) {
+        console.error('Error fetching exam status:', error)
+      }
+    }
+
+    fetchStatus()
+    const statusInterval = setInterval(fetchStatus, 10000) // Check every 10 seconds
+
+    return () => clearInterval(statusInterval)
+  }, [sessionId])
+
+  // Real-time countdown timer
+  useEffect(() => {
+    if (!hasStarted || timeRemaining === null) return
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 0) {
           clearInterval(timer)
+          handleAutoSubmit()
           return 0
         }
         return prev - 1
@@ -46,7 +82,64 @@ export default function ExamPaperPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [paper])
+  }, [hasStarted, timeRemaining])
+
+  // Auto-save answers every 30 seconds
+  useEffect(() => {
+    if (!hasStarted || !autoSaveEnabled || !sessionId) return
+
+    const autoSaveInterval = setInterval(async () => {
+      await autoSaveAnswers()
+    }, 30000) // Auto-save every 30 seconds
+
+    return () => clearInterval(autoSaveInterval)
+  }, [hasStarted, autoSaveEnabled, answers, sessionId])
+
+  // Load saved answers when exam starts
+  useEffect(() => {
+    if (!hasStarted || !sessionId) return
+
+    const loadSavedAnswers = async () => {
+      try {
+        console.log('📥 Loading saved answers for registration:', sessionId)
+        const response = await studentAnswersApi.getAnswers(sessionId)
+        const savedAnswers = response.answers
+        
+        console.log('✅ Loaded saved answers:', savedAnswers)
+        
+        // Convert saved answers to the format expected by the UI
+        const answersMap: Record<string, { type: string; value: string }> = {}
+        savedAnswers.forEach((answer: any) => {
+          answersMap[answer.paperQuestionId] = {
+            type: answer.questionType,
+            value: answer.selectedOptionId || answer.answerText || ''
+          }
+        })
+        
+        setAnswers(answersMap)
+        console.log('✅ Answers loaded into state:', answersMap)
+      } catch (error) {
+        console.error('Error loading saved answers:', error)
+      }
+    }
+
+    loadSavedAnswers()
+  }, [hasStarted, sessionId])
+
+  // Update activity every 2 minutes
+  useEffect(() => {
+    if (!hasStarted || !sessionId) return
+
+    const activityInterval = setInterval(async () => {
+      try {
+        await examRegistrationsApi.updateActivity(sessionId)
+      } catch (error) {
+        console.error('Error updating activity:', error)
+      }
+    }, 120000) // Every 2 minutes
+
+    return () => clearInterval(activityInterval)
+  }, [hasStarted, sessionId])
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -55,8 +148,81 @@ export default function ExamPaperPage() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  const handleStartExam = async () => {
+    if (!sessionId) return
+
+    setIsStarting(true)
+    try {
+      const response = await examRegistrationsApi.startExam(sessionId)
+      setHasStarted(true)
+      
+      // Fetch updated status
+      const status = await examRegistrationsApi.getExamStatus(sessionId)
+      setExamStatus(status)
+      setTimeRemaining(status.timeRemainingSeconds)
+    } catch (error: any) {
+      console.error('Error starting exam:', error)
+      alert(error?.response?.data?.message || 'Failed to start exam')
+    } finally {
+      setIsStarting(false)
+    }
+  }
+
+  const autoSaveAnswers = async () => {
+    if (!sessionId || Object.keys(answers).length === 0) return
+
+    try {
+      for (const [paperQuestionId, answer] of Object.entries(answers)) {
+        const answerDto: SaveAnswerDto = {
+          registrationId: sessionId,
+          paperQuestionId,
+          questionType: answer.type,
+          ...(answer.type === 'mcq' || answer.type === 'true_false'
+            ? { selectedOptionId: answer.value }
+            : { answerText: answer.value }),
+        }
+        await studentAnswersApi.saveAnswer(answerDto)
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error)
+    }
+  }
+
+  const handleAutoSubmit = async () => {
+    if (!sessionId) return
+
+    try {
+      const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => ({
+        registrationId: sessionId,
+        paperQuestionId,
+        questionType: answer.type,
+        ...(answer.type === 'mcq' || answer.type === 'true_false'
+          ? { selectedOptionId: answer.value }
+          : { answerText: answer.value }),
+      }))
+
+      await studentAnswersApi.submitExam({
+        registrationId: sessionId,
+        answers: answerDtos,
+      })
+
+      alert('Time expired! Your exam has been automatically submitted.')
+      router.push('/student/exams')
+    } catch (error: any) {
+      console.error('Error auto-submitting exam:', error)
+    }
+  }
+
   const handleAnswerChange = async (questionId: string, answer: string, questionType: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: { type: questionType, value: answer } }))
+  }
+
+  const handleClearAnswer = (questionId: string) => {
+    setAnswers(prev => {
+      const newAnswers = { ...prev }
+      delete newAnswers[questionId]
+      return newAnswers
+    })
   }
 
   const handleSubmit = async () => {
@@ -132,6 +298,81 @@ export default function ExamPaperPage() {
     return acc
   }, {} as Record<string, PaperQuestion[]>) || {}
 
+  // Show start exam screen for online exams
+  if (examStatus?.deliveryMode === 'online' && !hasStarted && examStatus?.canStart) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-2xl">Ready to Start Your Exam?</CardTitle>
+            <CardDescription>
+              Please read the instructions carefully before starting
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-medium">Exam Title:</span>
+                <span>{paper.paperTitle}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-medium">Duration:</span>
+                <span>{paper.durationMinutes} minutes</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-medium">Total Marks:</span>
+                <span>{paper.totalMarks}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-medium">Total Questions:</span>
+                <span>{paper.questionCount}</span>
+              </div>
+            </div>
+
+            {paper.instructions && (
+              <Alert>
+                <AlertCircleIcon className="h-4 w-4" />
+                <AlertDescription className="whitespace-pre-wrap">
+                  {paper.instructions}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Alert>
+              <AlertCircleIcon className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Once you start, the timer will begin counting down</li>
+                  <li>Your answers will be auto-saved every 30 seconds</li>
+                  <li>The exam will auto-submit when time expires</li>
+                  <li>Make sure you have a stable internet connection</li>
+                  <li>Do not refresh or close this page during the exam</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-4">
+              <Button
+                onClick={() => router.push('/student/exams')}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleStartExam}
+                disabled={isStarting}
+                className="flex-1"
+              >
+                {isStarting ? 'Starting...' : 'Start Exam'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-50 bg-background border-b">
@@ -191,6 +432,28 @@ export default function ExamPaperPage() {
               </div>
             </div>
 
+            {examStatus?.deliveryMode === 'online' && examStatus?.examStartTime && (
+              <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                <h4 className="font-semibold text-sm">Exam Timing</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Started At</p>
+                    <p className="font-medium">{format(new Date(examStatus.examStartTime), 'hh:mm:ss a')}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Will End At</p>
+                    <p className="font-medium">{format(new Date(examStatus.examEndTime), 'hh:mm:ss a')}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Auto-Save</p>
+                    <Badge variant={autoSaveEnabled ? 'default' : 'secondary'}>
+                      {autoSaveEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {paper.instructions && (
               <>
                 <Separator />
@@ -238,6 +501,7 @@ export default function ExamPaperPage() {
                     questionNumber={index + 1}
                     answer={answers[question._id]?.value || ''}
                     onAnswerChange={(answer) => handleAnswerChange(question._id, answer, question.questionType)}
+                    onClearAnswer={() => handleClearAnswer(question._id)}
                   />
                 ))}
               </CardContent>
@@ -281,11 +545,13 @@ function QuestionCard({
   questionNumber,
   answer,
   onAnswerChange,
+  onClearAnswer,
 }: {
   question: PaperQuestion
   questionNumber: number
   answer: string
   onAnswerChange: (answer: string) => void
+  onClearAnswer: () => void
 }) {
   const questionData = typeof question.questionId === 'object' ? question.questionId : null
   const questionType = questionData?.questionType || question.questionType
@@ -314,17 +580,38 @@ function QuestionCard({
               <span className="flex-1">{option.optionText}</span>
             </label>
           ))}
+          {currentAnswer && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearAnswer}
+              className="mt-2"
+            >
+              Clear Selection
+            </Button>
+          )}
         </div>
       )
     }
 
     return (
-      <textarea
-        className="w-full min-h-[150px] p-3 border rounded-md resize-y mt-3"
-        placeholder="Type your answer here..."
-        value={currentAnswer}
-        onChange={(e) => onAnswerChange(e.target.value)}
-      />
+      <div className="mt-3 space-y-2">
+        <textarea
+          className="w-full min-h-[150px] p-3 border rounded-md resize-y"
+          placeholder="Type your answer here..."
+          value={currentAnswer}
+          onChange={(e) => onAnswerChange(e.target.value)}
+        />
+        {currentAnswer && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAnswer}
+          >
+            Clear Answer
+          </Button>
+        )}
+      </div>
     )
   }
 

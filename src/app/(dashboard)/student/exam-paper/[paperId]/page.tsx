@@ -14,6 +14,8 @@ import type { ExamPaper, PaperQuestion, QuestionOption } from '@/features/exam-p
 import { studentAnswersApi, SaveAnswerDto } from '@/features/student-answers/api/student-answers'
 import { examRegistrationsApi } from '@/features/exam-registrations/api/exam-registrations'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
+import { EXAM_MESSAGES } from '@/constants/exam.constants'
 
 export default function ExamPaperPage() {
   const params = useParams()
@@ -34,21 +36,12 @@ export default function ExamPaperPage() {
   const { data: paperResponse, isLoading } = useExamPaperQuery(paperId, true)
   const paper = paperResponse?.data
 
-  // Fetch exam status
   useEffect(() => {
-    if (!sessionId) {
-      console.warn('⚠️ No session/registration ID provided in URL')
-      return
-    }
-
-    console.log('📋 Fetching exam status for session/registration ID:', sessionId)
-    console.log('💡 Note: This should be a REGISTRATION ID, not a SESSION ID')
-    console.log('💡 Check your database: exam_registrations collection for a document with sessionId:', sessionId)
+    if (!sessionId) return
 
     const fetchStatus = async () => {
       try {
         const status = await examRegistrationsApi.getExamStatus(sessionId)
-        console.log('✅ Exam status received:', status)
         setExamStatus(status)
         
         if (status.examStartTime) {
@@ -56,128 +49,14 @@ export default function ExamPaperPage() {
           setTimeRemaining(status.timeRemainingSeconds)
         }
       } catch (error) {
-        console.error('Error fetching exam status:', error)
       }
     }
 
     fetchStatus()
-    const statusInterval = setInterval(fetchStatus, 10000) // Check every 10 seconds
+    const statusInterval = setInterval(fetchStatus, 10000)
 
     return () => clearInterval(statusInterval)
   }, [sessionId])
-
-  // Real-time countdown timer
-  useEffect(() => {
-    if (!hasStarted || timeRemaining === null) return
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 0) {
-          clearInterval(timer)
-          handleAutoSubmit()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [hasStarted, timeRemaining])
-
-  // Auto-save answers every 30 seconds
-  useEffect(() => {
-    if (!hasStarted || !autoSaveEnabled || !sessionId) return
-
-    const autoSaveInterval = setInterval(async () => {
-      await autoSaveAnswers()
-    }, 30000) // Auto-save every 30 seconds
-
-    return () => clearInterval(autoSaveInterval)
-  }, [hasStarted, autoSaveEnabled, answers, sessionId])
-
-  // Load saved answers when exam starts
-  useEffect(() => {
-    if (!hasStarted || !sessionId) return
-
-    const loadSavedAnswers = async () => {
-      try {
-        console.log('📥 Loading saved answers for registration:', sessionId)
-        const response = await studentAnswersApi.getAnswers(sessionId)
-        const savedAnswers = response.answers
-        
-        console.log('✅ Loaded saved answers:', savedAnswers)
-        
-        // Convert saved answers to the format expected by the UI
-        const answersMap: Record<string, { type: string; value: string }> = {}
-        savedAnswers.forEach((answer: any) => {
-          // Extract the ID as a string (handle both ObjectId and populated objects)
-          const questionId = typeof answer.paperQuestionId === 'object' 
-            ? answer.paperQuestionId._id?.toString() || answer.paperQuestionId.toString()
-            : answer.paperQuestionId.toString()
-          
-          const optionId = answer.selectedOptionId 
-            ? (typeof answer.selectedOptionId === 'object'
-                ? answer.selectedOptionId._id?.toString() || answer.selectedOptionId.toString()
-                : answer.selectedOptionId.toString())
-            : ''
-          
-          answersMap[questionId] = {
-            type: answer.questionType,
-            value: optionId || answer.answerText || ''
-          }
-        })
-        
-        setAnswers(answersMap)
-        console.log('✅ Answers loaded into state:', answersMap)
-      } catch (error) {
-        console.error('Error loading saved answers:', error)
-      }
-    }
-
-    loadSavedAnswers()
-  }, [hasStarted, sessionId])
-
-  // Update activity every 2 minutes
-  useEffect(() => {
-    if (!hasStarted || !sessionId) return
-
-    const activityInterval = setInterval(async () => {
-      try {
-        await examRegistrationsApi.updateActivity(sessionId)
-      } catch (error) {
-        console.error('Error updating activity:', error)
-      }
-    }, 120000) // Every 2 minutes
-
-    return () => clearInterval(activityInterval)
-  }, [hasStarted, sessionId])
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const handleStartExam = async () => {
-    if (!sessionId) return
-
-    setIsStarting(true)
-    try {
-      const response = await examRegistrationsApi.startExam(sessionId)
-      setHasStarted(true)
-      
-      // Fetch updated status
-      const status = await examRegistrationsApi.getExamStatus(sessionId)
-      setExamStatus(status)
-      setTimeRemaining(status.timeRemainingSeconds)
-    } catch (error: any) {
-      console.error('Error starting exam:', error)
-      alert(error?.response?.data?.message || 'Failed to start exam')
-    } finally {
-      setIsStarting(false)
-    }
-  }
 
   const autoSaveAnswers = async () => {
     if (!sessionId || Object.keys(answers).length === 0) {
@@ -186,7 +65,6 @@ export default function ExamPaperPage() {
     }
 
     try {
-      console.log('💾 Auto-saving answers...', Object.keys(answers).length, 'answers')
       for (const [paperQuestionId, answer] of Object.entries(answers)) {
         const answerDto: SaveAnswerDto = {
           registrationId: sessionId,
@@ -198,9 +76,7 @@ export default function ExamPaperPage() {
         }
         await studentAnswersApi.saveAnswer(answerDto)
       }
-      console.log('✅ Auto-save completed successfully')
     } catch (error) {
-      console.error('❌ Auto-save failed:', error)
     }
   }
 
@@ -222,18 +98,115 @@ export default function ExamPaperPage() {
         answers: answerDtos,
       })
 
-      alert('Time expired! Your exam has been automatically submitted.')
-      router.push('/student/exams')
+      toast.success(EXAM_MESSAGES.TIME_EXPIRED)
+      router.push(`/student/exam-submitted?auto=true&title=${encodeURIComponent(paper?.paperTitle || 'Exam')}`)
     } catch (error: any) {
-      console.error('Error auto-submitting exam:', error)
+
+      toast.warning(error?.message || EXAM_MESSAGES.TIME_EXPIRED)
+      router.push(`/student/exam-submitted?auto=true&title=${encodeURIComponent(paper?.paperTitle || 'Exam')}`)
+    }
+  }
+
+  useEffect(() => {
+    if (!hasStarted || timeRemaining === null) return
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 0) {
+          clearInterval(timer)
+          handleAutoSubmit()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [hasStarted, timeRemaining])
+
+  useEffect(() => {
+    if (!hasStarted || !autoSaveEnabled || !sessionId) return
+
+    const autoSaveInterval = setInterval(async () => {
+      await autoSaveAnswers()
+    }, 30000)
+    return () => clearInterval(autoSaveInterval)
+  }, [hasStarted, autoSaveEnabled, sessionId, answers])
+
+  useEffect(() => {
+    if (!hasStarted || !sessionId) return;
+
+    const loadSavedAnswers = async () => {
+      try {
+        const response = await studentAnswersApi.getAnswers(sessionId)
+        const savedAnswers = response.answers.reduce((answersMap, answer) => {
+          const questionId = typeof answer.paperQuestionId === 'object' 
+            ? answer.paperQuestionId._id?.toString() || answer.paperQuestionId.toString()
+            : answer.paperQuestionId.toString()
+          
+          const optionId = answer.selectedOptionId 
+            ? (typeof answer.selectedOptionId === 'object'
+                ? answer.selectedOptionId._id?.toString() || answer.selectedOptionId.toString()
+                : answer.selectedOptionId.toString())
+            : ''
+          
+          answersMap[questionId] = {
+            type: answer.questionType,
+            value: optionId || answer.answerText || ''
+          }
+          
+          return answersMap
+        }, {} as Record<string, { type: string; value: string }>)
+        
+        setAnswers(savedAnswers)
+      } catch (error) {
+      }
+    }
+
+    loadSavedAnswers()
+  }, [hasStarted, sessionId])
+
+  useEffect(() => {
+    if (!hasStarted || !sessionId) return
+
+    const activityInterval = setInterval(async () => {
+      try {
+        await examRegistrationsApi.updateActivity(sessionId)
+      } catch (error) {
+      }
+    }, 120000)
+
+    return () => clearInterval(activityInterval)
+  }, [hasStarted, sessionId])
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const handleStartExam = async () => {
+    if (!sessionId) return
+
+    setIsStarting(true)
+    try {
+      const response = await examRegistrationsApi.startExam(sessionId)
+      setHasStarted(true)
+      
+      const status = await examRegistrationsApi.getExamStatus(sessionId)
+      setExamStatus(status)
+      setTimeRemaining(status.timeRemainingSeconds)
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to start exam')
+    } finally {
+      setIsStarting(false)
     }
   }
 
   const handleAnswerChange = async (questionId: string, answer: string, questionType: string) => {
-    // Update local state immediately for UI responsiveness
     setAnswers(prev => ({ ...prev, [questionId]: { type: questionType, value: answer } }))
     
-    // Save to backend immediately
     if (!sessionId) return
     
     try {
@@ -246,9 +219,7 @@ export default function ExamPaperPage() {
           : { answerText: answer }),
       }
       await studentAnswersApi.saveAnswer(answerDto)
-      console.log('✅ Answer saved:', questionId)
     } catch (error) {
-      console.error('❌ Failed to save answer:', error)
     }
   }
 
@@ -287,11 +258,10 @@ export default function ExamPaperPage() {
         answers: answerDtos,
       })
 
-      alert('Exam submitted successfully!')
-      router.push('/student/exams')
+      toast.success(EXAM_MESSAGES.SUBMIT_SUCCESS)
+      router.push(`/student/exam-submitted?title=${encodeURIComponent(paper?.paperTitle || 'Exam')}`)
     } catch (error: any) {
-      console.error('Error submitting exam:', error)
-      alert(error?.response?.data?.message || 'Failed to submit exam. Please try again.')
+      toast.error(error?.message || EXAM_MESSAGES.SUBMIT_ERROR)
     } finally {
       setIsSubmitting(false)
     }
@@ -333,7 +303,7 @@ export default function ExamPaperPage() {
     return acc
   }, {} as Record<string, PaperQuestion[]>) || {}
 
-  // Show start exam screen for online exams
+
   if (examStatus?.deliveryMode === 'online' && !hasStarted && examStatus?.canStart) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">

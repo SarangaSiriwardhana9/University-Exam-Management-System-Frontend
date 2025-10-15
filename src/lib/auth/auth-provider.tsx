@@ -29,10 +29,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isHydrated, setIsHydrated] = useState(false)
   const [isFetchingUser, setIsFetchingUser] = useState(false)
 
-  // Memoized values
   const isLoading = !store.isInitialized || isFetchingUser
 
-  // useCallback for refetchUser to prevent dependency issues
 const refetchUser = useCallback(async () => {
   if (!store.isAuthenticated || !store.token) return
   
@@ -49,12 +47,10 @@ const refetchUser = useCallback(async () => {
   }
 }, [store.isAuthenticated, store.token, store.setUser, store.logout])
 
-  // Handle hydration
   useEffect(() => {
     setIsHydrated(true)
   }, [])
 
-  // Initialize auth state only once after hydration
   useEffect(() => {
     if (!isHydrated || store.isInitialized) return
 
@@ -62,7 +58,6 @@ const refetchUser = useCallback(async () => {
       try {
         store.initialize()
         
-        // If we have a token but no user data, fetch user profile
         if (store.isAuthenticated && !store.user) {
           await refetchUser()
         }
@@ -75,15 +70,11 @@ const refetchUser = useCallback(async () => {
     initializeAuth()
   }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
 
-  /* -------------------------------------------------
-   * TEMPORARY DEBUG – remove after verifying year/departmentId
-   * ------------------------------------------------- */
   useEffect(() => {
     if (store.user) {
       console.log('🔍 CURRENT USER FROM AUTH PROVIDER:', JSON.stringify(store.user, null, 2))
     }
   }, [store.user])
-  /* ------------------------------------------------- */
 
   const contextValue = useMemo(() => ({
     user: store.user,
@@ -94,7 +85,6 @@ const refetchUser = useCallback(async () => {
     refetchUser
   }), [store.user, store.isAuthenticated, isLoading, store.login, store.logout, refetchUser])
 
-  // Show loading screen during hydration or initialization
   if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">

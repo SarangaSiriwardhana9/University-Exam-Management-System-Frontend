@@ -1,4 +1,3 @@
-// src/features/exam-papers/components/generate-paper-form.tsx
 'use client'
 
 import { useState } from 'react'

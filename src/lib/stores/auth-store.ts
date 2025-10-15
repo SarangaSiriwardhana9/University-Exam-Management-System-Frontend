@@ -1,4 +1,3 @@
-// src/lib/stores/auth-store.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { apiClient } from '@/lib/api/client'
@@ -22,13 +21,11 @@ type AuthActions = {
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set, get) => ({
-      // Initial state
       user: null,
       token: null,
       isAuthenticated: false,
       isInitialized: false,
 
-      // Actions
       login: (token: string, user: User) => {
         apiClient.setToken(token)
         set({
@@ -56,7 +53,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       initialize: () => {
         const { token, isInitialized } = get()
         
-        // Prevent multiple initializations
         if (isInitialized) return
         
         if (token) {

@@ -1,15 +1,10 @@
-// src/features/exam-papers/components/exam-paper-details.tsx
 'use client'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+ 
 import type { ExamPaper, PaperQuestion, SubPaperQuestion } from '../types/exam-papers'
 import { LockIcon, ClockIcon, FileTextIcon, ListTreeIcon } from 'lucide-react'
 import { JSX } from 'react'

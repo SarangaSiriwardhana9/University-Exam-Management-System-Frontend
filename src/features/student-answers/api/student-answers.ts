@@ -21,10 +21,10 @@ export interface StudentAnswer {
   studentId: string
   sessionId: string
   paperId: string
-  paperQuestionId: string
+  paperQuestionId: string | { _id: string; toString: () => string }
   questionId: string
   questionType: string
-  selectedOptionId?: string
+  selectedOptionId?: string | { _id: string; toString: () => string }
   answerText?: string
   isMarkedForReview: boolean
   timeSpentSeconds: number

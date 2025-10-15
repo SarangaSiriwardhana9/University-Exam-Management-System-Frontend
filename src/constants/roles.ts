@@ -1,6 +1,6 @@
 export const USER_ROLES = {
   ADMIN: 'admin',
-  FACULTY: 'faculty', 
+  FACULTY: 'faculty',
   STUDENT: 'student',
   EXAM_COORDINATOR: 'exam_coordinator',
   INVIGILATOR: 'invigilator'
@@ -8,16 +8,18 @@ export const USER_ROLES = {
 
 export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES]
 
-// Updated question types - only active types
 export const QUESTION_TYPES = {
   MCQ: 'mcq',
   STRUCTURED: 'structured',
   ESSAY: 'essay',
+  SHORT_ANSWER: 'short_answer',
+  LONG_ANSWER: 'long_answer',
+  FILL_BLANK: 'fill_blank',
+  TRUE_FALSE: 'true_false',
 } as const
 
 export type QuestionType = typeof QUESTION_TYPES[keyof typeof QUESTION_TYPES]
 
-// Sub-question types (can be used within STRUCTURED/ESSAY)
 export const SUB_QUESTION_TYPES = {
   SHORT_ANSWER: 'short_answer',
   LONG_ANSWER: 'long_answer',

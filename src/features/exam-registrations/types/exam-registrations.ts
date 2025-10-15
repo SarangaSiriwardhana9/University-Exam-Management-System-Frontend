@@ -2,6 +2,8 @@ export const REGISTRATION_STATUS = {
   REGISTERED: 'registered',
   CONFIRMED: 'confirmed',
   IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  AUTO_SUBMITTED: 'auto_submitted',
   CANCELLED: 'cancelled'
 } as const
 
@@ -44,7 +46,6 @@ export type ExamRegistration = {
   registeredByName?: string
   cancelledAt?: string
   cancellationReason?: string
-  // Online exam tracking fields
   examStartTime?: string
   examEndTime?: string
   actualSubmitTime?: string

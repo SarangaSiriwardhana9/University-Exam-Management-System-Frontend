@@ -416,10 +416,17 @@ function ExamRegistrationCard({
   // Check if exam has started
   const hasStarted = registration.examStartTime != null
   
-  // Check if exam time has expired (past exam end time)
-  const isExpired = examDate && registration.durationMinutes ? 
-    isPast(new Date(examDate.getTime() + registration.durationMinutes * 60 * 1000)) : 
-    false
+  // Check if exam time has expired (past the exam end time from backend)
+  const isExpired = registration.examEndTime ? isPast(new Date(registration.examEndTime)) : false
+  
+  // Check if exam has been submitted
+  // If exam has started and time expired, we assume it was auto-submitted
+  const isSubmitted = !!(
+    registration.actualSubmitTime || 
+    (registration.status as string) === 'completed' || 
+    (registration.status as string) === 'auto_submitted' ||
+    (hasStarted && isExpired) // Auto-submitted when time expired
+  )
 
   const getEnrollmentTimeMessage = () => {
     if (!examDate || !isOnlineExam) return null
@@ -466,14 +473,23 @@ function ExamRegistrationCard({
             {isSessionCancelled && (
               <Badge variant="destructive">Exam Cancelled</Badge>
             )}
-            {isExpired && !hasStarted && (
-              <Badge variant="destructive">Expired</Badge>
-            )}
-            {hasStarted && !isExpired && (
-              <Badge variant="default" className="bg-blue-600">In Progress</Badge>
-            )}
-            {hasStarted && isExpired && (
-              <Badge variant="outline">Time Expired</Badge>
+            {isSubmitted ? (
+              <Badge variant="default" className="bg-green-600">
+                <CheckCircle2Icon className="h-3 w-3 mr-1" />
+                {registration.isAutoSubmitted || (registration.status as string) === 'auto_submitted' || (hasStarted && isExpired) ? 'Auto-Submitted' : 'Submitted'}
+              </Badge>
+            ) : (
+              <>
+                {isExpired && !hasStarted && (
+                  <Badge variant="destructive">Expired</Badge>
+                )}
+                {hasStarted && !isExpired && (
+                  <Badge variant="default" className="bg-blue-600">In Progress</Badge>
+                )}
+                {hasStarted && isExpired && (
+                  <Badge variant="outline">Time Expired</Badge>
+                )}
+              </>
             )}
             <Badge variant={
               registration.status === 'cancelled' ? 'destructive' : 
@@ -562,7 +578,20 @@ function ExamRegistrationCard({
           </>
         )}
 
-        {(registration.status === 'registered' || registration.status === 'in_progress') && !isSessionCancelled && (
+        {isSubmitted && (
+          <>
+            <Separator />
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle2Icon className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-800">
+                <strong>Exam Submitted:</strong> Your exam was {registration.actualSubmitTime ? `submitted on ${format(new Date(registration.actualSubmitTime), 'PPp')}` : (hasStarted && isExpired) ? `auto-submitted when time expired at ${format(new Date(registration.examEndTime!), 'PPp')}` : 'successfully submitted'}.
+                {(registration.isAutoSubmitted || (registration.status as string) === 'auto_submitted' || (hasStarted && isExpired)) && !registration.actualSubmitTime && ' Your answers have been saved.'}
+              </AlertDescription>
+            </Alert>
+          </>
+        )}
+
+        {(registration.status === 'registered' || registration.status === 'in_progress') && !isSessionCancelled && !isSubmitted && (
           <>
             {isOnlineExam && (
               <>

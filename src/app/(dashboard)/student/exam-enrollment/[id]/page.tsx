@@ -1,19 +1,20 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LoadingSpinner } from '@/components/common/loading-spinner'
-import { KeyIcon, AlertCircleIcon, CheckCircle2Icon, ClockIcon, BookOpenIcon } from 'lucide-react'
-import { useMyExamRegistrationsQuery } from '@/features/exam-registrations/hooks/use-exam-registrations-query'
-import { examRegistrationsService } from '@/features/exam-registrations/hooks/use-exam-registrations'
-import type { ExamRegistration } from '@/features/exam-registrations/types/exam-registrations'
-import { format } from 'date-fns'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/common/loading-spinner';
+import { KeyIcon, AlertCircleIcon, CheckCircle2Icon, ClockIcon, BookOpenIcon } from 'lucide-react';
+import { useMyExamRegistrationsQuery } from '@/features/exam-registrations/hooks/use-exam-registrations-query';
+import { examRegistrationsService } from '@/features/exam-registrations/hooks/use-exam-registrations';
+import type { ExamRegistration } from '@/features/exam-registrations/types/exam-registrations';
+import { EXAM_MESSAGES } from '@/constants/exam.constants';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function ExamEnrollmentPage() {
   const params = useParams()
@@ -41,14 +42,13 @@ export default function ExamEnrollmentPage() {
       const result = await examRegistrationsService.verifyEnrollmentKey(registrationId, enrollmentKey.trim())
       
       if (result.data.verified) {
-        toast.success('Enrollment verified successfully!')
-        // Use registrationId instead of sessionId
+        toast.success(EXAM_MESSAGES.ENROLLMENT_SUCCESS)
         router.push(`/student/exam-paper/${result.data.paperId}?session=${result.data.registrationId}`)
       }
     } catch (err: any) {
-      setError(err.message || 'Invalid enrollment key. Please try again.')
+      setError(err.message || EXAM_MESSAGES.ENROLLMENT_ERROR)
       toast.error('Verification failed', {
-        description: err.message || 'Invalid enrollment key'
+        description: err.message || EXAM_MESSAGES.ENROLLMENT_ERROR
       })
     } finally {
       setIsVerifying(false)

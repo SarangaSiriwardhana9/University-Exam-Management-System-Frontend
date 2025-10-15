@@ -51,11 +51,10 @@ export const useDownloadReport = () => {
       return { blob, reportId }
     },
     onSuccess: ({ blob, reportId }) => {
-      // Create download link
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `report_${reportId}.pdf` // Default to PDF, adjust based on format
+      a.download = `report_${reportId}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

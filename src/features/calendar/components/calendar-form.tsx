@@ -33,15 +33,8 @@ type CreateCalendarFormProps = {
 }
 
 type UpdateCalendarFormProps = {
-  calendar: AcademicCalendar
-  onSubmit: (data: UpdateCalendarFormData) => void
-  onCancel: () => void
-  isLoading?: boolean
-}
-
 type CalendarFormProps = CreateCalendarFormProps | UpdateCalendarFormProps
 
-// Helper function to generate academic year in YYYY/YYYY format
 const generateAcademicYear = (startYear: number): string => {
   return `${startYear}/${startYear + 1}`
 }
@@ -51,70 +44,13 @@ type AcademicYearOption = {
   label: string
 }
 
-export const CalendarForm = ({ calendar, onSubmit, onCancel, isLoading }: CalendarFormProps) => {
-  const isEditMode = !!calendar
-  const currentYear = new Date().getFullYear()
-
-  const form = useForm<CreateCalendarFormData | UpdateCalendarFormData>({
-    resolver: zodResolver(isEditMode ? updateCalendarSchema : createCalendarSchema),
-    defaultValues: {
-      academicYear: generateAcademicYear(currentYear),
-      semester: 1,
-      semesterStart: '',
-      semesterEnd: '',
-      examStart: '',
-      examEnd: '',
-      resultPublishDate: '',
-      isCurrent: false,
-      description: ''
-    }
+const academicYearOptions: AcademicYearOption[] = []
+for (let i = currentYear - 2; i <= currentYear + 5; i++) {
+  academicYearOptions.push({
+    value: generateAcademicYear(i),
+    label: generateAcademicYear(i)
   })
 
-  useEffect(() => {
-    if (calendar) {
-      // Format dates for input
-      const formatDateForInput = (dateString: string) => {
-        return dateString ? new Date(dateString).toISOString().slice(0, 10) : ''
-      }
-      
-      form.reset({
-        academicYear: calendar.academicYear,
-        semester: calendar.semester,
-        semesterStart: formatDateForInput(calendar.semesterStart),
-        semesterEnd: formatDateForInput(calendar.semesterEnd),
-        examStart: formatDateForInput(calendar.examStart),
-        examEnd: formatDateForInput(calendar.examEnd),
-        resultPublishDate: calendar.resultPublishDate ? formatDateForInput(calendar.resultPublishDate) : '',
-        isCurrent: calendar.isCurrent,
-        description: calendar.description || ''
-      })
-    }
-  }, [calendar, form])
-
-  const handleSubmit = (data: CreateCalendarFormData | UpdateCalendarFormData) => {
-    // Convert dates to ISO strings
-    const formattedData = {
-      ...data,
-      semesterStart: new Date(data.semesterStart!).toISOString(),
-      semesterEnd: new Date(data.semesterEnd!).toISOString(),
-      examStart: new Date(data.examStart!).toISOString(),
-      examEnd: new Date(data.examEnd!).toISOString(),
-      resultPublishDate: data.resultPublishDate ? new Date(data.resultPublishDate).toISOString() : undefined
-    }
-
-    if (isEditMode) {
-      (onSubmit as (data: UpdateCalendarFormData) => void)(formattedData as UpdateCalendarFormData)
-    } else {
-      (onSubmit as (data: CreateCalendarFormData) => void)(formattedData as CreateCalendarFormData)
-    }
-  }
-
-  // Generate academic year options with proper typing
-  const academicYearOptions: AcademicYearOption[] = []
-  for (let i = currentYear - 2; i <= currentYear + 5; i++) {
-    academicYearOptions.push({
-      value: generateAcademicYear(i),
-      label: generateAcademicYear(i)
     })
   }
 

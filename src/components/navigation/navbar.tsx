@@ -22,7 +22,7 @@ import {
   UserIcon, 
   SettingsIcon, 
   BellIcon,
-  GraduationCapIcon
+  GraduationCapIcon,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLogout } from '@/features/auth/hooks/use-auth-mutations'
@@ -30,7 +30,6 @@ import { NAVIGATION_ITEMS, type NavItem } from '@/constants/navigation'
 import type { UserRole } from '@/constants/roles'
 import { cn } from '@/lib/utils'
 
-// Role-specific styling helper
 const getRoleStyle = (role: UserRole) => {
   const roleStyles = {
     admin: 'role-admin',

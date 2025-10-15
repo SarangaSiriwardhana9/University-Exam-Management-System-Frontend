@@ -75,7 +75,6 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterFormData) => {
-      // Remove confirmPassword and prepare the registration data
       const { confirmPassword, ...restData } = data
       
       const registerData: RegisterDto = {

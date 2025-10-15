@@ -147,7 +147,6 @@ class ApiClient {
       headers.Authorization = `Bearer ${this.token}`
     }
     
-    // Don't set Content-Type for FormData, let browser set it with boundary
     delete headers['Content-Type']
     
     const response = await fetch(fullURL, {
@@ -159,11 +158,9 @@ class ApiClient {
   }
 }
 
-// Create and export the API client instance
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export const apiClient = new ApiClient(API_BASE_URL)
 
-// Initialize token from localStorage on client side
 if (typeof window !== 'undefined') {
   const token = localStorage.getItem('auth_token')
   if (token) {

@@ -35,7 +35,6 @@ export const createUserSchema = z.object({
   semester: z.number().int().min(1).max(2).optional()
 }).refine(
   (data) => {
-    // If role is student, year and semester must be provided
     if (data.role === USER_ROLES.STUDENT) {
       return data.year !== undefined && data.semester !== undefined
     }

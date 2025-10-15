@@ -5,7 +5,6 @@ import type {
   UpdateCalendarDto, 
   CalendarSummary, 
   GetCalendarParams,
-  BackendCalendarsListResponse
 } from '../types/calendar'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
@@ -14,7 +13,6 @@ type RawAcademicCalendar = AcademicCalendar
 const transformCalendar = (calendar: RawAcademicCalendar): AcademicCalendar => {
   return {
     ...calendar,
-    // Ensure dates are properly formatted
     semesterStart: new Date(calendar.semesterStart).toISOString(),
     semesterEnd: new Date(calendar.semesterEnd).toISOString(),
     examStart: new Date(calendar.examStart).toISOString(),

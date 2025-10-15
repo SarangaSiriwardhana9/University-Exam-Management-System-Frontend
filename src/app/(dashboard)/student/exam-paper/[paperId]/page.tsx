@@ -25,7 +25,7 @@ export default function ExamPaperPage() {
   const sessionId = searchParams.get('session')
 
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
-  const [answers, setAnswers] = useState<Record<string, { type: string; value: string }>>({})
+  const [answers, setAnswers] = useState<Record<string, { type: string; value: string | string[] }>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [examStatus, setExamStatus] = useState<any>(null)
@@ -70,10 +70,18 @@ export default function ExamPaperPage() {
           registrationId: sessionId,
           paperQuestionId,
           questionType: answer.type,
-          ...(answer.type === 'mcq' || answer.type === 'true_false'
-            ? { selectedOptionId: answer.value }
-            : { answerText: answer.value }),
         }
+        
+        if (answer.type === 'mcq' || answer.type === 'true_false') {
+          if (Array.isArray(answer.value)) {
+            answerDto.selectedOptionIds = answer.value
+          } else {
+            answerDto.selectedOptionId = answer.value as string
+          }
+        } else {
+          answerDto.answerText = answer.value as string
+        }
+        
         await studentAnswersApi.saveAnswer(answerDto)
       }
     } catch (error) {
@@ -84,14 +92,25 @@ export default function ExamPaperPage() {
     if (!sessionId) return
 
     try {
-      const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => ({
-        registrationId: sessionId,
-        paperQuestionId,
-        questionType: answer.type,
-        ...(answer.type === 'mcq' || answer.type === 'true_false'
-          ? { selectedOptionId: answer.value }
-          : { answerText: answer.value }),
-      }))
+      const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => {
+        const dto: SaveAnswerDto = {
+          registrationId: sessionId,
+          paperQuestionId,
+          questionType: answer.type,
+        }
+        
+        if (answer.type === 'mcq' || answer.type === 'true_false') {
+          if (Array.isArray(answer.value)) {
+            dto.selectedOptionIds = answer.value
+          } else {
+            dto.selectedOptionId = answer.value as string
+          }
+        } else {
+          dto.answerText = answer.value as string
+        }
+        
+        return dto
+      })
 
       await studentAnswersApi.submitExam({
         registrationId: sessionId,
@@ -144,19 +163,30 @@ export default function ExamPaperPage() {
             ? answer.paperQuestionId._id?.toString() || answer.paperQuestionId.toString()
             : answer.paperQuestionId.toString()
           
-          const optionId = answer.selectedOptionId 
-            ? (typeof answer.selectedOptionId === 'object'
-                ? answer.selectedOptionId._id?.toString() || answer.selectedOptionId.toString()
-                : answer.selectedOptionId.toString())
-            : ''
+          let value: string | string[]
+          
+          // Handle multiple selections
+          if (answer.selectedOptionIds && answer.selectedOptionIds.length > 0) {
+            value = answer.selectedOptionIds.map(id => 
+              typeof id === 'object' ? id._id?.toString() || id.toString() : id.toString()
+            )
+          } else if (answer.selectedOptionId) {
+            // Handle single selection
+            value = typeof answer.selectedOptionId === 'object'
+              ? answer.selectedOptionId._id?.toString() || answer.selectedOptionId.toString()
+              : answer.selectedOptionId.toString()
+          } else {
+            // Handle text answers
+            value = answer.answerText || ''
+          }
           
           answersMap[questionId] = {
             type: answer.questionType,
-            value: optionId || answer.answerText || ''
+            value: value
           }
           
           return answersMap
-        }, {} as Record<string, { type: string; value: string }>)
+        }, {} as Record<string, { type: string; value: string | string[] }>)
         
         setAnswers(savedAnswers)
       } catch (error) {
@@ -204,7 +234,7 @@ export default function ExamPaperPage() {
     }
   }
 
-  const handleAnswerChange = async (questionId: string, answer: string, questionType: string) => {
+  const handleAnswerChange = async (questionId: string, answer: string | string[], questionType: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: { type: questionType, value: answer } }))
     
     if (!sessionId) return
@@ -214,10 +244,18 @@ export default function ExamPaperPage() {
         registrationId: sessionId,
         paperQuestionId: questionId,
         questionType: questionType,
-        ...(questionType === 'mcq' || questionType === 'true_false'
-          ? { selectedOptionId: answer }
-          : { answerText: answer }),
       }
+      
+      if (questionType === 'mcq' || questionType === 'true_false') {
+        if (Array.isArray(answer)) {
+          answerDto.selectedOptionIds = answer
+        } else {
+          answerDto.selectedOptionId = answer
+        }
+      } else {
+        answerDto.answerText = answer as string
+      }
+      
       await studentAnswersApi.saveAnswer(answerDto)
     } catch (error) {
     }
@@ -244,14 +282,25 @@ export default function ExamPaperPage() {
 
     setIsSubmitting(true)
     try {
-      const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => ({
-        registrationId: sessionId,
-        paperQuestionId,
-        questionType: answer.type,
-        ...(answer.type === 'mcq' || answer.type === 'true_false'
-          ? { selectedOptionId: answer.value }
-          : { answerText: answer.value }),
-      }))
+      const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => {
+        const dto: SaveAnswerDto = {
+          registrationId: sessionId,
+          paperQuestionId,
+          questionType: answer.type,
+        }
+        
+        if (answer.type === 'mcq' || answer.type === 'true_false') {
+          if (Array.isArray(answer.value)) {
+            dto.selectedOptionIds = answer.value
+          } else {
+            dto.selectedOptionId = answer.value as string
+          }
+        } else {
+          dto.answerText = answer.value as string
+        }
+        
+        return dto
+      })
 
       await studentAnswersApi.submitExam({
         registrationId: sessionId,
@@ -504,7 +553,7 @@ export default function ExamPaperPage() {
                     key={question._id}
                     question={question}
                     questionNumber={index + 1}
-                    answer={answers[question._id]?.value || ''}
+                    answer={answers[question._id]?.value || (question.questionType === 'mcq' && (typeof question.questionId === 'object' && question.questionId.allowMultipleAnswers) ? [] : '')}
                     onAnswerChange={(answer) => handleAnswerChange(question._id, answer, question.questionType)}
                     onClearAnswer={() => handleClearAnswer(question._id)}
                   />
@@ -554,38 +603,57 @@ function QuestionCard({
 }: {
   question: PaperQuestion
   questionNumber: number
-  answer: string
-  onAnswerChange: (answer: string) => void
+  answer: string | string[]
+  onAnswerChange: (answer: string | string[]) => void
   onClearAnswer: () => void
 }) {
   const questionData = typeof question.questionId === 'object' ? question.questionId : null
   const questionType = questionData?.questionType || question.questionType
   const options = questionData?.options || []
+  const allowMultipleAnswers = questionData?.allowMultipleAnswers || false
   const isMCQ = questionType === 'mcq' || questionType === 'true_false'
 
-  const renderAnswerInput = (qType: string, opts: QuestionOption[], currentAnswer: string) => {
+  const renderAnswerInput = (qType: string, opts: QuestionOption[], currentAnswer: string | string[], allowMultiple: boolean = false) => {
     if (qType === 'mcq' || qType === 'true_false') {
+      const selectedIds = Array.isArray(currentAnswer) ? currentAnswer : (currentAnswer ? [currentAnswer] : [])
+      
+      const handleOptionChange = (optionId: string) => {
+        if (allowMultiple) {
+          // Multiple selection
+          const newSelection = selectedIds.includes(optionId)
+            ? selectedIds.filter(id => id !== optionId)
+            : [...selectedIds, optionId]
+          onAnswerChange(newSelection)
+        } else {
+          // Single selection
+          onAnswerChange(optionId)
+        }
+      }
+      
       return (
         <div className="mt-3 space-y-2">
-          {opts.map((option) => (
-            <label
-              key={option._id}
-              className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-accent ${
-                currentAnswer === option._id ? 'bg-primary/10 border-primary' : ''
-              }`}
-            >
-              <input
-                type="radio"
-                name={`question-${question._id}`}
-                value={option._id}
-                checked={currentAnswer === option._id}
-                onChange={(e) => onAnswerChange(e.target.value)}
-                className="mt-1"
-              />
-              <span className="flex-1">{option.optionText}</span>
-            </label>
-          ))}
-          {currentAnswer && (
+          {opts.map((option) => {
+            const isSelected = selectedIds.includes(option._id)
+            return (
+              <label
+                key={option._id}
+                className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-accent ${
+                  isSelected ? 'bg-primary/10 border-primary' : ''
+                }`}
+              >
+                <input
+                  type={allowMultiple ? "checkbox" : "radio"}
+                  name={allowMultiple ? undefined : `question-${question._id}`}
+                  value={option._id}
+                  checked={isSelected}
+                  onChange={() => handleOptionChange(option._id)}
+                  className="mt-1"
+                />
+                <span className="flex-1">{option.optionText}</span>
+              </label>
+            )
+          })}
+          {selectedIds.length > 0 && (
             <Button
               variant="outline"
               size="sm"
@@ -649,6 +717,7 @@ function QuestionCard({
                 const subQData = typeof subQ.questionId === 'object' ? subQ.questionId : null
                 const subQType = subQData?.questionType || subQ.questionType
                 const subQOptions = subQData?.options || []
+                const subQAllowMultiple = subQData?.allowMultipleAnswers || false
                 
                 return (
                   <div key={subQ._id} className="space-y-2">
@@ -660,13 +729,13 @@ function QuestionCard({
                         {subQ.marksAllocated}m
                       </Badge>
                     </div>
-                    {renderAnswerInput(subQType, subQOptions, answer)}
+                    {renderAnswerInput(subQType, subQOptions, answer, subQAllowMultiple)}
                   </div>
                 )
               })}
             </div>
           ) : (
-            renderAnswerInput(questionType, options, answer)
+            renderAnswerInput(questionType, options, answer, allowMultipleAnswers)
           )}
         </div>
       </div>

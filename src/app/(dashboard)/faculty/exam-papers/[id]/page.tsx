@@ -296,97 +296,148 @@ const ViewExamPaperPage = ({ params }: ViewExamPaperPageProps) => {
               </CardContent>
             </Card>
 
-            {/* Questions */}
-            {paper.questions && paper.questions.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Questions ({paper.questions.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {paper.questions
-                      .sort((a, b) => a.questionOrder - b.questionOrder)
-                      .map((question, index) => {
-                        const questionData = typeof question.questionId === 'object' ? question.questionId : null
-                        const questionText = questionData?.questionText || question.questionText
-                        const questionType = questionData?.questionType || question.questionType
-                        const options = questionData?.options || []
-                        const isMCQ = questionType === 'mcq' || questionType === 'true_false'
+            {/* Questions by Parts */}
+            {paper.parts && paper.parts.length > 0 && (
+              <div className="space-y-6">
+                {paper.parts
+                  .sort((a, b) => a.partOrder - b.partOrder)
+                  .map((part) => {
+                    const partQuestions = paper.questions
+                      ?.filter(q => q.partLabel === part.partLabel)
+                      .sort((a, b) => a.questionOrder - b.questionOrder) || []
 
-                        return (
-                          <div
-                            key={question._id}
-                            className="p-4 border rounded-lg"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="font-semibold">Q{index + 1}.</span>
-                                  {question.partLabel && (
-                                    <Badge variant="outline" className="text-xs">
-                                      Part {question.partLabel}
-                                    </Badge>
-                                  )}
-                                  {question.isOptional && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Optional
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="font-medium mb-2 whitespace-pre-wrap">{questionText}</p>
-                                
-                                {/* MCQ Options */}
-                                {isMCQ && options.length > 0 && (
-                                  <div className="mt-3 ml-4 space-y-2">
-                                    {options
-                                      .sort((a: any, b: any) => a.optionOrder - b.optionOrder)
-                                      .map((option: any, optIdx: number) => (
-                                        <div 
-                                          key={option._id} 
-                                          className={cn(
-                                            "flex items-start gap-2 p-2 rounded",
-                                            option.isCorrect && "bg-green-50 dark:bg-green-950"
-                                          )}
-                                        >
-                                          <span className={cn(
-                                            "text-sm font-medium min-w-[24px]",
-                                            option.isCorrect ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
-                                          )}>
-                                            {String.fromCharCode(65 + optIdx)}.
-                                          </span>
-                                          <span className={cn(
-                                            "text-sm",
-                                            option.isCorrect && "text-green-700 dark:text-green-300 font-medium"
-                                          )}>
-                                            {option.optionText}
-                                            {option.isCorrect && (
-                                              <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ Correct</span>
-                                            )}
-                                          </span>
-                                        </div>
-                                      ))}
-                                  </div>
-                                )}
+                    if (partQuestions.length === 0) return null
 
-                                <div className="flex gap-2 mt-3">
-                                  <Badge variant="outline" className="text-xs">
-                                    {questionType.replace('_', ' ').toUpperCase()}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">
-                                    {question.difficultyLevel}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-semibold">{question.marksAllocated} marks</p>
-                              </div>
+                    return (
+                      <Card key={part.partLabel}>
+                        <CardHeader className="bg-muted/50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-xl">
+                                Part {part.partLabel}: {part.partTitle}
+                              </CardTitle>
+                              {part.partInstructions && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {part.partInstructions}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-muted-foreground">
+                                {part.questionCount} question{part.questionCount !== 1 ? 's' : ''}
+                              </p>
+                              <p className="text-lg font-bold">{part.totalMarks} marks</p>
                             </div>
                           </div>
-                        )
-                      })}
-                  </div>
-                </CardContent>
-              </Card>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          <div className="space-y-6">
+                            {partQuestions.map((question, qIdx) => {
+                              const questionData = typeof question.questionId === 'object' ? question.questionId : null
+                              const questionText = questionData?.questionText || question.questionText
+                              const questionType = questionData?.questionType || question.questionType
+                              const options = questionData?.options || []
+                              const allowMultiple = questionData?.allowMultipleAnswers || false
+                              const isMCQ = questionType === 'mcq' || questionType === 'true_false'
+                              const hasSubQuestions = question.subQuestions && question.subQuestions.length > 0
+
+                              return (
+                                <div key={question._id} className="border-l-4 border-primary/20 pl-4">
+                                  <div className="flex items-start justify-between gap-4 mb-3">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-lg font-bold">{qIdx + 1}.</span>
+                                        {question.isOptional && (
+                                          <Badge variant="secondary" className="text-xs">Optional</Badge>
+                                        )}
+                                        <Badge variant="outline" className="text-xs">
+                                          {questionType.replace('_', ' ')}
+                                        </Badge>
+                                        {isMCQ && allowMultiple && (
+                                          <Badge variant="default" className="text-xs bg-blue-100 text-blue-700">
+                                            Multiple Answers
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-base font-medium whitespace-pre-wrap">{questionText}</p>
+                                    </div>
+                                    <Badge variant="outline" className="text-sm font-semibold">
+                                      {question.marksAllocated} marks
+                                    </Badge>
+                                  </div>
+
+                                  {isMCQ && options.length > 0 && (
+                                    <div className="mt-3 ml-6 space-y-2">
+                                      {options
+                                        .sort((a: any, b: any) => a.optionOrder - b.optionOrder)
+                                        .map((option: any, optIdx: number) => (
+                                          <div
+                                            key={option._id}
+                                            className={cn(
+                                              "flex items-start gap-3 p-3 rounded-lg border",
+                                              option.isCorrect && "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                                            )}
+                                          >
+                                            <span className={cn(
+                                              "font-semibold min-w-[28px]",
+                                              option.isCorrect ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                                            )}>
+                                              {String.fromCharCode(65 + optIdx)}.
+                                            </span>
+                                            <span className={cn(
+                                              option.isCorrect && "text-green-700 dark:text-green-300 font-medium"
+                                            )}>
+                                              {option.optionText}
+                                              {option.isCorrect && (
+                                                <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400">
+                                                  ✓ Correct Answer
+                                                </span>
+                                              )}
+                                            </span>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  )}
+
+                                  {hasSubQuestions && (
+                                    <div className="mt-4 ml-6 space-y-4 border-l-2 border-muted pl-4">
+                                      {question.subQuestions?.map((subQ) => {
+                                        const subQData = typeof subQ.questionId === 'object' ? subQ.questionId : null
+                                        const subQText = subQData?.questionText || subQ.questionText
+                                        const subQType = subQData?.questionType || subQ.questionType
+
+                                        return (
+                                          <div key={subQ._id} className="space-y-2">
+                                            <div className="flex items-start justify-between gap-4">
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span className="font-semibold text-primary">
+                                                    ({subQ.subQuestionLabel})
+                                                  </span>
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {subQType?.replace('_', ' ')}
+                                                  </Badge>
+                                                </div>
+                                                <p className="text-sm whitespace-pre-wrap">{subQText}</p>
+                                              </div>
+                                              <Badge variant="secondary" className="text-xs">
+                                                {subQ.marksAllocated}m
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+              </div>
             )}
 
             {/* Metadata */}

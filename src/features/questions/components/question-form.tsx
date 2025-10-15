@@ -461,7 +461,26 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Answer Options</CardTitle>
+                <div className="space-y-2">
+                  <CardTitle>Answer Options</CardTitle>
+                  <FormField
+                    control={form.control}
+                    name="allowMultipleAnswers"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer">
+                          Allow multiple correct answers
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <Button type="button" variant="outline" size="sm" onClick={addOption}>
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Add Option
@@ -516,7 +535,9 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 </div>
               ))}
               <p className="text-sm text-muted-foreground">
-                Toggle the switch to mark the correct answer. Exactly one option must be correct.
+                {form.watch('allowMultipleAnswers') 
+                  ? 'Toggle switches to mark correct answers. At least one option must be correct for multiple answer questions.'
+                  : 'Toggle the switch to mark the correct answer. Exactly one option must be correct for single answer questions.'}
               </p>
             </CardContent>
           </Card>

@@ -153,7 +153,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     } else {
       newSelectedIds.add(questionId)
       const part = partFields.find(p => p.partLabel === activePartTab)
-      const questionOrder = questionFields.filter(q => q.partLabel === activePartTab).length + 1
+      const questionOrder = questionFields.length + 1
 
       const newQuestion: PaperQuestionDto = {
         questionId: question._id,
@@ -234,11 +234,21 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   }, [questionFields, partFields])
 
   const handleSubmit = (data: CreateExamPaperFormData) => {
+    const reorderedQuestions = data.questions
+      .sort((a, b) => {
+        if (a.partLabel < b.partLabel) return -1
+        if (a.partLabel > b.partLabel) return 1
+        return (a.questionOrder || 0) - (b.questionOrder || 0)
+      })
+      .map((q, index) => ({ ...q, questionOrder: index + 1 }))
+
+    const submissionData = { ...data, questions: reorderedQuestions }
+
     if (isEditMode) {
-      const { subjectId, ...updateData } = data
+      const { subjectId, ...updateData } = submissionData
       onSubmit(updateData as UpdateExamPaperFormData)
     } else {
-      onSubmit(data)
+      onSubmit(submissionData)
     }
   }
 

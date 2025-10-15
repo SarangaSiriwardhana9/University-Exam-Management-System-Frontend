@@ -26,6 +26,7 @@ export type SubPaperQuestion = {
     questionType: string
     difficultyLevel: string
     marks: number
+    allowMultipleAnswers?: boolean
     options?: QuestionOption[]
   }
   questionText: string
@@ -47,6 +48,7 @@ export type PaperQuestion = {
     questionType: string
     difficultyLevel: string
     marks: number
+    allowMultipleAnswers?: boolean
     options?: QuestionOption[]
   }
   questionText: string

@@ -43,6 +43,7 @@ export type Question = {
   isActive: boolean
   hasSubQuestions: boolean
   subQuestionLevel: number
+  allowMultipleAnswers?: boolean
   options?: QuestionOption[]
   subQuestions?: SubQuestion[]
   createdAt: string
@@ -71,6 +72,7 @@ export type CreateQuestionDto = {
   bloomsTaxonomy?: BloomsTaxonomy
   keywords?: string
   isPublic?: boolean
+  allowMultipleAnswers?: boolean
   options?: Omit<QuestionOption, '_id' | 'createdAt'>[]
   subQuestions?: CreateSubQuestionDto[]
 }

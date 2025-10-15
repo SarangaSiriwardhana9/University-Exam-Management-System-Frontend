@@ -5,6 +5,7 @@ export interface SaveAnswerDto {
   paperQuestionId: string
   questionType: string
   selectedOptionId?: string
+  selectedOptionIds?: string[]
   answerText?: string
   isMarkedForReview?: boolean
   timeSpentSeconds?: number
@@ -25,6 +26,7 @@ export interface StudentAnswer {
   questionId: string
   questionType: string
   selectedOptionId?: string | { _id: string; toString: () => string }
+  selectedOptionIds?: (string | { _id: string; toString: () => string })[]
   answerText?: string
   isMarkedForReview: boolean
   timeSpentSeconds: number

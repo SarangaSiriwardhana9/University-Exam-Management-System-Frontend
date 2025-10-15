@@ -61,6 +61,7 @@ const baseQuestionSchema = z.object({
   ]).optional(),
   keywords: z.string().optional().or(z.literal('')),
   isPublic: z.boolean().optional(),
+  allowMultipleAnswers: z.boolean().optional(),
   options: z.array(questionOptionSchema).optional(),
   subQuestions: z.array(subQuestionSchema).optional()
 })
@@ -77,13 +78,26 @@ export const createQuestionSchema = baseQuestionSchema.superRefine((data, ctx) =
     }
 
     const correctCount = data.options.filter(opt => opt.isCorrect).length
-    if (correctCount !== 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "MCQ must have exactly one correct answer",
-        path: ["options"]
-      })
-      return
+    if (data.allowMultipleAnswers) {
+      // For multiple answer MCQs, at least 1 correct answer required
+      if (correctCount < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Multiple answer MCQ must have at least one correct answer",
+          path: ["options"]
+        })
+        return
+      }
+    } else {
+      // For single answer MCQs, exactly 1 correct answer required
+      if (correctCount !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Single answer MCQ must have exactly one correct answer",
+          path: ["options"]
+        })
+        return
+      }
     }
 
     if (data.subQuestions?.length) {

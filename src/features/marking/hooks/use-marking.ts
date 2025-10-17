@@ -35,5 +35,9 @@ export const markingService = {
 
   getMarkingStats: async (sessionId: string): Promise<MarkingStats> => {
     return apiClient.get(`/api/v1/student-answers/marking/session/${sessionId}/stats`)
+  },
+
+  unmarkRegistration: async (registrationId: string): Promise<any> => {
+    return apiClient.post(`/api/v1/student-answers/marking/registration/${registrationId}/unmark`)
   }
 }

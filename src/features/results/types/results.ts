@@ -8,6 +8,7 @@ export type Result = {
   studentId: string
   studentName?: string
   studentEmail?: string
+  studentIdNumber?: string
   marksObtained: number
   totalMarks: number
   percentage: number

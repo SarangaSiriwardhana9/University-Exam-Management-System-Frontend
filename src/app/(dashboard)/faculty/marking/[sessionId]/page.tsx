@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronLeftIcon, CheckCircle2Icon, ClockIcon, UserIcon, SearchIcon, ArrowUpDownIcon, MailIcon, EditIcon, EyeIcon } from 'lucide-react'
+import { ChevronLeftIcon, CheckCircle2Icon, ClockIcon, UserIcon, SearchIcon, ArrowUpDownIcon, MailIcon, EditIcon, EyeIcon, MoreVerticalIcon, XCircleIcon } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -17,7 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useSessionSubmissionsQuery, useMarkingStatsQuery } from '@/features/marking/hooks/use-marking-query'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useSessionSubmissionsQuery, useMarkingStatsQuery, useUnmarkRegistration } from '@/features/marking/hooks/use-marking-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -35,14 +43,7 @@ export default function MarkingPage({ params }: MarkingPageProps) {
   const isMarked = filter === 'all' ? undefined : filter === 'marked'
   const { data: submissionsData, isLoading } = useSessionSubmissionsQuery(sessionId, isMarked)
   const { data: stats } = useMarkingStatsQuery(sessionId)
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
+  const unmarkMutation = useUnmarkRegistration()
 
   const submissions = submissionsData?.submissions || []
 
@@ -75,6 +76,20 @@ export default function MarkingPage({ params }: MarkingPageProps) {
 
     return filtered
   }, [submissions, search, sortBy])
+
+  const handleUnmark = async (registrationId: string) => {
+    if (confirm('Are you sure you want to unmark this submission? All marks will be reset.')) {
+      await unmarkMutation.mutateAsync(registrationId)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -200,7 +215,7 @@ export default function MarkingPage({ params }: MarkingPageProps) {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {submission.studentId.studentId}
+                          {submission.studentId.studentId || 'N/A'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -235,25 +250,32 @@ export default function MarkingPage({ params }: MarkingPageProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/faculty/marking/${sessionId}/${submission._id}`)}
-                          >
-                            {submission.isMarked ? (
-                              <>
-                                <EditIcon className="h-4 w-4 mr-1" />
-                                Update
-                              </>
-                            ) : (
-                              <>
-                                <EyeIcon className="h-4 w-4 mr-1" />
-                                Mark
-                              </>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/faculty/marking/${sessionId}/${submission._id}`)}
+                            >
+                              <EyeIcon className="h-4 w-4 mr-2" />
+                              {submission.isMarked ? 'View & Update' : 'Mark Answers'}
+                            </DropdownMenuItem>
+                            {submission.isMarked && (
+                              <DropdownMenuItem
+                                onClick={() => handleUnmark(submission._id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <XCircleIcon className="h-4 w-4 mr-2" />
+                                Mark as Unmarked
+                              </DropdownMenuItem>
                             )}
-                          </Button>
-                        </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))

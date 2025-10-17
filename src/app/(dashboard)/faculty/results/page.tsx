@@ -296,15 +296,18 @@ export default function FacultyResultsPage() {
                       <TableRow key={result._id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{result.studentName}</p>
-                            <p className="text-xs text-muted-foreground">{result.studentEmail}</p>
+                            <p className="font-medium">{result.studentName || 'N/A'}</p>
+                            <p className="text-xs text-muted-foreground">{result.studentEmail || 'N/A'}</p>
+                            {result.studentIdNumber && (
+                              <p className="text-xs text-muted-foreground">ID: {result.studentIdNumber}</p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-sm">{result.examTitle}</p>
+                            <p className="font-medium text-sm">{result.examTitle || 'N/A'}</p>
                             <p className="text-xs text-muted-foreground">
-                              {result.subjectCode && `${result.subjectCode} - `}{result.subjectName}
+                              {result.subjectCode && `${result.subjectCode} - `}{result.subjectName || 'N/A'}
                             </p>
                           </div>
                         </TableCell>

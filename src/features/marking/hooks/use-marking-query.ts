@@ -88,3 +88,18 @@ export const useFinalizeMarking = () => {
     },
   })
 }
+
+export const useUnmarkRegistration = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (registrationId: string) => markingService.unmarkRegistration(registrationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marking'] })
+      toast.success('Registration unmarked successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to unmark registration')
+    },
+  })
+}

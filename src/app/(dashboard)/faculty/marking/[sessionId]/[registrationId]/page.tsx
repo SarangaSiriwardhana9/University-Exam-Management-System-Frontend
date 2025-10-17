@@ -314,7 +314,6 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
                       step={0.5}
                       value={marks[answer._id]?.marks || 0}
                       onChange={(e) => handleMarkChange(answer._id, 'marks', parseFloat(e.target.value) || 0)}
-                      disabled={registration.isMarked}
                     />
                   </div>
                   <div>
@@ -324,7 +323,6 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
                       onChange={(e) => handleMarkChange(answer._id, 'feedback', e.target.value)}
                       placeholder="Add feedback for the student..."
                       rows={1}
-                      disabled={registration.isMarked}
                     />
                   </div>
                 </div>
@@ -334,50 +332,54 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
         })}
       </div>
 
-      {!registration.isMarked && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 shadow-lg">
-          <div className="container mx-auto max-w-7xl flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Marks</p>
-                <p className="text-2xl font-bold">{obtainedMarks} / {totalMarks}</p>
-              </div>
-              {!allMarked && (
-                <Badge variant="destructive">
-                  {answers.filter(a => !a.isMarked).length} unmarked
-                </Badge>
-              )}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 shadow-lg">
+        <div className="container mx-auto max-w-7xl flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Marks</p>
+              <p className="text-2xl font-bold">{obtainedMarks} / {totalMarks}</p>
             </div>
-            <div className="flex items-center gap-2">
+            {!allMarked && (
+              <Badge variant="destructive">
+                {answers.filter(a => !a.isMarked).length} unmarked
+              </Badge>
+            )}
+            {registration.isMarked && (
+              <Badge className="bg-green-600">
+                <CheckCircle2Icon className="h-3 w-3 mr-1" />
+                Finalized
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/faculty/marking/${sessionId}`)}
+            >
+              {registration.isMarked ? 'Back' : 'Cancel'}
+            </Button>
+            {hasChanges && (
               <Button
-                variant="outline"
-                onClick={() => router.push(`/faculty/marking/${sessionId}`)}
+                onClick={handleSaveAll}
+                disabled={bulkMark.isPending}
               >
-                Cancel
+                <SaveIcon className="h-4 w-4 mr-2" />
+                {bulkMark.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
-              {hasChanges && (
-                <Button
-                  onClick={handleSaveAll}
-                  disabled={bulkMark.isPending}
-                >
-                  <SaveIcon className="h-4 w-4 mr-2" />
-                  {bulkMark.isPending ? 'Saving...' : 'Save All'}
-                </Button>
-              )}
-              {allMarked && (
-                <Button
-                  onClick={handleFinalize}
-                  disabled={finalize.isPending}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle2Icon className="h-4 w-4 mr-2" />
-                  {finalize.isPending ? 'Finalizing...' : 'Finalize Marking'}
-                </Button>
-              )}
-            </div>
+            )}
+            {allMarked && !registration.isMarked && (
+              <Button
+                onClick={handleFinalize}
+                disabled={finalize.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2Icon className="h-4 w-4 mr-2" />
+                {finalize.isPending ? 'Finalizing...' : 'Finalize Marking'}
+              </Button>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

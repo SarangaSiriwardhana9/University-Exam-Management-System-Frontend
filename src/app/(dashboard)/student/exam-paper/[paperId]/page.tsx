@@ -556,6 +556,9 @@ export default function ExamPaperPage() {
                     answer={answers[question._id]?.value || (question.questionType === 'mcq' && (typeof question.questionId === 'object' && question.questionId.allowMultipleAnswers) ? [] : '')}
                     onAnswerChange={(answer) => handleAnswerChange(question._id, answer, question.questionType)}
                     onClearAnswer={() => handleClearAnswer(question._id)}
+                    onSubQuestionAnswerChange={handleAnswerChange}
+                    onSubQuestionClearAnswer={handleClearAnswer}
+                    answers={answers}
                   />
                 ))}
               </CardContent>
@@ -600,12 +603,18 @@ function QuestionCard({
   answer,
   onAnswerChange,
   onClearAnswer,
+  onSubQuestionAnswerChange,
+  onSubQuestionClearAnswer,
+  answers,
 }: {
   question: PaperQuestion
   questionNumber: number
   answer: string | string[]
   onAnswerChange: (answer: string | string[]) => void
   onClearAnswer: () => void
+  onSubQuestionAnswerChange?: (subQId: string, answer: string | string[], questionType: string) => void
+  onSubQuestionClearAnswer?: (subQId: string) => void
+  answers: Record<string, { type: string; value: string | string[] }>
 }) {
   const questionData = typeof question.questionId === 'object' ? question.questionId : null
   const questionType = questionData?.questionType || question.questionType
@@ -613,25 +622,39 @@ function QuestionCard({
   const allowMultipleAnswers = questionData?.allowMultipleAnswers || false
   const isMCQ = questionType === 'mcq' || questionType === 'true_false'
 
-  const renderAnswerInput = (qType: string, opts: QuestionOption[], currentAnswer: string | string[], allowMultiple: boolean = false) => {
+  const renderAnswerInput = (
+    qType: string, 
+    opts: QuestionOption[], 
+    currentAnswer: string | string[], 
+    allowMultiple: boolean = false,
+    questionId?: string,
+    onAnswerChangeFn?: (answer: string | string[]) => void,
+    onClearFn?: () => void
+  ) => {
+    const handleChange = onAnswerChangeFn || onAnswerChange
+    const handleClear = onClearFn || onClearAnswer
+    
     if (qType === 'mcq' || qType === 'true_false') {
       const selectedIds = Array.isArray(currentAnswer) ? currentAnswer : (currentAnswer ? [currentAnswer] : [])
       
       const handleOptionChange = (optionId: string) => {
         if (allowMultiple) {
-          // Multiple selection
           const newSelection = selectedIds.includes(optionId)
             ? selectedIds.filter(id => id !== optionId)
             : [...selectedIds, optionId]
-          onAnswerChange(newSelection)
+          handleChange(newSelection)
         } else {
-          // Single selection
-          onAnswerChange(optionId)
+          handleChange(optionId)
         }
       }
       
       return (
         <div className="mt-3 space-y-2">
+          {allowMultiple && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Select all that apply (Multiple answers allowed)
+            </p>
+          )}
           {opts.map((option) => {
             const isSelected = selectedIds.includes(option._id)
             return (
@@ -643,7 +666,7 @@ function QuestionCard({
               >
                 <input
                   type={allowMultiple ? "checkbox" : "radio"}
-                  name={allowMultiple ? undefined : `question-${question._id}`}
+                  name={allowMultiple ? undefined : `question-${questionId || question._id}`}
                   value={option._id}
                   checked={isSelected}
                   onChange={() => handleOptionChange(option._id)}
@@ -657,7 +680,7 @@ function QuestionCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={onClearAnswer}
+              onClick={handleClear}
               className="mt-2"
             >
               Clear Selection
@@ -672,14 +695,14 @@ function QuestionCard({
         <textarea
           className="w-full min-h-[150px] p-3 border rounded-md resize-y"
           placeholder="Type your answer here..."
-          value={currentAnswer}
-          onChange={(e) => onAnswerChange(e.target.value)}
+          value={currentAnswer as string}
+          onChange={(e) => handleChange(e.target.value)}
         />
         {currentAnswer && (
           <Button
             variant="outline"
             size="sm"
-            onClick={onClearAnswer}
+            onClick={handleClear}
           >
             Clear Answer
           </Button>
@@ -699,7 +722,17 @@ function QuestionCard({
             <div className="flex-1">
               <p className="text-base font-medium whitespace-pre-wrap">
                 {questionData?.questionText || question.questionText}
+                {((questionData as any)?.questionDescription || (question as any).questionDescription) && (
+                  <span className="text-sm text-muted-foreground font-normal ml-2">
+                    ({(questionData as any)?.questionDescription || (question as any).questionDescription})
+                  </span>
+                )}
               </p>
+              {allowMultipleAnswers && isMCQ && (
+                <Badge variant="secondary" className="mt-2 text-xs">
+                  Multiple answers allowed
+                </Badge>
+              )}
               {question.isOptional && (
                 <Badge variant="secondary" className="mt-2">
                   Optional
@@ -712,24 +745,53 @@ function QuestionCard({
           </div>
 
           {question.subQuestions && question.subQuestions.length > 0 ? (
-            <div className="mt-4 ml-4 space-y-4 border-l-2 pl-4">
+            <div className="mt-4 space-y-4">
               {question.subQuestions.map((subQ) => {
                 const subQData = typeof subQ.questionId === 'object' ? subQ.questionId : null
                 const subQType = subQData?.questionType || subQ.questionType
                 const subQOptions = subQData?.options || []
                 const subQAllowMultiple = subQData?.allowMultipleAnswers || false
+                const subQAnswer = answers[subQ._id]?.value || (subQType === 'mcq' && subQAllowMultiple ? [] : '')
                 
                 return (
-                  <div key={subQ._id} className="space-y-2">
+                  <div key={subQ._id} className="ml-6 p-4 border-l-4 border-primary/20 space-y-3">
                     <div className="flex items-start justify-between gap-4">
-                      <p className="text-sm font-medium">
-                        ({subQ.subQuestionLabel}) {subQData?.questionText || subQ.questionText}
-                      </p>
-                      <Badge variant="outline" className="text-xs">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-primary">
+                            ({subQ.subQuestionLabel})
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {subQType?.replace('_', ' ')}
+                          </Badge>
+                          {subQAllowMultiple && (subQType === 'mcq' || subQType === 'true_false') && (
+                            <Badge variant="secondary" className="text-xs">
+                              Multiple answers
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium whitespace-pre-wrap">
+                          {subQData?.questionText || subQ.questionText}
+                          {((subQData as any)?.questionDescription || (subQ as any).questionDescription) && (
+                            <span className="text-xs text-muted-foreground font-normal ml-2">
+                              ({(subQData as any)?.questionDescription || (subQ as any).questionDescription})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
                         {subQ.marksAllocated}m
                       </Badge>
                     </div>
-                    {renderAnswerInput(subQType, subQOptions, answer, subQAllowMultiple)}
+                    {renderAnswerInput(
+                      subQType, 
+                      subQOptions, 
+                      subQAnswer, 
+                      subQAllowMultiple,
+                      subQ._id,
+                      (answer) => onSubQuestionAnswerChange?.(subQ._id, answer, subQType),
+                      () => onSubQuestionClearAnswer?.(subQ._id)
+                    )}
                   </div>
                 )
               })}

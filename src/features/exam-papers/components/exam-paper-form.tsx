@@ -100,7 +100,10 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   useEffect(() => {
     if (paper && paper.questions) {
       setSelectedSubject(paper.subjectId)
-      const questionIds = new Set(paper.questions.map(q => q.questionId))
+      // Extract question IDs properly - handle both string and object types
+      const questionIds = new Set(paper.questions.map(q => {
+        return typeof q.questionId === 'string' ? q.questionId : q.questionId._id
+      }))
       setSelectedQuestionIds(questionIds)
       
       const formData: any = {
@@ -119,7 +122,8 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           minimumQuestionsToAnswer: p.minimumQuestionsToAnswer || 0
         })),
         questions: paper.questions.map(q => ({
-          questionId: q.questionId,
+          // Extract the ID string from questionId (could be string or object)
+          questionId: typeof q.questionId === 'string' ? q.questionId : q.questionId._id,
           questionOrder: q.questionOrder,
           marksAllocated: q.marksAllocated,
           partLabel: q.partLabel,
@@ -194,15 +198,24 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     if (fromBank) return fromBank
     
     if (paper?.questions) {
-      const fromPaper = paper.questions.find(q => q.questionId === questionId)
+      const fromPaper = paper.questions.find(q => {
+        // Handle both string and object types for questionId
+        const qId = typeof q.questionId === 'string' ? q.questionId : q.questionId._id
+        return qId === questionId
+      })
       if (fromPaper) {
+        // Extract question text from questionId object if it's populated
+        const questionData = typeof fromPaper.questionId === 'object' ? fromPaper.questionId : null
+        
         return {
-          _id: fromPaper.questionId,
-          questionText: fromPaper.questionText,
-          questionType: fromPaper.questionType,
-          difficultyLevel: fromPaper.difficultyLevel,
+          _id: typeof fromPaper.questionId === 'string' ? fromPaper.questionId : fromPaper.questionId._id,
+          questionText: questionData?.questionText || fromPaper.questionText || 'Question text not available',
+          questionType: questionData?.questionType || fromPaper.questionType || 'unknown',
+          difficultyLevel: questionData?.difficultyLevel || fromPaper.difficultyLevel || 'medium',
           marks: fromPaper.marksAllocated,
           hasSubQuestions: fromPaper.subQuestions && fromPaper.subQuestions.length > 0,
+          options: questionData?.options || [],
+          allowMultipleAnswers: questionData?.allowMultipleAnswers || false,
           topic: undefined,
           subtopic: undefined,
           bloomsTaxonomy: undefined,
@@ -212,7 +225,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           createdBy: '',
           createdByName: undefined,
           isActive: true,
-          subQuestionLevel: fromPaper.subQuestionLevel,
+          subQuestionLevel: fromPaper.subQuestionLevel || 0,
           createdAt: fromPaper.createdAt,
           updatedAt: fromPaper.createdAt,
           subjectId: paper.subjectId,
@@ -738,6 +751,50 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                             )}
                                           </div>
                                           <p className="font-medium mb-2">{questionDetails?.questionText}</p>
+                                          
+                                          {/* Display MCQ Options */}
+                                          {questionDetails && (questionDetails.questionType === 'mcq' || questionDetails.questionType === 'true_false') && (
+                                            <div className="mb-3 pl-4 space-y-1.5">
+                                              {(() => {
+                                                // Debug: Log the question details to see what we have
+                                                console.log('Question Details for MCQ:', {
+                                                  questionId: field.questionId,
+                                                  questionDetails,
+                                                  hasOptions: !!(questionDetails as any).options,
+                                                  optionsLength: ((questionDetails as any).options || []).length
+                                                })
+                                                
+                                                // Get options from questionDetails
+                                                const options = (questionDetails as any).options || []
+                                                if (options.length === 0) {
+                                                  return (
+                                                    <div className="text-xs text-muted-foreground italic">
+                                                      No options available for this question
+                                                    </div>
+                                                  )
+                                                }
+                                                
+                                                return options.map((option: any, optIdx: number) => (
+                                                  <div key={option._id || optIdx} className="flex items-start gap-2 text-sm">
+                                                    <span className="font-medium text-muted-foreground min-w-[24px]">
+                                                      {String.fromCharCode(65 + optIdx)}.
+                                                    </span>
+                                                    <span className={cn(
+                                                      option.isCorrect && "text-green-600 dark:text-green-400 font-medium"
+                                                    )}>
+                                                      {option.optionText}
+                                                      {option.isCorrect && (
+                                                        <Badge variant="default" className="ml-2 h-5 text-xs bg-green-600">
+                                                          Correct
+                                                        </Badge>
+                                                      )}
+                                                    </span>
+                                                  </div>
+                                                ))
+                                              })()}
+                                            </div>
+                                          )}
+                                          
                                           {questionDetails && (
                                             <div className="flex gap-2 flex-wrap mb-3">
                                               <Badge variant="outline" className="text-xs">

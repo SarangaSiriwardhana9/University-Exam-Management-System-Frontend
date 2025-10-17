@@ -9,8 +9,16 @@ import type {
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
 export const resultsService = {
-  getAll: (params?: GetResultsParams): Promise<PaginatedResponse<Result>> =>
-    apiClient.get('/api/v1/results', { params }),
+  getAll: async (params?: GetResultsParams): Promise<PaginatedResponse<Result>> => {
+    const response = await apiClient.get<any>('/api/v1/results', { params })
+    return {
+      data: response.results || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 0
+    }
+  },
 
   getById: (id: string): Promise<ApiResponse<Result>> =>
     apiClient.get(`/api/v1/results/${id}`),

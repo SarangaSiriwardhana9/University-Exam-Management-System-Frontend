@@ -144,14 +144,18 @@ const ViewExamSessionPage = ({ params }: ViewExamSessionPageProps) => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-sm">
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>{new Date(session.examDateTime).toLocaleDateString()}</span>
+                  <span>{new Date(session.startTime).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center space-x-3 text-sm">
-                  <ClockIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {new Date(session.examDateTime).toLocaleTimeString()} 
-                    ({formatDuration(session.durationMinutes)})
-                  </span>
+                <div className="flex items-start space-x-3 text-sm">
+                  <ClockIcon className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Duration: {formatDuration(session.durationMinutes)}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-3 text-sm">
                   <MapPinIcon className="h-4 w-4 text-muted-foreground" />

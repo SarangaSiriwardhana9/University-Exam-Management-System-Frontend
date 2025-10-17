@@ -55,6 +55,21 @@ export const useMarkAsAbsent = () => {
   })
 }
 
+export const useDeleteRegistration = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (id: string) => registrationsService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exam-registrations'] })
+      toast.success('Registration deleted successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete registration')
+    },
+  })
+}
+
 export const useExportRegistrations = () => {
   return useMutation({
     mutationFn: (params?: GetRegistrationsParams) => registrationsService.exportData(params),

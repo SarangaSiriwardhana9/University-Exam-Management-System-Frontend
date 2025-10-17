@@ -34,3 +34,11 @@ export const useBuildingsQuery = () => {
     staleTime: 60000, // Buildings don't change often
   })
 }
+
+export const useRoomStatsQuery = () => {
+  return useQuery({
+    queryKey: ['rooms', 'stats'],
+    queryFn: () => roomsService.getStats(),
+    staleTime: 60000, // Stats don't change often
+  })
+}

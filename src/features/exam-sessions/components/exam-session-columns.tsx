@@ -43,6 +43,34 @@ const formatDuration = (minutes: number) => {
   return `${remainingMinutes}m`
 }
 
+const getSessionTimeStatus = (session: ExamSession) => {
+  const now = new Date()
+  const startTime = new Date(session.startTime)
+  const endTime = new Date(session.endTime)
+
+  if (session.status === 'cancelled') {
+    return { label: 'Cancelled', variant: 'destructive' as const, color: 'text-red-600' }
+  }
+
+  if (session.status === 'completed') {
+    return { label: 'Completed', variant: 'default' as const, color: 'text-green-600' }
+  }
+
+  if (endTime < now) {
+    return { label: 'Expired', variant: 'secondary' as const, color: 'text-gray-600' }
+  }
+
+  if (startTime <= now && endTime >= now) {
+    return { label: 'Ongoing', variant: 'default' as const, color: 'text-orange-600' }
+  }
+
+  if (startTime > now) {
+    return { label: 'Upcoming', variant: 'outline' as const, color: 'text-blue-600' }
+  }
+
+  return { label: 'Scheduled', variant: 'outline' as const, color: 'text-blue-600' }
+}
+
 type ExamSessionColumnsProps = {
   onEdit: (session: ExamSession) => void
   onDelete: (session: ExamSession) => void
@@ -73,14 +101,22 @@ export const getExamSessionColumns = ({
   },
   {
     accessorKey: 'examDateTime',
-    header: 'Date & Time',
+    header: 'Schedule',
     cell: ({ row }) => {
-      const dateTime = row.original.examDateTime
+      const session = row.original
+      const startTime = new Date(session.startTime)
+      const endTime = new Date(session.endTime)
+      
       return (
         <div className="text-sm">
-          <div>{formatDateTime(dateTime)}</div>
+          <div className="font-medium">
+            {startTime.toLocaleDateString()}
+          </div>
           <div className="text-muted-foreground">
-            Duration: {formatDuration(row.original.durationMinutes)}
+            {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            ({formatDuration(session.durationMinutes)})
           </div>
         </div>
       )
@@ -124,22 +160,38 @@ export const getExamSessionColumns = ({
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
-      const status = row.original.status
+      const session = row.original
+      const timeStatus = getSessionTimeStatus(session)
+      
+      // If cancelled or completed, only show one badge
+      if (session.status === 'cancelled' || session.status === 'completed') {
+        return (
+          <Badge variant="outline" className={cn('font-medium', getStatusBadgeClass(session.status))}>
+            {formatStatus(session.status)}
+          </Badge>
+        )
+      }
+      
       return (
-        <Badge variant="outline" className={cn('font-medium', getStatusBadgeClass(status))}>
-          {formatStatus(status)}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge variant="outline" className={cn('font-medium', getStatusBadgeClass(session.status))}>
+            {formatStatus(session.status)}
+          </Badge>
+          <Badge variant={timeStatus.variant} className={cn('text-xs', timeStatus.color)}>
+            {timeStatus.label}
+          </Badge>
+        </div>
       )
     },
   },
   {
-    accessorKey: 'academicYear',
+    accessorKey: 'year',
     header: 'Academic Year',
     cell: ({ row }) => {
       const session = row.original
       return (
         <div className="text-sm">
-          <div>{session.academicYear}</div>
+          <div>{session.year}</div>
           <div className="text-muted-foreground">Semester {session.semester}</div>
         </div>
       )

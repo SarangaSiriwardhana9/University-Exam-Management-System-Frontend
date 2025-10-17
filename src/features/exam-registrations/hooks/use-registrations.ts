@@ -9,7 +9,7 @@ import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
 export const registrationsService = {
   getAll: async (params?: GetRegistrationsParams): Promise<PaginatedResponse<ExamRegistration>> => {
-    const response = await apiClient.get<RegistrationsListResponse>('/api/v1/exam-registrations', { params })
+    const response = await apiClient.get<RegistrationsListResponse>('/api/v1/exam-registrations', { params: params as Record<string, unknown> })
     console.log('Registrations API Response:', response)
     return {
       data: response.registrations || [],
@@ -25,7 +25,7 @@ export const registrationsService = {
   },
 
   getBySession: async (sessionId: string, params?: GetRegistrationsParams): Promise<PaginatedResponse<ExamRegistration>> => {
-    const response = await apiClient.get<RegistrationsListResponse>(`/api/v1/exam-registrations/session/${sessionId}`, { params })
+    const response = await apiClient.get<RegistrationsListResponse>(`/api/v1/exam-registrations/session/${sessionId}`, { params: params as Record<string, unknown> })
     return {
       data: response.registrations || [],
       total: response.total || 0,
@@ -44,6 +44,10 @@ export const registrationsService = {
 
   markAsAbsent: async (id: string): Promise<ApiResponse<ExamRegistration>> => {
     return apiClient.patch(`/api/v1/exam-registrations/${id}/absent`)
+  },
+
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    return apiClient.delete(`/api/v1/exam-registrations/${id}`)
   },
 
   exportData: async (params?: GetRegistrationsParams): Promise<Blob> => {

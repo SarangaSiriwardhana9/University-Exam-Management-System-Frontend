@@ -48,10 +48,11 @@ import {
   CalendarIcon,
   FileTextIcon,
   RefreshCwIcon,
+  TrashIcon,
 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { format } from 'date-fns'
-import { useRegistrationsQuery, useRegistrationStatsQuery, useMarkAsAbsent, useExportRegistrations } from '@/features/exam-registrations/hooks/use-registrations-query'
+import { useRegistrationsQuery, useRegistrationStatsQuery, useMarkAsAbsent, useDeleteRegistration, useExportRegistrations } from '@/features/exam-registrations/hooks/use-registrations-query'
 import { useExamSessionsQuery } from '@/features/exam-sessions/hooks/use-exam-sessions-query'
 
 export default function ExamCoordinatorRegistrationsPage() {
@@ -61,11 +62,14 @@ export default function ExamCoordinatorRegistrationsPage() {
   const [sessionFilter, setSessionFilter] = useState<string>('all')
   const [selectedRegistration, setSelectedRegistration] = useState<any>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [registrationToDelete, setRegistrationToDelete] = useState<any>(null)
 
   const { data: registrationsData, isLoading } = useRegistrationsQuery({ limit: 100 })
   const { data: statsData } = useRegistrationStatsQuery()
   const { data: sessionsData } = useExamSessionsQuery({ limit: 100 })
   const markAsAbsent = useMarkAsAbsent()
+  const deleteRegistration = useDeleteRegistration()
   const exportData = useExportRegistrations()
 
   const registrations = registrationsData?.data || []
@@ -124,6 +128,19 @@ export default function ExamCoordinatorRegistrationsPage() {
 
   const handleMarkAbsent = async (id: string) => {
     await markAsAbsent.mutateAsync(id)
+  }
+
+  const handleDeleteClick = (registration: any) => {
+    setRegistrationToDelete(registration)
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (registrationToDelete) {
+      await deleteRegistration.mutateAsync(registrationToDelete._id)
+      setShowDeleteDialog(false)
+      setRegistrationToDelete(null)
+    }
   }
 
   const handleExportData = async () => {
@@ -326,6 +343,14 @@ export default function ExamCoordinatorRegistrationsPage() {
                               Mark as Absent
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDeleteClick(registration)}
+                          >
+                            <TrashIcon className="mr-2 h-4 w-4" />
+                            Delete Registration
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -415,6 +440,40 @@ export default function ExamCoordinatorRegistrationsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Registration</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this registration? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {registrationToDelete && (
+            <div className="py-4">
+              <p className="text-sm">
+                <span className="font-medium">Student:</span> {registrationToDelete.studentName}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Exam:</span> {registrationToDelete.examTitle}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteConfirm}
+              disabled={deleteRegistration.isPending}
+            >
+              {deleteRegistration.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

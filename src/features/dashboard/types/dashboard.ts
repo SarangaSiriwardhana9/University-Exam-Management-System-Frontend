@@ -27,17 +27,26 @@ export type AdminDashboard = DashboardStats & {
 }
 
 export type FacultyDashboard = {
-  mySubjects: number
-  myQuestions: number
-  myExamPapers: number
-  upcomingExams: Array<{
-    id: string
+  overview: {
+    mySubjects: number
+    myUpcomingExams: number
+    myPendingResults: number
+    myActiveStudents: number
+  }
+  examStats: {
+    scheduledExams: number
+    ongoingExams: number
+    completedExams: number
+    totalQuestions: number
+    totalPapers: number
+  }
+  recentActivities: Array<{
+    type: string
     title: string
+    status: string
     date: string
-    room: string
+    createdAt: string
   }>
-  pendingGrading: number
-  recentActivity: DashboardActivity[]
 }
 
 export type StudentDashboard = {

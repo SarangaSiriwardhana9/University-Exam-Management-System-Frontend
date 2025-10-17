@@ -25,6 +25,7 @@ export const NAVIGATION_ITEMS: Record<UserRole, NavItem[]> = {
     { title: 'Subjects', href: ROUTES.FACULTY.SUBJECTS, icon: 'book' },
     { title: 'Questions', href: ROUTES.FACULTY.QUESTIONS, icon: 'help-circle' },
     { title: 'Exam Papers', href: ROUTES.FACULTY.EXAM_PAPERS, icon: 'file-text' },
+    { title: 'Mark Answers', href: '/faculty/sessions', icon: 'clipboard-check' },
     { title: 'Results', href: ROUTES.FACULTY.RESULTS, icon: 'award' },
     { title: 'Assignments', href: ROUTES.FACULTY.ASSIGNMENTS, icon: 'clipboard' }
   ],

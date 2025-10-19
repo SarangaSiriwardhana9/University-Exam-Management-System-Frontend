@@ -84,6 +84,15 @@ export const cleanQuestionFormData = (data: CreateQuestionFormData): CreateQuest
     ? (data.subjectId as any)._id || String(data.subjectId)
     : String(data.subjectId)
   
+  // Ensure options have correct sequential optionOrder to prevent duplicates
+  const cleanedOptions = data.questionType === QUESTION_TYPES.MCQ && data.options
+    ? data.options.map((opt, index) => ({
+        optionText: opt.optionText,
+        isCorrect: opt.isCorrect,
+        optionOrder: index + 1  // Force sequential order starting from 1
+      }))
+    : []
+  
   return {
     ...data,
     subjectId,
@@ -91,7 +100,7 @@ export const cleanQuestionFormData = (data: CreateQuestionFormData): CreateQuest
     topic: cleanString(data.topic),
     subtopic: cleanString(data.subtopic),
     keywords: cleanString(data.keywords),
-    options: data.questionType === QUESTION_TYPES.MCQ ? data.options : [],
+    options: cleanedOptions,
     subQuestions: data.questionType === QUESTION_TYPES.MCQ ? [] : cleanSubQuestionsForSubmit(data.subQuestions || []),
   }
 }

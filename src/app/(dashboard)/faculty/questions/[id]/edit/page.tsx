@@ -6,7 +6,7 @@ import { QuestionForm } from '@/features/questions/components/question-form'
 import { useQuestionQuery } from '@/features/questions/hooks/use-questions-query'
 import { useUpdateQuestion } from '@/features/questions/hooks/use-question-mutations'
 import type { CreateQuestionFormData } from '@/features/questions/validations/question-schemas'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 
 export default function EditQuestionPage() {
   const params = useParams()
@@ -17,29 +17,14 @@ export default function EditQuestionPage() {
   const updateMutation = useUpdateQuestion()
 
   const handleUpdate = async (formData: CreateQuestionFormData) => {
-    await updateMutation.mutateAsync({
-      id: questionId,
-      data: formData,
-    })
+    await updateMutation.mutateAsync({ id: questionId, data: formData })
     router.push('/faculty/questions')
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -49,7 +34,7 @@ export default function EditQuestionPage() {
       <Card>
         <CardHeader>
           <CardTitle>Question Not Found</CardTitle>
-          <CardDescription>The question you&lsquo;re looking for doesn&lsquo;t exist.</CardDescription>
+          <CardDescription>The question you're looking for doesn't exist.</CardDescription>
         </CardHeader>
       </Card>
     )

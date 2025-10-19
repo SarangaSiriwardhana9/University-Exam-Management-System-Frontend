@@ -26,7 +26,7 @@ export const getDefaultQuestionFormData = (): CreateQuestionFormData => ({
   subtopic: '',
   bloomsTaxonomy: undefined,
   keywords: '',
-  isPublic: false,
+  isPublic: true,
   options: [],
   subQuestions: [],
 })
@@ -64,32 +64,90 @@ export const calculateTotalMarks = (
   return calculateSubMarks(subQuestions)
 }
 
+const cleanSubQuestionsForSubmit = (subQuestions: any[]): CreateSubQuestionDto[] => {
+  if (!subQuestions || !Array.isArray(subQuestions)) return []
+  
+  return subQuestions.map(sq => {
+    const cleaned: CreateSubQuestionDto = {
+      questionText: sq.questionText || '',
+      questionDescription: sq.questionDescription || '',
+      questionType: sq.questionType,
+      marks: Number(sq.marks) || 0,
+      subQuestionLabel: sq.subQuestionLabel || '',
+      subQuestionOrder: Number(sq.subQuestionOrder) || 0,
+      subQuestions: sq.subQuestions?.length ? cleanSubQuestionsForSubmit(sq.subQuestions) : []
+    }
+    return cleaned
+  })
+}
+
 export const cleanQuestionFormData = (data: CreateQuestionFormData): CreateQuestionFormData => {
   const cleanString = (str: string | undefined) => str?.trim() || undefined
   
+  let subjectId = data.subjectId
+  if (typeof subjectId === 'object' && subjectId !== null) {
+    subjectId = (subjectId as any)._id || String(subjectId)
+  }
+  
   return {
     ...data,
+    subjectId: typeof subjectId === 'string' ? subjectId : String(subjectId),
     questionDescription: cleanString(data.questionDescription),
     topic: cleanString(data.topic),
     subtopic: cleanString(data.subtopic),
     keywords: cleanString(data.keywords),
     options: data.questionType === QUESTION_TYPES.MCQ ? data.options : [],
-    subQuestions: data.questionType === QUESTION_TYPES.MCQ ? [] : data.subQuestions,
+    subQuestions: data.questionType === QUESTION_TYPES.MCQ ? [] : cleanSubQuestionsForSubmit(data.subQuestions || []),
   }
 }
 
-export const mapQuestionToFormData = (question: Question): CreateQuestionFormData => ({
-  subjectId: question.subjectId,
-  questionText: question.questionText,
-  questionDescription: question.questionDescription || '',
-  questionType: question.questionType,
-  difficultyLevel: question.difficultyLevel,
-  marks: question.marks,
-  topic: question.topic || '',
-  subtopic: question.subtopic || '',
-  bloomsTaxonomy: question.bloomsTaxonomy,
-  keywords: question.keywords || '',
-  isPublic: question.isPublic,
-  options: question.options || [],
-  subQuestions: question.subQuestions || [],
-})
+const mapSubQuestionsToFormData = (subQuestions: any[]): CreateSubQuestionDto[] => {
+  if (!subQuestions || !Array.isArray(subQuestions)) return []
+  
+  return subQuestions.map(sq => ({
+    questionText: sq.questionText || '',
+    questionDescription: sq.questionDescription || '',
+    questionType: sq.questionType,
+    marks: sq.marks || 0,
+    subQuestionLabel: sq.subQuestionLabel || '',
+    subQuestionOrder: sq.subQuestionOrder || 0,
+    subQuestions: sq.subQuestions?.length ? mapSubQuestionsToFormData(sq.subQuestions) : []
+  }))
+}
+
+export const mapQuestionToFormData = (question: Question): CreateQuestionFormData => {
+  let subjectId = question.subjectId
+
+  if (typeof subjectId === 'string' && subjectId.includes('ObjectId')) {
+    try {
+      const parsed = JSON.parse(subjectId.replace(/new ObjectId\('([^']+)'\)/g, '"$1"').replace(/ObjectId\('([^']+)'\)/g, '"$1"'))
+      subjectId = parsed._id || subjectId
+    } catch {
+      const match = subjectId.match(/ObjectId\('([^']+)'\)/)
+      if (match) subjectId = match[1]
+    }
+  } else if (typeof subjectId === 'object' && subjectId !== null) {
+    subjectId = (subjectId as any)._id || subjectId
+  }
+
+  return {
+    subjectId: typeof subjectId === 'string' ? subjectId : String(subjectId),
+    questionText: question.questionText,
+    questionDescription: question.questionDescription || '',
+    questionType: question.questionType,
+    difficultyLevel: question.difficultyLevel,
+    marks: question.marks,
+    topic: question.topic || '',
+    subtopic: question.subtopic || '',
+    bloomsTaxonomy: question.bloomsTaxonomy,
+    keywords: question.keywords || '',
+    isPublic: question.isPublic,
+    allowMultipleAnswers: question.allowMultipleAnswers,
+    options: question.options?.map(opt => ({
+      optionText: opt.optionText,
+      isCorrect: opt.isCorrect,
+      optionOrder: opt.optionOrder
+    })) || [],
+    subQuestions: question.subQuestions?.length ? mapSubQuestionsToFormData(question.subQuestions) : [],
+  }
+}

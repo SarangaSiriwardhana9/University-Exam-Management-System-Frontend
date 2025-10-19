@@ -33,6 +33,7 @@ export const NAVIGATION_ITEMS: Record<UserRole, NavItem[]> = {
     { title: 'Dashboard', href: ROUTES.STUDENT.DASHBOARD, icon: 'dashboard' },
     { title: 'Enrollments', href: ROUTES.STUDENT.ENROLLMENTS, icon: 'user-plus' },
     { title: 'Exams', href: ROUTES.STUDENT.EXAMS, icon: 'clock' },
+    { title: 'Exam Calendar', href: ROUTES.STUDENT.EXAM_CALENDAR, icon: 'calendar' },
     { title: 'Results', href: ROUTES.STUDENT.RESULTS, icon: 'award' },
     { title: 'Notifications', href: ROUTES.STUDENT.NOTIFICATIONS, icon: 'bell' }
   ],

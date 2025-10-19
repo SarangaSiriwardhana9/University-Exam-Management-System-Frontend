@@ -34,6 +34,7 @@ export const ROUTES = {
     DASHBOARD: '/student/dashboard',
     ENROLLMENTS: '/student/enrollments',
     EXAMS: '/student/exams',
+    EXAM_CALENDAR: '/student/exam-calendar',
     RESULTS: '/student/results',
     NOTIFICATIONS: '/student/notifications'
   },

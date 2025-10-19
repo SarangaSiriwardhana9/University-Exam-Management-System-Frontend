@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useForm, useFieldArray, type UseFormReturn, type FieldValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -48,6 +48,7 @@ type QuestionFormProps = {
   onSubmit: (data: CreateQuestionFormData) => void
   onCancel: () => void
   isLoading?: boolean
+  initialData?: Partial<CreateQuestionFormData> | null
 }
 
 type SubQuestionFieldsProps = {
@@ -100,11 +101,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
                 <FormItem>
                   <FormLabel>Question Text *</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter question text..."
-                      className="min-h-[80px]"
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter question text..." className="min-h-[80px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,8 +147,8 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
                       min="0.5"
                       max="100"
                       step="0.5"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -168,12 +165,7 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
             <FormItem>
               <FormLabel>Instructions (Optional)</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Additional context..."
-                  rows={2}
-                  {...field}
-                  value={field.value || ''}
-                />
+                <Textarea placeholder="Additional context..." rows={2} {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -221,9 +213,10 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
   )
 }
 
-export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: QuestionFormProps) => {
+export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialData }: QuestionFormProps) => {
   const isEditMode = !!question
   const { data: subjectsData, isLoading: isSubjectsLoading } = useMySubjectsQuery()
+  const [formKey, setFormKey] = useState(0)
 
   const form = useForm({
     resolver: zodResolver(createQuestionSchema) as any,
@@ -251,14 +244,34 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
   }, [questionType, form])
 
   useEffect(() => {
-    if (isEditMode && question) {
-      form.reset(mapQuestionToFormData(question))
+    if (isEditMode && question && !isSubjectsLoading) {
+      const formData = mapQuestionToFormData(question)
+      form.reset(formData)
+      setFormKey((prev: number) => prev + 1)
+    } else if (!isEditMode && initialData) {
+      form.reset({ ...getDefaultQuestionFormData(), ...initialData })
+      setFormKey((prev: number) => prev + 1)
     }
-  }, [isEditMode, question, form])
+  }, [isEditMode, question, isSubjectsLoading])
 
   const handleSubmit = (data: CreateQuestionFormData) => {
+    if (data.questionType === QUESTION_TYPES.STRUCTURED || data.questionType === QUESTION_TYPES.ESSAY) {
+      const calculatedMarks = calculateTotalMarks(data.questionType, 0, data.subQuestions)
+      data.marks = calculatedMarks
+    }
+    
     const cleanedData = cleanQuestionFormData(data)
-    onSubmit(cleanedData)
+    if (isEditMode) {
+      const { subjectId, ...updateData } = cleanedData
+      console.log('=== SUBMITTING QUESTION UPDATE ===')
+      console.log('Total Marks:', updateData.marks)
+      console.log('Sub-Questions Count:', updateData.subQuestions?.length)
+      console.log('Sub-Questions Details:', JSON.stringify(updateData.subQuestions, null, 2))
+      console.log('Full Update Data:', updateData)
+      onSubmit(updateData as CreateQuestionFormData)
+    } else {
+      onSubmit(cleanedData)
+    }
   }
 
   const addOption = () => {
@@ -275,12 +288,24 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
 
   const watchedMarks = form.watch('marks')
   const watchedSubQuestions = form.watch('subQuestions')
-  const totalMarks = calculateTotalMarks(questionType, watchedMarks, watchedSubQuestions)
   const subjects = subjectsData?.data || []
+
+  const totalMarks = useMemo(() => {
+    return calculateTotalMarks(questionType, watchedMarks, watchedSubQuestions)
+  }, [questionType, watchedMarks, JSON.stringify(watchedSubQuestions)])
+
+  useEffect(() => {
+    if (questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) {
+      const calculatedMarks = calculateTotalMarks(questionType, 0, watchedSubQuestions)
+      if (calculatedMarks !== watchedMarks) {
+        form.setValue('marks', calculatedMarks, { shouldValidate: false, shouldDirty: true })
+      }
+    }
+  }, [questionType, JSON.stringify(watchedSubQuestions)])
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form key={formKey} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
@@ -292,7 +317,13 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Subject *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubjectsLoading || isEditMode}>
+                  <Select 
+                    key={field.value || 'empty'}
+                    onValueChange={field.onChange} 
+                    value={field.value} 
+                    disabled={isSubjectsLoading || isEditMode}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isSubjectsLoading ? "Loading subjects..." : "Select subject"} />
@@ -316,11 +347,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                       )}
                     </SelectContent>
                   </Select>
-                  {isEditMode && (
-                    <FormDescription>
-                      Subject cannot be changed when editing
-                    </FormDescription>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -333,7 +359,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Question Type *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
@@ -345,11 +371,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         <SelectItem value={QUESTION_TYPES.ESSAY}>Essay Question</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      {field.value === QUESTION_TYPES.MCQ && 'Single correct answer with multiple options'}
-                      {field.value === QUESTION_TYPES.STRUCTURED && 'Question with multiple sub-parts with nested levels'}
-                      {field.value === QUESTION_TYPES.ESSAY && 'Long-form answer with optional nested sub-parts'}
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -361,7 +382,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Difficulty Level *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select difficulty" />
@@ -386,11 +407,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <FormItem>
                   <FormLabel>Question Text *</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter the question text..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter the question text..." className="min-h-[100px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -404,12 +421,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <FormItem>
                   <FormLabel>Additional Instructions (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Any additional context or instructions for students..."
-                      className="min-h-[80px]"
-                      {...field}
-                      value={field.value || ''}
-                    />
+                    <Textarea placeholder="Additional context or instructions..." className="min-h-[80px]" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -429,8 +441,8 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                         min="0.5"
                         max="100"
                         step="0.5"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -488,57 +500,56 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {optionFields.map((field, index) => (
-                <div key={field.id} className="flex gap-2 items-start">
-                  <FormField
-                    control={form.control}
-                    name={`options.${index}.isCorrect`}
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 mt-2">
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex-1">
+              {optionFields.map((field, index) => {
+                const allowMultiple = form.watch('allowMultipleAnswers')
+                return (
+                  <div key={field.id} className="flex gap-2 items-start">
                     <FormField
                       control={form.control}
-                      name={`options.${index}.optionText`}
+                      name={`options.${index}.isCorrect`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex items-center space-x-2 mt-2">
                           <FormControl>
-                            <Input
-                              placeholder={`Option ${index + 1}`}
-                              {...field}
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={!allowMultiple}
                             />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <div className="flex-1">
+                      <FormField
+                        control={form.control}
+                        name={`options.${index}.optionText`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder={`Option ${index + 1}`}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {optionFields.length > 2 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeOption(index)}
+                        className="mt-1"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  {optionFields.length > 2 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeOption(index)}
-                      className="mt-1"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <p className="text-sm text-muted-foreground">
-                {form.watch('allowMultipleAnswers') 
-                  ? 'Toggle switches to mark correct answers. At least one option must be correct for multiple answer questions.'
-                  : 'Toggle the switch to mark the correct answer. Exactly one option must be correct for single answer questions.'}
-              </p>
+                )
+              })}
             </CardContent>
           </Card>
         )}
@@ -552,9 +563,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                     <ListTreeIcon className="h-5 w-5" />
                     Sub-Questions
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add parts (A, B, C, etc.) with up to 3 levels of nesting (A, A.i, A.i.a)
-                  </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addSubQuestion}>
                   <PlusIcon className="h-4 w-4 mr-2" />
@@ -566,8 +574,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
               {subQuestionFields.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <ListTreeIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No sub-questions added yet.</p>
-                  <p className="text-sm">Click &quot;Add Part&quot; to create structured sub-questions.</p>
+                  <p>No sub-questions added yet. Click "Add Part" to create structured sub-questions.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -599,7 +606,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Data Structures" {...field} value={field.value || ''} />
+                      <Input placeholder="Data Structures" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -613,7 +620,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                   <FormItem>
                     <FormLabel>Subtopic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Binary Trees" {...field} value={field.value || ''} />
+                      <Input placeholder="Binary Trees" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -654,11 +661,8 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading }: Questi
                 <FormItem>
                   <FormLabel>Keywords</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., sorting, algorithm, complexity" {...field} value={field.value || ''} />
+                    <Input placeholder="sorting, algorithm, complexity" {...field} value={field.value || ''} />
                   </FormControl>
-                  <FormDescription>
-                    Comma-separated keywords for search and filtering
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

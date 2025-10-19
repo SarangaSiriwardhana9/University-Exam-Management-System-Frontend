@@ -4,13 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DataTable } from '@/components/data-display/data-table'
-import { PlusIcon } from 'lucide-react'
+import { PlusIcon, Filter } from 'lucide-react'
 import { getQuestionColumns } from '@/features/questions/components/question-columns'
 import { useQuestionsQuery } from '@/features/questions/hooks/use-questions-query'
 import { useDeleteQuestion } from '@/features/questions/hooks/use-question-mutations'
+import { useMySubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import type { Question } from '@/features/questions/types/questions'
 import type { QuestionType } from '@/constants/roles'
+import { QUESTION_TYPES } from '@/constants/roles'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,13 +42,11 @@ export default function QuestionsPage() {
   const { data, isLoading } = useQuestionsQuery({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
-    questionType: filters.questionType && filters.questionType !== 'all' 
-      ? (filters.questionType as QuestionType) 
-      : undefined,
-    subjectId: filters.subjectId && filters.subjectId !== 'all' 
-      ? filters.subjectId 
-      : undefined,
+    questionType: filters.questionType !== 'all' ? (filters.questionType as QuestionType) : undefined,
+    subjectId: filters.subjectId !== 'all' ? filters.subjectId : undefined,
   })
+
+  const { data: subjectsData } = useMySubjectsQuery()
 
   const deleteMutation = useDeleteQuestion()
 
@@ -94,10 +95,41 @@ export default function QuestionsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Questions</CardTitle>
-            <CardDescription>
-              {isLoading ? 'Loading questions...' : `${questions.length} question(s) found`}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Questions</CardTitle>
+                <CardDescription>
+                  {isLoading ? 'Loading questions...' : `${questions.length} question(s) found`}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={filters.subjectId} onValueChange={(v) => setFilters(prev => ({ ...prev, subjectId: v }))}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All Subjects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Subjects</SelectItem>
+                    {subjectsData?.data?.map((subject) => (
+                      <SelectItem key={subject._id} value={subject._id}>
+                        {subject.subjectCode} - {subject.subjectName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filters.questionType} onValueChange={(v) => setFilters(prev => ({ ...prev, questionType: v }))}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value={QUESTION_TYPES.MCQ}>MCQ</SelectItem>
+                    <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
+                    <SelectItem value={QUESTION_TYPES.ESSAY}>Essay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (

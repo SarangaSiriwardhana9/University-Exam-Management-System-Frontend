@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, CopyIcon, LockIcon, LayersIcon } from 'lucide-react'
+import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, CopyIcon, LockIcon, LayersIcon, PowerIcon } from 'lucide-react'
 import type { ExamPaper, ExamType } from '../types/exam-papers'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +43,7 @@ type ExamPaperColumnsProps = {
   onView: (paper: ExamPaper) => void
   onDuplicate: (paper: ExamPaper) => void
   onFinalize: (paper: ExamPaper) => void
+  onToggleActive: (paper: ExamPaper) => void
 }
 
 export const getExamPaperColumns = ({ 
@@ -50,7 +51,8 @@ export const getExamPaperColumns = ({
   onDelete, 
   onView, 
   onDuplicate,
-  onFinalize 
+  onFinalize,
+  onToggleActive
 }: ExamPaperColumnsProps): ColumnDef<ExamPaper>[] => [
   {
     accessorKey: 'paperTitle',
@@ -188,12 +190,10 @@ export const getExamPaperColumns = ({
               <EyeIcon className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
-            {!paper.isFinalized && (
-              <DropdownMenuItem onClick={() => onEdit(paper)}>
-                <EditIcon className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => onEdit(paper)}>
+              <EditIcon className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onDuplicate(paper)}>
               <CopyIcon className="mr-2 h-4 w-4" />
               Duplicate
@@ -204,11 +204,14 @@ export const getExamPaperColumns = ({
                 Finalize
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => onToggleActive(paper)}>
+              <PowerIcon className="mr-2 h-4 w-4" />
+              {paper.isActive ? 'Deactivate' : 'Activate'}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => onDelete(paper)}
               className="text-destructive focus:text-destructive"
-              disabled={paper.isFinalized}
             >
               <TrashIcon className="mr-2 h-4 w-4" />
               Delete

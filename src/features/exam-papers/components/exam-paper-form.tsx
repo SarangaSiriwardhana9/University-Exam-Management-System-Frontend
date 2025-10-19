@@ -100,7 +100,6 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
   useEffect(() => {
     if (paper && paper.questions) {
       setSelectedSubject(paper.subjectId)
-      // Extract question IDs properly - handle both string and object types
       const questionIds = new Set(paper.questions.map(q => {
         return typeof q.questionId === 'string' ? q.questionId : q.questionId._id
       }))
@@ -122,7 +121,6 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           minimumQuestionsToAnswer: p.minimumQuestionsToAnswer || 0
         })),
         questions: paper.questions.map(q => ({
-          // Extract the ID string from questionId (could be string or object)
           questionId: typeof q.questionId === 'string' ? q.questionId : q.questionId._id,
           questionOrder: q.questionOrder,
           marksAllocated: q.marksAllocated,
@@ -199,12 +197,10 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     
     if (paper?.questions) {
       const fromPaper = paper.questions.find(q => {
-        // Handle both string and object types for questionId
         const qId = typeof q.questionId === 'string' ? q.questionId : q.questionId._id
         return qId === questionId
       })
       if (fromPaper) {
-        // Extract question text from questionId object if it's populated
         const questionData = typeof fromPaper.questionId === 'object' ? fromPaper.questionId : null
         
         return {
@@ -756,15 +752,6 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                           {questionDetails && (questionDetails.questionType === 'mcq' || questionDetails.questionType === 'true_false') && (
                                             <div className="mb-3 pl-4 space-y-1.5">
                                               {(() => {
-                                                // Debug: Log the question details to see what we have
-                                                console.log('Question Details for MCQ:', {
-                                                  questionId: field.questionId,
-                                                  questionDetails,
-                                                  hasOptions: !!(questionDetails as any).options,
-                                                  optionsLength: ((questionDetails as any).options || []).length
-                                                })
-                                                
-                                                // Get options from questionDetails
                                                 const options = (questionDetails as any).options || []
                                                 if (options.length === 0) {
                                                   return (

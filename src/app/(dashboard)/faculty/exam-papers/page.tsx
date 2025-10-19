@@ -29,6 +29,7 @@ import {
   useDeleteExamPaper,
   useDuplicateExamPaper,
   useFinalizeExamPaper,
+  useToggleExamPaperActive,
 } from "@/features/exam-papers/hooks/use-exam-paper-mutations";
 import type { ExamPaper } from "@/features/exam-papers/types/exam-papers";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
@@ -48,6 +49,7 @@ const ExamPapersPage = () => {
   const deleteMutation = useDeleteExamPaper();
   const duplicateMutation = useDuplicateExamPaper();
   const finalizeMutation = useFinalizeExamPaper();
+  const toggleActiveMutation = useToggleExamPaperActive();
 
   const handleDelete = () => {
     if (!deletingPaper) return;
@@ -83,12 +85,17 @@ const ExamPapersPage = () => {
     });
   };
 
+  const handleToggleActive = (paper: ExamPaper) => {
+    toggleActiveMutation.mutate(paper._id);
+  };
+
   const columns = getExamPaperColumns({
     onEdit: (paper) => router.push(`/faculty/exam-papers/${paper._id}/edit`),
     onDelete: (paper) => setDeletingPaper(paper),
     onView: (paper) => router.push(`/faculty/exam-papers/${paper._id}`),
     onDuplicate: handleDuplicate,
     onFinalize: (paper) => setFinalizingPaper(paper),
+    onToggleActive: handleToggleActive,
   });
 
   return (

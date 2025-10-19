@@ -55,6 +55,18 @@ export const examPapersService = {
     return { data: paper }
   },
 
+  toggleActive: async (id: string): Promise<ApiResponse<ExamPaper>> => {
+    const paper = await apiClient.patch<ExamPaper>(`/api/v1/exam-papers/${id}/toggle-active`)
+    return { data: paper }
+  },
+
+  getPapersForSession: async (subjectId?: string): Promise<ApiResponse<ExamPaper[]>> => {
+    const papers = await apiClient.get<ExamPaper[]>('/api/v1/exam-papers/for-session/list', { 
+      params: subjectId ? { subjectId } : undefined 
+    })
+    return { data: papers }
+  },
+
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
     apiClient.delete(`/api/v1/exam-papers/${id}`)
 }

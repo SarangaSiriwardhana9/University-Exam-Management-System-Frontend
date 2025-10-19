@@ -98,6 +98,8 @@ export type ExamPaper = {
   parts: PaperPart[]
   questions?: PaperQuestion[]
   questionCount?: number
+  inSession?: boolean
+  sessionCount?: number
   createdAt: string
   updatedAt: string
 }

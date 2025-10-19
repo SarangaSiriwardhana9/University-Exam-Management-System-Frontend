@@ -23,11 +23,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { createExamSessionSchema, updateExamSessionSchema, type CreateExamSessionFormData, type UpdateExamSessionFormData } from '../validations/exam-session-schemas'
 import type { ExamSession } from '../types/exam-sessions'
 import { useExamPapersQuery, useExamPaperQuery } from '@/features/exam-papers/hooks/use-exam-papers-query'
 import { useRoomsQuery, useRoomQuery } from '@/features/rooms/hooks/use-rooms-query'
+import { useQuery } from '@tanstack/react-query'
+import { examPapersService } from '@/features/exam-papers/hooks/use-exam-papers'
 
 type ExamSessionFormProps = {
   session?: ExamSession
@@ -40,9 +43,9 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
   const isEditMode = !!session
   const [deliveryMode, setDeliveryMode] = useState<'onsite' | 'online'>('onsite')
 
-  const { data: examPapersData, isLoading: isLoadingPapers } = useExamPapersQuery({ 
-    isFinalized: true, 
-    isActive: true 
+  const { data: papersForSessionData, isLoading: isLoadingPapers } = useQuery({
+    queryKey: ['exam-papers-for-session'],
+    queryFn: () => examPapersService.getPapersForSession()
   })
 
   const { data: roomsData, isLoading: isLoadingRooms } = useRoomsQuery({ 
@@ -63,10 +66,12 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
 
   const examPapers = useMemo(() => {
     const map = new Map()
-    ;(examPapersData?.data || []).forEach(p => map.set(p._id, p))
+    ;(papersForSessionData?.data || []).forEach(p => map.set(p._id, p))
     if (sessionPaperData?.data) map.set(sessionPaperData.data._id, sessionPaperData.data)
-    return Array.from(map.values())
-  }, [examPapersData?.data, sessionPaperData?.data])
+    return Array.from(map.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+  }, [papersForSessionData?.data, sessionPaperData?.data])
 
   const rooms = useMemo(() => {
     const map = new Map()
@@ -191,7 +196,14 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                     <SelectContent>
                       {examPapers.map((paper) => (
                         <SelectItem key={paper._id} value={paper._id}>
-                          {paper.paperTitle} ({paper.subjectCode})
+                          <div className="flex items-center justify-between w-full">
+                            <span>{paper.paperTitle} ({paper.subjectCode})</span>
+                            {paper.inSession && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                In Session ({paper.sessionCount})
+                              </Badge>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

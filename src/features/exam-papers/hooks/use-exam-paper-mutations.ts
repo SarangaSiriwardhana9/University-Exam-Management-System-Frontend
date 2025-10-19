@@ -103,6 +103,25 @@ export const useFinalizeExamPaper = () => {
   })
 }
 
+export const useToggleExamPaperActive = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => examPapersService.toggleActive(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exam-papers'] })
+      toast.success('Status Updated', {
+        description: 'Exam paper active status has been updated.'
+      })
+    },
+    onError: (error: ApiError) => {
+      toast.error('Failed to Update Status', {
+        description: error.message || 'An error occurred while updating the status.'
+      })
+    }
+  })
+}
+
 export const useDeleteExamPaper = () => {
   const queryClient = useQueryClient()
 

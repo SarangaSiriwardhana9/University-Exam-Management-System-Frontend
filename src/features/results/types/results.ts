@@ -66,3 +66,31 @@ export type GetResultsParams = {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
 }
+
+export type StudentResultItem = {
+  _id: string
+  sessionId: string
+  examTitle: string
+  examDate: string
+  paperTitle: string
+  subjectCode: string
+  subjectName: string
+  marksObtained: number
+  totalMarks: number
+  percentage: number
+  grade?: string
+  gradePoints?: number
+  isPass: boolean
+  remarks?: string
+  publishedAt?: string
+}
+
+export type GroupedResults = {
+  [year: number]: {
+    [semester: number]: StudentResultItem[]
+  }
+}
+
+export type StudentResultsResponse = {
+  results: GroupedResults
+}

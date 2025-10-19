@@ -37,7 +37,6 @@ const refetchUser = useCallback(async () => {
   setIsFetchingUser(true)
   try {
     const response = await usersService.getProfile()
-    console.log('🔍 FETCHED USER FROM API:', JSON.stringify(response.data, null, 2))
     store.setUser(response.data)
   } catch (error) {
     console.error('Failed to fetch user profile:', error)
@@ -70,11 +69,6 @@ const refetchUser = useCallback(async () => {
     initializeAuth()
   }, [isHydrated, store.isInitialized, store.isAuthenticated, store.user, store.initialize, store.logout, refetchUser])
 
-  useEffect(() => {
-    if (store.user) {
-      console.log('🔍 CURRENT USER FROM AUTH PROVIDER:', JSON.stringify(store.user, null, 2))
-    }
-  }, [store.user])
 
   const contextValue = useMemo(() => ({
     user: store.user,

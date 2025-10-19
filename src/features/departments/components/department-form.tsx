@@ -82,10 +82,6 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
     if (department) {
       const hodId = getHeadOfDepartmentId(department.headOfDepartment)
       
-      console.log('Department data:', department)
-      console.log('Extracted HOD ID:', hodId)
-      console.log('HOD Name:', department.headOfDepartmentName)
-      
       form.reset({
         departmentName: department.departmentName,
         headOfDepartment: hodId,
@@ -93,14 +89,6 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
       })
     }
   }, [department, form])
-
- 
-  useEffect(() => {
-    if (usersData?.data) {
-      console.log('Faculty members loaded:', usersData.data.length)
-      console.log('Faculty IDs:', usersData.data.map(f => f._id))
-    }
-  }, [usersData])
 
   const handleSubmit = (data: CreateDepartmentFormData | UpdateDepartmentFormData) => {
     if (isEditMode) {
@@ -111,7 +99,6 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
   }
 
   const currentHeadId = form.watch('headOfDepartment')
-  console.log('Current form HOD value:', currentHeadId)
 
   return (
     <Form {...form}>

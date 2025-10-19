@@ -4,7 +4,8 @@ import type {
   CreateResultDto, 
   UpdateResultDto, 
   ResultStats, 
-  GetResultsParams 
+  GetResultsParams,
+  StudentResultsResponse
 } from '../types/results'
 import type { PaginatedResponse, ApiResponse } from '@/types/common'
 
@@ -51,5 +52,8 @@ export const resultsService = {
     apiClient.patch(`/api/v1/results/session/${sessionId}/publish`),
 
   delete: (id: string): Promise<ApiResponse<{ message: string }>> =>
-    apiClient.delete(`/api/v1/results/${id}`)
+    apiClient.delete(`/api/v1/results/${id}`),
+
+  getMyResults: (): Promise<StudentResultsResponse> =>
+    apiClient.get('/api/v1/student-answers/results/my-results')
 }

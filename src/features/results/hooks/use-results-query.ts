@@ -148,3 +148,10 @@ export function useDeleteResult() {
     },
   })
 }
+
+export function useStudentResultsQuery() {
+  return useQuery({
+    queryKey: [RESULTS_QUERY_KEY, 'my-results'],
+    queryFn: () => resultsService.getMyResults(),
+  })
+}

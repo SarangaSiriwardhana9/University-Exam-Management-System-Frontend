@@ -2,6 +2,8 @@
 
 import { use, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSessionSubmissionsQuery, useMarkingStatsQuery, useUnmarkRegistration } from '@/features/marking/hooks/use-marking-query'
+import { usePublishBulkResults } from '@/features/results/hooks/use-results-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -39,15 +42,20 @@ export default function MarkingPage({ params }: MarkingPageProps) {
   const [filter, setFilter] = useState<'all' | 'marked' | 'unmarked'>('all')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'marks' | 'time'>('name')
+  const [showPublishDialog, setShowPublishDialog] = useState(false)
+  const [showUnmarkDialog, setShowUnmarkDialog] = useState(false)
+  const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null)
 
   const isMarked = filter === 'all' ? undefined : filter === 'marked'
   const { data: submissionsData, isLoading } = useSessionSubmissionsQuery(sessionId, isMarked)
   const { data: stats } = useMarkingStatsQuery(sessionId)
   const unmarkMutation = useUnmarkRegistration()
+  const publishResultsMutation = usePublishBulkResults()
 
   const submissions = submissionsData?.submissions || []
+  const sessionInfo = submissions[0]?.sessionId as any
+  const paperInfo = sessionInfo?.paperId as any
 
-  // Filter and sort submissions
   const filteredAndSortedSubmissions = useMemo(() => {
     let filtered = submissions.filter(sub => {
       const searchLower = search.toLowerCase()
@@ -77,10 +85,29 @@ export default function MarkingPage({ params }: MarkingPageProps) {
     return filtered
   }, [submissions, search, sortBy])
 
-  const handleUnmark = async (registrationId: string) => {
-    if (confirm('Are you sure you want to unmark this submission? All marks will be reset.')) {
-      await unmarkMutation.mutateAsync(registrationId)
+  const handleUnmark = (registrationId: string) => {
+    setSelectedRegistrationId(registrationId)
+    setShowUnmarkDialog(true)
+  }
+
+  const confirmUnmark = async () => {
+    if (selectedRegistrationId) {
+      await unmarkMutation.mutateAsync(selectedRegistrationId)
+      setShowUnmarkDialog(false)
+      setSelectedRegistrationId(null)
     }
+  }
+
+  const handlePublishResults = () => {
+    if (!stats || stats.unmarked > 0) {
+      return
+    }
+    setShowPublishDialog(true)
+  }
+
+  const confirmPublish = async () => {
+    await publishResultsMutation.mutateAsync(sessionId)
+    setShowPublishDialog(false)
   }
 
   if (isLoading) {
@@ -111,27 +138,74 @@ export default function MarkingPage({ params }: MarkingPageProps) {
         </div>
       </div>
 
+      {sessionInfo && (
+        <Card>
+          <CardHeader>
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Exam Session</p>
+                <h2 className="text-xl font-semibold">{sessionInfo.examTitle || 'N/A'}</h2>
+              </div>
+              {paperInfo && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Exam Paper</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium">{paperInfo.paperTitle || 'N/A'}</h3>
+                    <Badge variant="outline">{paperInfo.totalMarks || 0} marks</Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Total Submissions</CardDescription>
-              <CardTitle className="text-3xl">{stats.total}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Marked</CardDescription>
-              <CardTitle className="text-3xl text-green-600">{stats.marked}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Pending</CardDescription>
-              <CardTitle className="text-3xl text-orange-600">{stats.unmarked}</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Total Submissions</CardDescription>
+                <CardTitle className="text-3xl">{stats.total}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Marked</CardDescription>
+                <CardTitle className="text-3xl text-green-600">{stats.marked}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Pending</CardDescription>
+                <CardTitle className="text-3xl text-orange-600">{stats.unmarked}</CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
+          
+          {stats.unmarked === 0 && stats.marked > 0 && (
+            <Card className="border-green-200 bg-green-50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-green-900">Ready to Publish Results</CardTitle>
+                    <CardDescription className="text-green-700">
+                      All {stats.marked} submissions have been marked. Publish results so students can view their marks.
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    onClick={handlePublishResults}
+                    disabled={publishResultsMutation.isPending || (stats && stats.unmarked > 0)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle2Icon className="h-4 w-4 mr-2" />
+                    {publishResultsMutation.isPending ? 'Publishing...' : 'Publish Results'}
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+          )}
+        </>
       )}
 
       <Card>
@@ -285,6 +359,50 @@ export default function MarkingPage({ params }: MarkingPageProps) {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish Results?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Publish results for all {stats?.marked || 0} students? Students will be able to view their results immediately.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={publishResultsMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmPublish}
+              disabled={publishResultsMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {publishResultsMutation.isPending ? 'Publishing...' : 'Publish Results'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showUnmarkDialog} onOpenChange={setShowUnmarkDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unmark Submission?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unmark this submission? All marks will be reset and you'll need to mark it again.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unmarkMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmUnmark}
+              disabled={unmarkMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {unmarkMutation.isPending ? 'Unmarking...' : 'Unmark Submission'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

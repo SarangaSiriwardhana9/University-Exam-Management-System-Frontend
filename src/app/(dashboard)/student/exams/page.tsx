@@ -2,50 +2,28 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { format, isPast, isFuture, isToday, addDays } from 'date-fns'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { format, isPast, isFuture, isToday, parseISO } from 'date-fns'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  CalendarIcon,
-  ClockIcon,
-  MapPinIcon,
-  UsersIcon,
-  CheckCircle2Icon,
-  XCircleIcon,
-  AlertCircleIcon,
-  BookOpenIcon,
-  InfoIcon,
-  FileTextIcon,
-  MonitorIcon,
-  BuildingIcon,
-} from 'lucide-react'
+import { CalendarIcon, ClockIcon, MapPinIcon, CheckCircle2Icon, XCircleIcon, AlertCircleIcon, BookOpenIcon, MonitorIcon, BuildingIcon, HistoryIcon } from 'lucide-react'
 import { useMyExamRegistrationsQuery } from '@/features/exam-registrations/hooks/use-exam-registrations-query'
 import { useExamSessionsQuery } from '@/features/exam-sessions/hooks/use-exam-sessions-query'
-import {
-  useCreateExamRegistrationMutation,
-  useCancelExamRegistrationMutation,
-} from '@/features/exam-registrations/hooks/use-exam-registration-mutations'
+import { useCreateExamRegistrationMutation, useCancelExamRegistrationMutation } from '@/features/exam-registrations/hooks/use-exam-registration-mutations'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { cn } from '@/lib/utils'
 import type { ExamSession } from '@/features/exam-sessions/types/exam-sessions'
 import type { ExamRegistration } from '@/features/exam-registrations/types/exam-registrations'
+import { DataTable } from '@/components/data-display/data-table'
+import { ColumnDef } from '@tanstack/react-table'
 
 export default function StudentExamsPage() {
+  const router = useRouter()
   const [selectedSession, setSelectedSession] = useState<ExamSession | null>(null)
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false)
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
@@ -54,9 +32,7 @@ export default function StudentExamsPage() {
   const [cancellationReason, setCancellationReason] = useState('')
 
   const { data: registrationsData, isLoading: isLoadingRegistrations } = useMyExamRegistrationsQuery()
-  const { data: sessionsData, isLoading: isLoadingSessions } = useExamSessionsQuery({
-    status: 'scheduled',
-  })
+  const { data: sessionsData, isLoading: isLoadingSessions } = useExamSessionsQuery({ status: 'scheduled' })
 
   const createMutation = useCreateExamRegistrationMutation()
   const cancelMutation = useCancelExamRegistrationMutation()
@@ -64,35 +40,102 @@ export default function StudentExamsPage() {
   const registrations = registrationsData?.data || []
   const allSessions = sessionsData?.data || []
 
-  const registeredSessionIds = useMemo(
-    () => new Set(registrations.map(r => r.sessionId)),
-    [registrations]
-  )
+  const registeredSessionIds = useMemo(() => new Set(registrations.map(r => r.sessionId)), [registrations])
+  const availableSessions = useMemo(() => allSessions.filter(s => !registeredSessionIds.has(s._id)), [allSessions, registeredSessionIds])
 
-  const availableSessions = useMemo(
-    () => allSessions.filter(s => !registeredSessionIds.has(s._id)),
-    [allSessions, registeredSessionIds]
-  )
-
-  const { upcomingExams, pastExams, todayExams } = useMemo(() => {
-    const now = new Date()
-    const registered = registrations.filter(r => r.status !== 'cancelled')
-
-    return {
-      upcomingExams: registered.filter(r => r.examDateTime && isFuture(new Date(r.examDateTime))),
-      pastExams: registered.filter(r => r.examDateTime && isPast(new Date(r.examDateTime))),
-      todayExams: registered.filter(r => r.examDateTime && isToday(new Date(r.examDateTime))),
-    }
+  const sortedRegistrations = useMemo(() => {
+    return [...registrations]
+      .filter(r => r.status !== 'cancelled')
+      .sort((a, b) => {
+        const dateA = a.examDateTime ? new Date(a.examDateTime).getTime() : 0
+        const dateB = b.examDateTime ? new Date(b.examDateTime).getTime() : 0
+        const now = Date.now()
+        
+        const isOngoingA = a.examStartTime && !a.actualSubmitTime
+        const isOngoingB = b.examStartTime && !b.actualSubmitTime
+        
+        if (isOngoingA && !isOngoingB) return -1
+        if (!isOngoingA && isOngoingB) return 1
+        
+        const isTodayA = a.examDateTime && isToday(new Date(a.examDateTime))
+        const isTodayB = b.examDateTime && isToday(new Date(b.examDateTime))
+        
+        if (isTodayA && !isTodayB) return -1
+        if (!isTodayA && isTodayB) return 1
+        
+        const isFutureA = dateA > now
+        const isFutureB = dateB > now
+        
+        if (isFutureA && !isFutureB) return -1
+        if (!isFutureA && isFutureB) return 1
+        
+        return dateB - dateA
+      })
   }, [registrations])
+
+  const examHistory = useMemo(() => {
+    return registrations.map(reg => {
+      const examDate = reg.examDateTime ? new Date(reg.examDateTime) : null
+      const hasStarted = !!reg.examStartTime
+      const isExpired = reg.examEndTime ? isPast(new Date(reg.examEndTime)) : false
+      const isSubmitted = !!(reg.actualSubmitTime || hasStarted && isExpired)
+      
+      return {
+        ...reg,
+        participated: isSubmitted,
+        isPast: examDate ? isPast(examDate) : false
+      }
+    }).filter(r => r.isPast)
+  }, [registrations])
+
+  const historyColumns: ColumnDef<typeof examHistory[0]>[] = [
+    {
+      accessorKey: 'examTitle',
+      header: 'Exam',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.examTitle}</div>
+          <div className="text-xs text-muted-foreground">{row.original.subjectCode}</div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'examDateTime',
+      header: 'Date',
+      cell: ({ row }) => row.original.examDateTime ? format(new Date(row.original.examDateTime), 'PP') : 'N/A',
+    },
+    {
+      accessorKey: 'participated',
+      header: 'Status',
+      cell: ({ row }) => {
+        const { participated, status } = row.original
+        if (status === 'cancelled') {
+          return <Badge variant="destructive">Cancelled</Badge>
+        }
+        return participated ? (
+          <Badge variant="default" className="bg-green-600">
+            <CheckCircle2Icon className="h-3 w-3 mr-1" />
+            Participated
+          </Badge>
+        ) : (
+          <Badge variant="secondary">
+            <XCircleIcon className="h-3 w-3 mr-1" />
+            Not Participated
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: 'deliveryMode',
+      header: 'Mode',
+      cell: ({ row }) => <span className="capitalize">{row.original.deliveryMode}</span>,
+    },
+  ]
 
   const handleRegister = () => {
     if (!selectedSession) return
-
     createMutation.mutate(
-      {
-        sessionId: selectedSession._id,
-        specialRequirements: specialRequirements || undefined,
-      },
+      { sessionId: selectedSession._id, specialRequirements: specialRequirements || undefined },
       {
         onSuccess: () => {
           setIsRegisterDialogOpen(false)
@@ -105,12 +148,8 @@ export default function StudentExamsPage() {
 
   const handleCancelRegistration = () => {
     if (!selectedRegistration) return
-
     cancelMutation.mutate(
-      {
-        id: selectedRegistration._id,
-        reason: cancellationReason || undefined,
-      },
+      { id: selectedRegistration._id, reason: cancellationReason || undefined },
       {
         onSuccess: () => {
           setIsCancelDialogOpen(false)
@@ -122,19 +161,12 @@ export default function StudentExamsPage() {
   }
 
   const canRegisterForSession = (session: ExamSession) => {
-    const now = new Date()
-    const endTime = new Date(session.endTime)
-
-    return (
-      session.status === 'scheduled' &&
-      session.registeredStudents < session.maxStudents &&
-      now < endTime
-    )
+    return session.status === 'scheduled' && session.registeredStudents < session.maxStudents && isFuture(new Date(session.endTime))
   }
 
   if (isLoadingRegistrations || isLoadingSessions) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -144,136 +176,85 @@ export default function StudentExamsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">My Exams</h1>
-        <p className="text-muted-foreground mt-1">
-          View and manage your exam registrations
-        </p>
+        <p className="text-muted-foreground mt-1">View and manage your exam registrations</p>
       </div>
 
-      {todayExams.length > 0 && (
-        <Alert className="border-primary bg-primary/5">
-          <AlertCircleIcon className="h-5 w-5 text-primary" />
-          <AlertDescription className="text-primary font-medium">
-            You have {todayExams.length} exam{todayExams.length > 1 ? 's' : ''} today!
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Registered Exams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{registrations.filter(r => r.status !== 'cancelled').length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total registrations
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Upcoming Exams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{upcomingExams.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Registered and scheduled
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Available Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{availableSessions.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Open for registration
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Completed Exams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{pastExams.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Past examinations
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="registered" className="space-y-4">
+      <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="registered">
-            My Registrations ({registrations.length})
-          </TabsTrigger>
-          <TabsTrigger value="available">
-            Available Sessions ({availableSessions.length})
+          <TabsTrigger value="active">Active Exams ({sortedRegistrations.length})</TabsTrigger>
+          <TabsTrigger value="available">Available ({availableSessions.length})</TabsTrigger>
+          <TabsTrigger value="history">
+            <HistoryIcon className="h-4 w-4 mr-2" />
+            History ({examHistory.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="registered" className="space-y-4">
-          {registrations.length === 0 ? (
+        <TabsContent value="active" className="space-y-3">
+          {sortedRegistrations.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileTextIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Exam Registrations</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  You haven't registered for any exams yet. Check the available sessions tab to register.
-                </p>
+                <BookOpenIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Active Exams</h3>
+                <p className="text-sm text-muted-foreground">Check the available tab to register for exams.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {registrations.map((registration) => (
-                <ExamRegistrationCard
-                  key={registration._id}
-                  registration={registration}
-                  onCancel={(reg) => {
-                    setSelectedRegistration(reg)
-                    setIsCancelDialogOpen(true)
-                  }}
-                />
-              ))}
-            </div>
+            sortedRegistrations.map((registration) => (
+              <CompactExamCard
+                key={registration._id}
+                registration={registration}
+                onCancel={(reg) => {
+                  setSelectedRegistration(reg)
+                  setIsCancelDialogOpen(true)
+                }}
+                onStart={() => router.push(`/student/exam-paper/${registration.paperId}?session=${registration._id}`)}
+              />
+            ))
           )}
         </TabsContent>
 
-        <TabsContent value="available" className="space-y-4">
+        <TabsContent value="available" className="space-y-3">
           {availableSessions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <CalendarIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No Available Sessions</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md">
-                  There are no exam sessions available for registration at this time.
-                </p>
+                <p className="text-sm text-muted-foreground">There are no exam sessions available for registration.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {availableSessions.map((session) => {
-                const isRegistered = registeredSessionIds.has(session._id)
-                return (
-                  <AvailableSessionCard
-                    key={session._id}
-                    session={session}
-                    canRegister={canRegisterForSession(session)}
-                    isRegistered={isRegistered}
-                    onRegister={(s) => {
-                      setSelectedSession(s)
-                      setIsRegisterDialogOpen(true)
-                    }}
-                  />
-                )
-              })}
-            </div>
+            availableSessions.map((session) => (
+              <CompactSessionCard
+                key={session._id}
+                session={session}
+                canRegister={canRegisterForSession(session)}
+                onRegister={(s) => {
+                  setSelectedSession(s)
+                  setIsRegisterDialogOpen(true)
+                }}
+              />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="history">
+          {examHistory.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <HistoryIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Exam History</h3>
+                <p className="text-sm text-muted-foreground">Your past exams will appear here.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Exam History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DataTable columns={historyColumns} data={examHistory} searchKey="examTitle" />
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
@@ -282,53 +263,26 @@ export default function StudentExamsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register for Exam</DialogTitle>
-            <DialogDescription>
-              Confirm your registration for this exam session
-            </DialogDescription>
+            <DialogDescription>Confirm your registration for this exam session</DialogDescription>
           </DialogHeader>
-
           {selectedSession && (
             <div className="space-y-4">
-              <div className="p-4 border rounded-lg space-y-2 bg-muted/50">
+              <div className="p-3 border rounded-lg space-y-2 bg-muted/50">
                 <h4 className="font-semibold">{selectedSession.examTitle}</h4>
-                {selectedSession.paperTitle && (
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Paper: {selectedSession.paperTitle}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <BookOpenIcon className="h-4 w-4" />
-                  <span>{selectedSession.subjectCode} - {selectedSession.subjectName}</span>
-                </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CalendarIcon className="h-4 w-4" />
-                  <span>{format(new Date(selectedSession.examDateTime), 'PPP')}</span>
+                  <span>{format(new Date(selectedSession.examDateTime), 'PPP p')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <ClockIcon className="h-4 w-4" />
-                  <span>{format(new Date(selectedSession.examDateTime), 'p')} ({selectedSession.formattedDuration})</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  {selectedSession.deliveryMode === 'online' ? (
-                    <MonitorIcon className="h-4 w-4" />
-                  ) : (
-                    <BuildingIcon className="h-4 w-4" />
-                  )}
+                  {selectedSession.deliveryMode === 'online' ? <MonitorIcon className="h-4 w-4" /> : <BuildingIcon className="h-4 w-4" />}
                   <span className="capitalize">{selectedSession.deliveryMode}</span>
                 </div>
-                {selectedSession.roomNumber && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPinIcon className="h-4 w-4" />
-                    <span>{selectedSession.roomNumber}</span>
-                  </div>
-                )}
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="special-requirements">Special Requirements (Optional)</Label>
                 <Textarea
                   id="special-requirements"
-                  placeholder="e.g., Extra time, specific seating, accessibility needs..."
+                  placeholder="e.g., Extra time, specific seating..."
                   value={specialRequirements}
                   onChange={(e) => setSpecialRequirements(e.target.value)}
                   rows={3}
@@ -336,13 +290,10 @@ export default function StudentExamsPage() {
               </div>
             </div>
           )}
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRegisterDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsRegisterDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleRegister} disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Registering...' : 'Confirm Registration'}
+              {createMutation.isPending ? 'Registering...' : 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -352,42 +303,21 @@ export default function StudentExamsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cancel Registration</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel your registration for this exam?
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to cancel this exam registration?</DialogDescription>
           </DialogHeader>
-
-          {selectedRegistration && (
-            <div className="space-y-4">
-              <Alert variant="destructive">
-                <AlertCircleIcon className="h-4 w-4" />
-                <AlertDescription>
-                  This action cannot be undone. You will need to register again if you change your mind.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <Label htmlFor="cancellation-reason">Reason for Cancellation (Optional)</Label>
-                <Textarea
-                  id="cancellation-reason"
-                  placeholder="Please provide a reason for cancellation..."
-                  value={cancellationReason}
-                  onChange={(e) => setCancellationReason(e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-
+          <div className="space-y-2">
+            <Label htmlFor="cancellation-reason">Reason (Optional)</Label>
+            <Textarea
+              id="cancellation-reason"
+              placeholder="Reason for cancellation..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              rows={3}
+            />
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>
-              Keep Registration
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancelRegistration}
-              disabled={cancelMutation.isPending}
-            >
+            <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>Keep Registration</Button>
+            <Button variant="destructive" onClick={handleCancelRegistration} disabled={cancelMutation.isPending}>
               {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Registration'}
             </Button>
           </DialogFooter>
@@ -397,416 +327,130 @@ export default function StudentExamsPage() {
   )
 }
 
-function ExamRegistrationCard({
-  registration,
-  onCancel,
-}: {
-  registration: ExamRegistration
-  onCancel: (reg: ExamRegistration) => void
-}) {
-  const router = useRouter()
+function CompactExamCard({ registration, onCancel, onStart }: { registration: ExamRegistration; onCancel: (reg: ExamRegistration) => void; onStart: () => void }) {
   const examDate = registration.examDateTime ? new Date(registration.examDateTime) : null
-  const isUpcoming = examDate && isFuture(examDate)
-  const isPastExam = examDate && isPast(examDate)
-  const isTodayExam = examDate && isToday(examDate)
-
-  const isSessionCancelled = registration.sessionStatus === 'cancelled'
-  const isOnlineExam = registration.deliveryMode === 'online'
-
-  // Check if exam has started
-  const hasStarted = registration.examStartTime != null
-  
-  // Check if exam time has expired (past the exam end time from backend)
+  const hasStarted = !!registration.examStartTime
   const isExpired = registration.examEndTime ? isPast(new Date(registration.examEndTime)) : false
-  
-  // Check if exam has been submitted
-  // If exam has started and time expired, we assume it was auto-submitted
-  const isSubmitted = !!(
-    registration.actualSubmitTime || 
-    (registration.status as string) === 'completed' || 
-    (registration.status as string) === 'auto_submitted' ||
-    (hasStarted && isExpired) // Auto-submitted when time expired
-  )
-
-  const getEnrollmentTimeMessage = () => {
-    if (!examDate || !isOnlineExam) return null
-    const now = new Date()
-    const bufferTime = 15 * 60 * 1000
-    const canEnrollFrom = new Date(examDate.getTime() - bufferTime)
-    
-    if (now < canEnrollFrom) {
-      return `Available from ${format(canEnrollFrom, 'p')}`
-    }
-    return null
-  }
-
-  const enrollmentMessage = getEnrollmentTimeMessage()
-
-  const handleStartOrContinueExam = () => {
-    // Navigate directly to exam paper with registration ID
-    router.push(`/student/exam-paper/${registration.paperId}?session=${registration._id}`)
-  }
+  const isSubmitted = !!(registration.actualSubmitTime || hasStarted && isExpired)
+  const isCancelled = registration.sessionStatus === 'cancelled'
+  const isTodayExam = examDate && isToday(examDate)
+  const canStart = registration.canEnroll && !hasStarted && !isExpired
 
   return (
-    <Card className={cn(
-      'transition-all hover:shadow-md',
-      isTodayExam && 'border-primary border-2',
-      registration.status === 'cancelled' && 'opacity-60',
-      isSessionCancelled && 'border-destructive border-2 opacity-75'
-    )}>
-      <CardHeader className="pb-4">
+    <Card className={cn('transition-all hover:shadow-md', isTodayExam && 'border-primary border-2', isCancelled && 'opacity-60')}>
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2 flex-1">
-            <CardTitle className="text-xl">{registration.examTitle || 'Exam'}</CardTitle>
-            {registration.paperTitle && (
-              <p className="text-sm font-medium text-muted-foreground">
-                Paper: {registration.paperTitle}
-              </p>
-            )}
-            {registration.subjectCode && registration.subjectName && (
-              <p className="text-sm text-muted-foreground">
-                {registration.subjectCode} - {registration.subjectName}
-              </p>
-            )}
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base truncate">{registration.examTitle}</CardTitle>
+            <p className="text-xs text-muted-foreground truncate">{registration.subjectCode} - {registration.subjectName}</p>
           </div>
-          <div className="flex flex-col gap-2 items-end">
-            {isSessionCancelled && (
-              <Badge variant="destructive">Exam Cancelled</Badge>
-            )}
-            {isSubmitted ? (
-              <Badge variant="default" className="bg-green-600">
-                <CheckCircle2Icon className="h-3 w-3 mr-1" />
-                {registration.isAutoSubmitted || (registration.status as string) === 'auto_submitted' || (hasStarted && isExpired) ? 'Auto-Submitted' : 'Submitted'}
-              </Badge>
-            ) : (
-              <>
-                {isExpired && !hasStarted && (
-                  <Badge variant="destructive">Expired</Badge>
-                )}
-                {hasStarted && !isExpired && (
-                  <Badge variant="default" className="bg-blue-600">In Progress</Badge>
-                )}
-                {hasStarted && isExpired && (
-                  <Badge variant="outline">Time Expired</Badge>
-                )}
-              </>
-            )}
-            <Badge variant={
-              registration.status === 'cancelled' ? 'destructive' : 
-              registration.status === 'confirmed' ? 'default' : 
-              registration.status === 'in_progress' ? 'default' : 
-              'secondary'
-            }>
-              {registration.status === 'in_progress' ? 'In Progress' : registration.status}
-            </Badge>
+          <div className="flex flex-col gap-1 items-end flex-shrink-0">
+            {isCancelled && <Badge variant="destructive" className="text-xs">Cancelled</Badge>}
+            {isSubmitted && <Badge variant="default" className="bg-green-600 text-xs"><CheckCircle2Icon className="h-3 w-3 mr-1" />Submitted</Badge>}
+            {hasStarted && !isExpired && !isSubmitted && <Badge variant="default" className="bg-blue-600 text-xs">In Progress</Badge>}
+            {isTodayExam && !isSubmitted && <Badge variant="destructive" className="text-xs">Today</Badge>}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isSessionCancelled && (
-          <>
-            <Alert variant="destructive">
-              <AlertCircleIcon className="h-4 w-4" />
-              <AlertDescription>
-                This exam session has been cancelled by the coordinator. Please contact the exam office for more information.
-              </AlertDescription>
-            </Alert>
-            <Separator />
-          </>
-        )}
-        <div className="space-y-3">
-          {examDate ? (
-            <>
-              <div className="flex items-center gap-3">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm">{format(examDate, 'PPPP')}</span>
-                {isTodayExam && (
-                  <Badge variant="destructive" className="ml-auto">Today</Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <ClockIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm">
-                  {format(examDate, 'p')}
-                  {registration.formattedDuration && ` • ${registration.formattedDuration}`}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm text-muted-foreground">Exam date not scheduled yet</span>
-            </div>
-          )}
-          {registration.deliveryMode && (
-            <div className="flex items-center gap-3">
-              {registration.deliveryMode === 'online' ? (
-                <MonitorIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              ) : (
-                <BuildingIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              )}
-              <span className="text-sm capitalize font-medium">{registration.deliveryMode}</span>
-            </div>
-          )}
+      <CardContent className="space-y-3 pt-0">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs">{examDate ? format(examDate, 'PP') : 'TBD'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs">{examDate ? format(examDate, 'p') : 'TBD'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {registration.deliveryMode === 'online' ? <MonitorIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <BuildingIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+            <span className="text-xs capitalize">{registration.deliveryMode}</span>
+          </div>
           {registration.roomNumber && (
-            <div className="flex items-center gap-3">
-              <MapPinIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm font-medium">{registration.roomNumber}</span>
-            </div>
-          )}
-          {registration.seatNumber && (
-            <div className="flex items-center gap-3">
-              <InfoIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm">Seat Number: <strong>{registration.seatNumber}</strong></span>
+            <div className="flex items-center gap-2">
+              <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs">{registration.roomNumber}</span>
             </div>
           )}
         </div>
 
-        <Separator />
-
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Registered on {format(new Date(registration.registrationDate), 'PP')}</span>
-        </div>
-
-        {registration.specialRequirements && (
-          <>
-            <Separator />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Special Requirements:</p>
-              <p className="text-sm text-muted-foreground">{registration.specialRequirements}</p>
-            </div>
-          </>
+        {isCancelled && (
+          <Alert variant="destructive" className="py-2">
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertDescription className="text-xs">This exam session has been cancelled.</AlertDescription>
+          </Alert>
         )}
 
-        {isSubmitted && (
-          <>
-            <Separator />
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle2Icon className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-sm text-green-800">
-                <strong>Exam Submitted:</strong> Your exam was {registration.actualSubmitTime ? `submitted on ${format(new Date(registration.actualSubmitTime), 'PPp')}` : (hasStarted && isExpired) ? `auto-submitted when time expired at ${format(new Date(registration.examEndTime!), 'PPp')}` : 'successfully submitted'}.
-                {(registration.isAutoSubmitted || (registration.status as string) === 'auto_submitted' || (hasStarted && isExpired)) && !registration.actualSubmitTime && ' Your answers have been saved.'}
-              </AlertDescription>
-            </Alert>
-          </>
-        )}
-
-        {(registration.status === 'registered' || registration.status === 'in_progress') && !isSessionCancelled && !isSubmitted && (
-          <>
-            {isOnlineExam && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  {/* Show different button states based on exam status */}
-                  {isExpired && !hasStarted ? (
-                    <Alert variant="destructive">
-                      <AlertCircleIcon className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Exam Expired:</strong> The time to start this exam has passed.
-                      </AlertDescription>
-                    </Alert>
-                  ) : hasStarted && !isExpired ? (
-                    <>
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        size="lg"
-                        onClick={handleStartOrContinueExam}
-                      >
-                        <MonitorIcon className="h-5 w-5 mr-2" />
-                        Continue Exam
-                      </Button>
-                      <Alert className="border-blue-200 bg-blue-50">
-                        <InfoIcon className="h-4 w-4 text-blue-600" />
-                        <AlertDescription className="text-sm text-blue-800">
-                          <strong>Exam in progress:</strong> Click to continue your exam. Your progress has been saved.
-                        </AlertDescription>
-                      </Alert>
-                    </>
-                  ) : hasStarted && isExpired ? (
-                    <Alert variant="destructive">
-                      <AlertCircleIcon className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Time Expired:</strong> The exam time has ended. Your answers have been auto-submitted.
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <>
-                      <Button
-                        className="w-full"
-                        size="lg"
-                        disabled={!registration.canEnroll}
-                        onClick={handleStartOrContinueExam}
-                      >
-                        <MonitorIcon className="h-5 w-5 mr-2" />
-                        {registration.canEnroll ? 'Start Online Exam' : 'Online Exam'}
-                      </Button>
-                      {enrollmentMessage && (
-                        <Alert>
-                          <ClockIcon className="h-4 w-4" />
-                          <AlertDescription className="text-sm">
-                            <strong>Enrollment opens soon:</strong> {enrollmentMessage}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      {registration.canEnroll && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle2Icon className="h-4 w-4 text-green-600" />
-                          <AlertDescription className="text-sm text-green-800">
-                            <strong>Ready to start:</strong> Click the button above to begin the exam.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </>
-                  )}
-                </div>
-              </>
+        {!isCancelled && !isSubmitted && registration.deliveryMode === 'online' && (
+          <div className="flex gap-2">
+            {hasStarted && !isExpired ? (
+              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700" onClick={onStart}>
+                <MonitorIcon className="h-4 w-4 mr-2" />Continue Exam
+              </Button>
+            ) : canStart ? (
+              <Button size="sm" className="w-full" onClick={onStart}>
+                <MonitorIcon className="h-4 w-4 mr-2" />Start Exam
+              </Button>
+            ) : isExpired && !hasStarted ? (
+              <Alert variant="destructive" className="py-2">
+                <AlertDescription className="text-xs">Exam time has expired</AlertDescription>
+              </Alert>
+            ) : null}
+            {!hasStarted && !isExpired && isFuture(examDate!) && (
+              <Button size="sm" variant="destructive" onClick={() => onCancel(registration)}>
+                <XCircleIcon className="h-4 w-4 mr-2" />Cancel
+              </Button>
             )}
-            {isUpcoming && !hasStarted && (
-              <>
-                <Separator />
-                <div className="flex justify-end pt-2">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onCancel(registration)}
-                  >
-                    <XCircleIcon className="h-4 w-4 mr-2" />
-                    Cancel Registration
-                  </Button>
-                </div>
-              </>
-            )}
-          </>
-        )}
-
-        {registration.status === 'cancelled' && registration.cancellationReason && (
-          <>
-            <Separator />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-destructive">Cancellation Reason:</p>
-              <p className="text-sm text-muted-foreground">{registration.cancellationReason}</p>
-            </div>
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
   )
 }
 
-function AvailableSessionCard({
-  session,
-  canRegister,
-  isRegistered,
-  onRegister,
-}: {
-  session: ExamSession
-  canRegister: boolean
-  isRegistered: boolean
-  onRegister: (session: ExamSession) => void
-}) {
+function CompactSessionCard({ session, canRegister, onRegister }: { session: ExamSession; canRegister: boolean; onRegister: (s: ExamSession) => void }) {
   const examDate = new Date(session.examDateTime)
-  const endTime = new Date(session.endTime)
   const availableSeats = session.maxStudents - session.registeredStudents
   const isFull = availableSeats <= 0
-  const isAlmostFull = availableSeats <= 5 && availableSeats > 0
 
   return (
     <Card className="transition-all hover:shadow-md">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{session.examTitle}</CardTitle>
-            {session.paperTitle && (
-              <CardDescription className="font-medium">
-                Paper: {session.paperTitle}
-              </CardDescription>
-            )}
-            {session.subjectCode && session.subjectName && (
-              <CardDescription className="flex items-center gap-2">
-                <BookOpenIcon className="h-4 w-4" />
-                {session.subjectCode} - {session.subjectName}
-              </CardDescription>
-            )}
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base truncate">{session.examTitle}</CardTitle>
+            <p className="text-xs text-muted-foreground truncate">{session.subjectCode} - {session.subjectName}</p>
           </div>
-          <div className="flex gap-2">
-            {isRegistered && (
-              <Badge variant="default">
-                <CheckCircle2Icon className="h-3 w-3 mr-1" />
-                Enrolled
-              </Badge>
-            )}
-            {isFull ? (
-              <Badge variant="destructive">Full</Badge>
-            ) : isAlmostFull ? (
-              <Badge variant="outline">Almost Full</Badge>
-            ) : (
-              <Badge variant="secondary">Available</Badge>
-            )}
-          </div>
+          <Badge variant={isFull ? 'destructive' : 'secondary'} className="text-xs flex-shrink-0">
+            {isFull ? 'Full' : `${availableSeats} seats`}
+          </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{format(examDate, 'PPP')}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <ClockIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{format(examDate, 'p')} ({session.formattedDuration})</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              {session.deliveryMode === 'online' ? (
-                <MonitorIcon className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <BuildingIcon className="h-4 w-4 text-muted-foreground" />
-              )}
-              <span className="capitalize font-medium">{session.deliveryMode}</span>
-            </div>
-            {session.roomNumber && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{session.roomNumber}</span>
-              </div>
-            )}
+      <CardContent className="space-y-3 pt-0">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs">{format(examDate, 'PP')}</span>
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <UsersIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{session.registeredStudents} / {session.maxStudents} registered</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <InfoIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{availableSeats} seats available</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <AlertCircleIcon className="h-4 w-4 text-muted-foreground" />
-              <span>Register before: {format(endTime, 'PPp')}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs">{format(examDate, 'p')}</span>
           </div>
-        </div>
-
-        {session.instructions && (
-          <>
-            <Separator />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Instructions:</p>
-              <p className="text-sm text-muted-foreground">{session.instructions}</p>
+          <div className="flex items-center gap-2">
+            {session.deliveryMode === 'online' ? <MonitorIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <BuildingIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+            <span className="text-xs capitalize">{session.deliveryMode}</span>
+          </div>
+          {session.roomNumber && (
+            <div className="flex items-center gap-2">
+              <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs">{session.roomNumber}</span>
             </div>
-          </>
-        )}
-
-        <div className="flex justify-end pt-2">
-          <Button
-            onClick={() => onRegister(session)}
-            disabled={!canRegister || isFull || isRegistered}
-          >
-            <CheckCircle2Icon className="h-4 w-4 mr-2" />
-            {isRegistered ? 'Already Enrolled' : isFull ? 'Session Full' : 'Register for Exam'}
-          </Button>
+          )}
         </div>
+        <Button size="sm" className="w-full" onClick={() => onRegister(session)} disabled={!canRegister || isFull}>
+          <CheckCircle2Icon className="h-4 w-4 mr-2" />
+          {isFull ? 'Session Full' : 'Register'}
+        </Button>
       </CardContent>
     </Card>
   )

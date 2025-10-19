@@ -2,26 +2,18 @@
 
 import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  ChevronLeftIcon, 
-  CheckCircle2Icon, 
-  AlertCircleIcon, 
-  SparklesIcon,
-  SaveIcon,
-  UserIcon 
-} from 'lucide-react'
-import { 
-  useRegistrationAnswersQuery, 
-  useAutoMarkMcq, 
-  useBulkMarkAnswers,
-  useFinalizeMarking 
-} from '@/features/marking/hooks/use-marking-query'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { ChevronLeftIcon, CheckCircle2Icon, AlertCircleIcon, SparklesIcon, SaveIcon } from 'lucide-react'
+import { useRegistrationAnswersQuery, useAutoMarkMcq, useBulkMarkAnswers, useFinalizeMarking } from '@/features/marking/hooks/use-marking-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { cn } from '@/lib/utils'
 
@@ -114,11 +106,18 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
   }
 
   const allMarked = answers.every(a => a.isMarked)
-  const totalMarks = answers.reduce((sum, answer) => {
+  const answeredQuestionsMarks = answers.reduce((sum, answer) => {
     const paperQ = answer.paperQuestionId as any
     return sum + (paperQ?.marksAllocated || 0)
   }, 0)
   const obtainedMarks = Object.values(marks).reduce((sum, m) => sum + (m.marks || 0), 0)
+  
+  const hasInvalidMarks = answers.some(answer => {
+    const paperQ = answer.paperQuestionId as any
+    const allocatedMarks = paperQ?.marksAllocated || 0
+    const obtainedMarks = marks[answer._id]?.marks || 0
+    return obtainedMarks > allocatedMarks || obtainedMarks < 0
+  })
 
   const mcqCount = answers.filter(a => ['mcq', 'true_false'].includes(a.questionType)).length
 
@@ -159,11 +158,11 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <p className="text-sm text-muted-foreground">Total Marks</p>
-            <p className="text-2xl font-bold">{totalMarks}</p>
-            {paperTotalMarks && paperTotalMarks !== totalMarks && (
+            <p className="text-sm text-muted-foreground">Paper Total</p>
+            <p className="text-2xl font-bold">{paperTotalMarks || 0}</p>
+            {answeredQuestionsMarks !== paperTotalMarks && (
               <p className="text-xs text-muted-foreground mt-1">
-                Paper: {paperTotalMarks} marks
+                Answered: {answeredQuestionsMarks} marks
               </p>
             )}
           </CardHeader>
@@ -302,30 +301,13 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Marks Obtained <span className="text-muted-foreground">(out of {allocatedMarks})</span>
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={allocatedMarks}
-                      step={0.5}
-                      value={marks[answer._id]?.marks || 0}
-                      onChange={(e) => handleMarkChange(answer._id, 'marks', parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Feedback (Optional)</label>
-                    <Textarea
-                      value={marks[answer._id]?.feedback || ''}
-                      onChange={(e) => handleMarkChange(answer._id, 'feedback', e.target.value)}
-                      placeholder="Add feedback for the student..."
-                      rows={1}
-                    />
-                  </div>
-                </div>
+                <MarkingForm
+                  answerId={answer._id}
+                  allocatedMarks={allocatedMarks}
+                  currentMarks={marks[answer._id]?.marks || 0}
+                  currentFeedback={marks[answer._id]?.feedback || ''}
+                  onMarkChange={handleMarkChange}
+                />
               </CardContent>
             </Card>
           )
@@ -337,7 +319,7 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
           <div className="flex items-center gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Marks</p>
-              <p className="text-2xl font-bold">{obtainedMarks} / {totalMarks}</p>
+              <p className="text-2xl font-bold">{obtainedMarks} / {paperTotalMarks || 0}</p>
             </div>
             {!allMarked && (
               <Badge variant="destructive">
@@ -361,11 +343,17 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
             {hasChanges && (
               <Button
                 onClick={handleSaveAll}
-                disabled={bulkMark.isPending}
+                disabled={bulkMark.isPending || hasInvalidMarks}
               >
                 <SaveIcon className="h-4 w-4 mr-2" />
                 {bulkMark.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
+            )}
+            {hasInvalidMarks && (
+              <Badge variant="destructive" className="animate-pulse">
+                <AlertCircleIcon className="h-3 w-3 mr-1" />
+                Invalid marks
+              </Badge>
             )}
             {allMarked && !registration.isMarked && (
               <Button
@@ -381,5 +369,85 @@ export default function MarkingDetailPage({ params }: MarkingDetailPageProps) {
         </div>
       </div>
     </div>
+  )
+}
+
+type MarkingFormProps = {
+  answerId: string
+  allocatedMarks: number
+  currentMarks: number
+  currentFeedback: string
+  onMarkChange: (answerId: string, field: 'marks' | 'feedback', value: string | number) => void
+}
+
+function MarkingForm({ answerId, allocatedMarks, currentMarks, currentFeedback, onMarkChange }: MarkingFormProps) {
+  const markingSchema = z.object({
+    marks: z.number()
+      .min(0, 'Marks cannot be negative')
+      .max(allocatedMarks, `Marks cannot exceed ${allocatedMarks}`),
+    feedback: z.string().optional()
+  })
+
+  const form = useForm<z.infer<typeof markingSchema>>({
+    resolver: zodResolver(markingSchema),
+    mode: 'onChange',
+    values: {
+      marks: currentMarks,
+      feedback: currentFeedback
+    }
+  })
+
+  return (
+    <Form {...form}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+        <FormField
+          control={form.control}
+          name="marks"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Marks Obtained <span className="text-muted-foreground">(out of {allocatedMarks})</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  max={allocatedMarks}
+                  step={0.5}
+                  {...field}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0
+                    field.onChange(value)
+                    onMarkChange(answerId, 'marks', value)
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="feedback"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Feedback (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                    onMarkChange(answerId, 'feedback', e.target.value)
+                  }}
+                  placeholder="Add feedback for the student..."
+                  rows={1}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </Form>
   )
 }

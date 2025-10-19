@@ -5,24 +5,23 @@ import type {
   StudentDashboard, 
   DashboardStats 
 } from '../types/dashboard'
-import type { ApiResponse } from '@/types/common'
 
 export const dashboardService = {
-  getAdminDashboard: (): Promise<ApiResponse<AdminDashboard>> =>
+  getAdminDashboard: (): Promise<AdminDashboard> =>
     apiClient.get('/api/v1/dashboard/admin'),
 
-  getFacultyDashboard: (): Promise<ApiResponse<FacultyDashboard>> =>
+  getFacultyDashboard: (): Promise<FacultyDashboard> =>
     apiClient.get('/api/v1/dashboard/faculty'),
 
-  getStudentDashboard: (): Promise<ApiResponse<StudentDashboard>> =>
+  getStudentDashboard: (): Promise<StudentDashboard> =>
     apiClient.get('/api/v1/dashboard/student'),
 
-  getDashboard: (): Promise<ApiResponse<DashboardStats>> =>
+  getDashboard: (): Promise<DashboardStats> =>
     apiClient.get('/api/v1/dashboard'),
 
-  getSystemHealth: (): Promise<ApiResponse<Record<string, boolean>>> =>
+  getSystemHealth: (): Promise<Record<string, boolean>> =>
     apiClient.get('/api/v1/dashboard/system-health'),
 
-  getRecentActivity: (params?: { limit?: number }): Promise<ApiResponse<DashboardStats['recentActivity']>> =>
+  getRecentActivity: (params?: { limit?: number }): Promise<DashboardStats['recentActivity']> =>
     apiClient.get('/api/v1/dashboard/recent-activity', { params })
 }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { ClockIcon, AlertCircleIcon, FileTextIcon, CheckCircle2Icon } from 'lucide-react'
@@ -28,6 +29,7 @@ export default function ExamPaperPage() {
   const [answers, setAnswers] = useState<Record<string, { type: string; value: string | string[] }>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [examStatus, setExamStatus] = useState<any>(null)
   const [hasStarted, setHasStarted] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
@@ -269,17 +271,19 @@ export default function ExamPaperPage() {
     })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmitClick = () => {
     if (!sessionId) {
-      alert('Session ID is required to submit the exam')
+      toast.error('Session ID is required to submit the exam')
       return
     }
-
     if (isSubmitting) return
+    setShowSubmitDialog(true)
+  }
 
-    const confirmed = confirm('Are you sure you want to submit your exam? This action cannot be undone.')
-    if (!confirmed) return
-
+  const handleConfirmSubmit = async () => {
+    if (!sessionId) return
+    
+    setShowSubmitDialog(false)
     setIsSubmitting(true)
     try {
       const answerDtos: SaveAnswerDto[] = Object.entries(answers).map(([paperQuestionId, answer]) => {
@@ -451,7 +455,7 @@ export default function ExamPaperPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">Time Remaining</p>
               </div>
-              <Button onClick={handleSubmit} size="lg" disabled={isSubmitting}>
+              <Button onClick={handleSubmitClick} size="lg" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit Exam'}
               </Button>
             </div>
@@ -585,7 +589,7 @@ export default function ExamPaperPage() {
                   </Alert>
                 )}
               </div>
-              <Button onClick={handleSubmit} size="lg" disabled={isSubmitting}>
+              <Button onClick={handleSubmitClick} size="lg" disabled={isSubmitting}>
                 <CheckCircle2Icon className="h-5 w-5 mr-2" />
                 {isSubmitting ? 'Submitting...' : 'Submit Exam'}
               </Button>
@@ -593,6 +597,24 @@ export default function ExamPaperPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit your exam? This action cannot be undone. 
+              Make sure you have answered all questions before submitting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Exam'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -22,11 +22,32 @@
       "includeDiffs": false
     }
   },
-  "include": [],
+  "include": [
+    "src/features/questions/**/*.ts",
+    "src/features/questions/**/*.tsx",
+    "src/app/(dashboard)/faculty/questions/**/*.tsx",
+    "src/app/(dashboard)/faculty/questions/**/*.ts"
+  ],
   "ignore": {
     "useGitignore": true,
     "useDefaultPatterns": true,
-    "customPatterns": []
+    "customPatterns": [
+      "src/features/!(questions)/**",
+      "src/app/(dashboard)/faculty/!(questions)/**",
+      "src/app/(dashboard)/student/**",
+      "src/app/(dashboard)/admin/**",
+      "src/app/(dashboard)/exam-coordinator/**",
+      "src/components/**",
+      "src/lib/**",
+      "src/hooks/**",
+      "src/contexts/**",
+      "src/styles/**",
+      "public/**",
+      "*.test.ts",
+      "*.test.tsx",
+      "*.spec.ts",
+      "*.spec.tsx"
+    ]
   },
   "security": {
     "enableSecurityCheck": true

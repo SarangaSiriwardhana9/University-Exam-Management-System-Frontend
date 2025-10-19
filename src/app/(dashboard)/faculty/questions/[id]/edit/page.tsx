@@ -12,7 +12,6 @@ export default function EditQuestionPage() {
   const params = useParams()
   const router = useRouter()
   const questionId = params.id as string
-
   const { data, isLoading } = useQuestionQuery(questionId)
   const updateMutation = useUpdateQuestion()
 
@@ -46,7 +45,6 @@ export default function EditQuestionPage() {
         <h1 className="text-3xl font-bold tracking-tight">Edit Question</h1>
         <p className="text-muted-foreground">Update question details and structure</p>
       </div>
-
       <QuestionForm
         question={data.data}
         onSubmit={handleUpdate}

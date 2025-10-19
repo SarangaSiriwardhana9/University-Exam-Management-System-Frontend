@@ -67,31 +67,26 @@ export const calculateTotalMarks = (
 const cleanSubQuestionsForSubmit = (subQuestions: any[]): CreateSubQuestionDto[] => {
   if (!subQuestions || !Array.isArray(subQuestions)) return []
   
-  return subQuestions.map(sq => {
-    const cleaned: CreateSubQuestionDto = {
-      questionText: sq.questionText || '',
-      questionDescription: sq.questionDescription || '',
-      questionType: sq.questionType,
-      marks: Number(sq.marks) || 0,
-      subQuestionLabel: sq.subQuestionLabel || '',
-      subQuestionOrder: Number(sq.subQuestionOrder) || 0,
-      subQuestions: sq.subQuestions?.length ? cleanSubQuestionsForSubmit(sq.subQuestions) : []
-    }
-    return cleaned
-  })
+  return subQuestions.map(sq => ({
+    questionText: sq.questionText || '',
+    questionDescription: sq.questionDescription || '',
+    questionType: sq.questionType,
+    marks: Number(sq.marks) || 0,
+    subQuestionLabel: sq.subQuestionLabel || '',
+    subQuestionOrder: Number(sq.subQuestionOrder) || 0,
+    subQuestions: sq.subQuestions?.length ? cleanSubQuestionsForSubmit(sq.subQuestions) : []
+  }))
 }
 
 export const cleanQuestionFormData = (data: CreateQuestionFormData): CreateQuestionFormData => {
   const cleanString = (str: string | undefined) => str?.trim() || undefined
-  
-  let subjectId = data.subjectId
-  if (typeof subjectId === 'object' && subjectId !== null) {
-    subjectId = (subjectId as any)._id || String(subjectId)
-  }
+  const subjectId = typeof data.subjectId === 'object' && data.subjectId !== null 
+    ? (data.subjectId as any)._id || String(data.subjectId)
+    : String(data.subjectId)
   
   return {
     ...data,
-    subjectId: typeof subjectId === 'string' ? subjectId : String(subjectId),
+    subjectId,
     questionDescription: cleanString(data.questionDescription),
     topic: cleanString(data.topic),
     subtopic: cleanString(data.subtopic),
@@ -134,7 +129,7 @@ export const mapQuestionToFormData = (question: Question): CreateQuestionFormDat
     subjectId: typeof subjectId === 'string' ? subjectId : String(subjectId),
     questionText: question.questionText,
     questionDescription: question.questionDescription || '',
-    questionType: question.questionType,
+    questionType: question.questionType as 'mcq' | 'structured' | 'essay',
     difficultyLevel: question.difficultyLevel,
     marks: question.marks,
     topic: question.topic || '',

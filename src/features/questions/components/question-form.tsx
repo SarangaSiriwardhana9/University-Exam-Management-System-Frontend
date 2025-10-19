@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, useFieldArray, type UseFormReturn, type FieldValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -148,7 +148,16 @@ const SubQuestionFields = ({ form, parentPath, level, onRemove }: SubQuestionFie
                       max="100"
                       step="0.5"
                       value={field.value || ''}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                      onChange={(e) => {
+                        const value = e.target.value ? parseFloat(e.target.value) : 0
+                        field.onChange(value)
+                        
+                        setTimeout(() => {
+                          const allSubQuestions = form.getValues('subQuestions')
+                          const calculatedMarks = calculateTotalMarks(form.getValues('questionType'), 0, allSubQuestions)
+                          form.setValue('marks', calculatedMarks, { shouldValidate: false, shouldDirty: true })
+                        }, 0)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -217,6 +226,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
   const isEditMode = !!question
   const { data: subjectsData, isLoading: isSubjectsLoading } = useMySubjectsQuery()
   const [formKey, setFormKey] = useState(0)
+  const hasInitialized = useRef(false)
 
   const form = useForm({
     resolver: zodResolver(createQuestionSchema) as any,
@@ -244,30 +254,26 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
   }, [questionType, form])
 
   useEffect(() => {
-    if (isEditMode && question && !isSubjectsLoading) {
+    if (isEditMode && question && !isSubjectsLoading && !hasInitialized.current) {
       const formData = mapQuestionToFormData(question)
       form.reset(formData)
       setFormKey((prev: number) => prev + 1)
-    } else if (!isEditMode && initialData) {
+      hasInitialized.current = true
+    } else if (!isEditMode && initialData && !hasInitialized.current) {
       form.reset({ ...getDefaultQuestionFormData(), ...initialData })
       setFormKey((prev: number) => prev + 1)
+      hasInitialized.current = true
     }
-  }, [isEditMode, question, isSubjectsLoading])
+  }, [isEditMode, question, isSubjectsLoading, initialData, form])
 
   const handleSubmit = (data: CreateQuestionFormData) => {
     if (data.questionType === QUESTION_TYPES.STRUCTURED || data.questionType === QUESTION_TYPES.ESSAY) {
-      const calculatedMarks = calculateTotalMarks(data.questionType, 0, data.subQuestions)
-      data.marks = calculatedMarks
+      data.marks = calculateTotalMarks(data.questionType, 0, data.subQuestions)
     }
     
     const cleanedData = cleanQuestionFormData(data)
     if (isEditMode) {
       const { subjectId, ...updateData } = cleanedData
-      console.log('=== SUBMITTING QUESTION UPDATE ===')
-      console.log('Total Marks:', updateData.marks)
-      console.log('Sub-Questions Count:', updateData.subQuestions?.length)
-      console.log('Sub-Questions Details:', JSON.stringify(updateData.subQuestions, null, 2))
-      console.log('Full Update Data:', updateData)
       onSubmit(updateData as CreateQuestionFormData)
     } else {
       onSubmit(cleanedData)
@@ -301,7 +307,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
         form.setValue('marks', calculatedMarks, { shouldValidate: false, shouldDirty: true })
       }
     }
-  }, [questionType, JSON.stringify(watchedSubQuestions)])
+  }, [questionType, JSON.stringify(watchedSubQuestions), watchedMarks, form])
 
   return (
     <Form {...form}>

@@ -17,8 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "University Management System",
-  description: "Comprehensive university exam management system",
+  title: "University Portal - Exam Management System",
+  description: "Comprehensive university exam management system for students, faculty, and administrators",
+  keywords: ["university", "exam", "management", "education", "portal"],
+  authors: [{ name: "University Portal Team" }],
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -29,13 +32,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <QueryProvider>
           <AuthProvider>
             <NuqsAdapter>
               {children}
-              <Toaster position="top-right" />
+              <Toaster 
+                position="top-right" 
+                richColors
+                closeButton
+                toastOptions={{
+                  className: 'shadow-xl',
+                  duration: 4000,
+                }}
+              />
             </NuqsAdapter>
           </AuthProvider>
         </QueryProvider>

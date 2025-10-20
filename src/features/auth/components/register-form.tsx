@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon, GraduationCapIcon, MailIcon, UserIcon, ShieldCheckIcon, BookOpenIcon } from 'lucide-react'
 import { useRegister } from '../hooks/use-auth-mutations'
 import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
 
@@ -42,31 +42,129 @@ export const RegisterForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/5 via-background to-accent/5 p-4">
-      <div className="max-w-2xl w-full">
-        <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6 pt-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <UserPlusIcon className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding & Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-secondary to-accent overflow-hidden">
+        <div className="absolute inset-0 bg-black/20" />
+        <Image
+          src="/uni.jpeg"
+          alt="University Campus"
+          fill
+          className="object-cover mix-blend-overlay opacity-40"
+          priority
+        />
+        
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
+          {/* Logo & Title */}
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="University Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Student Registration
-            </h1>
-            <p className="text-muted-foreground mt-2">Create your university account</p>
-          </CardHeader>
+            <div>
+              <h1 className="text-2xl font-bold">University Portal</h1>
+              <p className="text-sm text-white/80">Exam Management System</p>
+            </div>
+          </div>
 
-          <CardContent className="px-8 pb-8">
-            {registerMutation.isError && (
-              <Alert className="mb-6 border-destructive/20 bg-destructive/5">
-                <AlertCircleIcon className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive">
-                  {registerMutation.error?.message || 'Registration failed. Please try again.'}
-                </AlertDescription>
-              </Alert>
-            )}
+          {/* Center Content */}
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-4xl font-bold mb-4 leading-tight">
+                Join Our<br />Academic Community
+              </h2>
+              <p className="text-lg text-white/90 max-w-md">
+                Create your account to access exams, results, and manage your academic journey.
+              </p>
+            </div>
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* Features */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <ShieldCheckIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold">Secure Access</p>
+                  <p className="text-sm text-white/80">Your data is protected with enterprise-grade security</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <BookOpenIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold">Easy Management</p>
+                  <p className="text-sm text-white/80">Manage exams and view results effortlessly</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <GraduationCapIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold">Academic Excellence</p>
+                  <p className="text-sm text-white/80">Track your progress and achieve your goals</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-sm text-white/70">
+            2024 University Exam Management System. All rights reserved.
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Registration Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background overflow-y-auto">
+        <div className="w-full max-w-md space-y-6 my-8">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center space-x-3 mb-8">
+            <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="University Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold gradient-text">University Portal</h1>
+              <p className="text-sm text-muted-foreground">Exam Management System</p>
+            </div>
+          </div>
+
+          {/* Form Header */}
+          <div className="text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
+              Sign Up
+            </h2>
+            <p className="text-muted-foreground">
+              Create your account to get started
+            </p>
+          </div>
+
+          {/* Error Alert */}
+          {registerMutation.isError && (
+            <Alert className="border-destructive/50 bg-destructive/10">
+              <AlertCircleIcon className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-destructive">
+                {registerMutation.error?.message || 'Registration failed. Please try again.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Registration Form */}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {/* Full Name */}
                 <FormField
                   control={form.control}
@@ -79,7 +177,7 @@ export const RegisterForm = () => {
                       <FormControl>
                         <Input
                           placeholder="Enter your full name"
-                          className="h-11 focus:ring-primary"
+                          className="h-12 border-border focus:border-primary focus:ring-primary/20"
                           {...field}
                         />
                       </FormControl>
@@ -101,7 +199,7 @@ export const RegisterForm = () => {
                         <Input
                           type="email"
                           placeholder="SE12345678@alfa.uni.lk"
-                          className="h-11 focus:ring-primary"
+                          className="h-12 border-border focus:border-primary focus:ring-primary/20"
                           {...field}
                         />
                       </FormControl>
@@ -126,7 +224,7 @@ export const RegisterForm = () => {
                         <FormControl>
                           <Input
                             placeholder="Choose username"
-                            className="h-11 focus:ring-primary"
+                            className="h-12 border-border focus:border-primary focus:ring-primary/20"
                             {...field}
                           />
                         </FormControl>
@@ -153,7 +251,7 @@ export const RegisterForm = () => {
                           defaultValue="1"
                         >
                           <FormControl>
-                            <SelectTrigger className="h-11">
+                            <SelectTrigger className="h-12">
                               <SelectValue placeholder="Select year" />
                             </SelectTrigger>
                           </FormControl>
@@ -186,7 +284,7 @@ export const RegisterForm = () => {
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               placeholder="Create password"
-                              className="h-11 pr-12 focus:ring-primary"
+                              className="h-12 pr-12 border-border focus:border-primary focus:ring-primary/20"
                               {...field}
                             />
                             <button
@@ -218,7 +316,7 @@ export const RegisterForm = () => {
                             <Input
                               type={showConfirmPassword ? 'text' : 'password'}
                               placeholder="Confirm password"
-                              className="h-11 pr-12 focus:ring-primary"
+                              className="h-12 pr-12 border-border focus:border-primary focus:ring-primary/20"
                               {...field}
                             />
                             <button
@@ -252,7 +350,7 @@ export const RegisterForm = () => {
                       <FormControl>
                         <Input
                           placeholder="+94771234567"
-                          className="h-11 focus:ring-primary"
+                          className="h-12 border-border focus:border-primary focus:ring-primary/20"
                           {...field}
                         />
                       </FormControl>
@@ -275,7 +373,7 @@ export const RegisterForm = () => {
                         <FormControl>
                           <Input
                             placeholder="Street address"
-                            className="h-10 focus:ring-primary"
+                            className="h-12 border-border focus:border-primary focus:ring-primary/20"
                             {...field}
                           />
                         </FormControl>
@@ -293,7 +391,7 @@ export const RegisterForm = () => {
                           <FormControl>
                             <Input
                               placeholder="City"
-                              className="h-10 focus:ring-primary"
+                              className="h-12 border-border focus:border-primary focus:ring-primary/20"
                               {...field}
                             />
                           </FormControl>
@@ -310,7 +408,7 @@ export const RegisterForm = () => {
                           <FormControl>
                             <Input
                               placeholder="State"
-                              className="h-10 focus:ring-primary"
+                              className="h-12 border-border focus:border-primary focus:ring-primary/20"
                               {...field}
                             />
                           </FormControl>
@@ -327,7 +425,7 @@ export const RegisterForm = () => {
                           <FormControl>
                             <Input
                               placeholder="ZIP"
-                              className="h-10 focus:ring-primary"
+                              className="h-12 border-border focus:border-primary focus:ring-primary/20"
                               {...field}
                             />
                           </FormControl>
@@ -336,38 +434,38 @@ export const RegisterForm = () => {
                       )}
                     />
                   </div>
-                </div>
+              </div>
 
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
-                  disabled={registerMutation.isPending}
-                >
-                  {registerMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            </Form>
+              <Button
+                type="submit"
+                className="w-full h-12 gradient-primary text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                disabled={registerMutation.isPending}
+              >
+                {registerMutation.isPending ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Creating account...</span>
+                  </div>
+                ) : (
+                  'Create Account'
+                )}
+              </Button>
+            </form>
+          </Form>
 
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <Link 
-                  href="/login" 
-                  className="text-primary hover:text-primary/80 font-medium hover:underline transition-colors"
-                >
-                  Sign in here
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Sign In Link */}
+          <div className="text-center pt-4">
+            <p className="text-muted-foreground">
+              Already have an account?{' '}
+              <Link 
+                href="/login" 
+                className="text-primary hover:text-primary/80 font-semibold hover:underline transition-colors"
+              >
+                Sign in here
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

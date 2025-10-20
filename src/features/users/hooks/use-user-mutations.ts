@@ -13,14 +13,10 @@ export const useCreateUser = () => {
     mutationFn: (data: CreateUserDto) => usersService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Created', {
-        description: 'User has been created successfully.'
-      })
+      toast.success('User Created', { description: 'User has been created successfully.' })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Create User', {
-        description: error.message || 'An error occurred while creating the user.'
-      })
+      toast.error('Failed to Create User', { description: error.message || 'An error occurred while creating the user.' })
     }
   })
 }
@@ -29,18 +25,13 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) =>
-      usersService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) => usersService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Updated', {
-        description: 'User has been updated successfully.'
-      })
+      toast.success('User Updated', { description: 'User has been updated successfully.' })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Update User', {
-        description: error.message || 'An error occurred while updating the user.'
-      })
+      toast.error('Failed to Update User', { description: error.message || 'An error occurred while updating the user.' })
     }
   })
 }
@@ -52,14 +43,10 @@ export const useDeleteUser = () => {
     mutationFn: (id: string) => usersService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('User Deleted', {
-        description: 'User has been deleted successfully.'
-      })
+      toast.success('User Deleted', { description: 'User has been deleted successfully.' })
     },
     onError: (error: ApiError) => {
-      toast.error('Failed to Delete User', {
-        description: error.message || 'An error occurred while deleting the user.'
-      })
+      toast.error('Failed to Delete User', { description: error.message || 'An error occurred while deleting the user.' })
     }
   })
 }

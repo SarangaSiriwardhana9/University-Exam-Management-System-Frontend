@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -13,12 +20,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FilterIcon } from "lucide-react";
 import { DataTable } from "@/components/data-display/data-table";
 import { getUserColumns } from "@/features/users/components/user-columns";
 import { useUsersQuery } from "@/features/users/hooks/use-users-query";
 import { useDeleteUser } from "@/features/users/hooks/use-user-mutations";
 import type { User } from "@/features/users/types/users";
+import type { UserRole } from "@/constants/roles";
 import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { RoleGuard } from "@/lib/auth/role-guard";
 import { USER_ROLES } from "@/constants/roles";
@@ -27,8 +35,17 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 const UsersPage = () => {
   const router = useRouter();
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { page, limit, pagination, onPaginationChange } = usePagination();
-  const { data, isLoading } = useUsersQuery({ page, limit });
+  
+  const { data, isLoading } = useUsersQuery({ 
+    page, 
+    limit,
+    role: roleFilter !== 'all' ? roleFilter : undefined,
+    sortBy: 'createdAt',
+    sortOrder,
+  });
 
   const deleteMutation = useDeleteUser();
 
@@ -64,6 +81,35 @@ const UsersPage = () => {
             <PlusIcon className='mr-2 h-4 w-4' />
             Add User
           </Button>
+        </div>
+
+        <div className='flex items-center gap-4'>
+          <div className='flex items-center gap-2'>
+            <FilterIcon className='h-4 w-4 text-muted-foreground' />
+            <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as UserRole | 'all')}>
+              <SelectTrigger className='w-[180px]'>
+                <SelectValue placeholder='Filter by role' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Roles</SelectItem>
+                <SelectItem value={USER_ROLES.ADMIN}>Admin</SelectItem>
+                <SelectItem value={USER_ROLES.FACULTY}>Faculty</SelectItem>
+                <SelectItem value={USER_ROLES.STUDENT}>Student</SelectItem>
+                <SelectItem value={USER_ROLES.EXAM_COORDINATOR}>Exam Coordinator</SelectItem>
+                <SelectItem value={USER_ROLES.INVIGILATOR}>Invigilator</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+            <SelectTrigger className='w-[180px]'>
+              <SelectValue placeholder='Sort by date' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='desc'>Newest First</SelectItem>
+              <SelectItem value='asc'>Oldest First</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (

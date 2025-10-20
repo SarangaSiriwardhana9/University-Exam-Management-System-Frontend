@@ -21,8 +21,6 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
   const router = useRouter()
   const { id: userId } = use(params)
 
-  console.log('Edit page - User ID from params:', userId)
-
   const { data: userResponse, isLoading, error } = useUserQuery(userId)
   const updateMutation = useUpdateUser()
 
@@ -46,7 +44,19 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
   }
 
   if (error) {
-    console.error('Error fetching user:', error)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-gray-900">Error</h2>
+          <p className="text-muted-foreground">
+            An error occurred while fetching the user.
+          </p>
+          <Button onClick={() => router.push('/admin/users')} className="mt-4">
+            Back to Users
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (!userResponse?.data) {
@@ -57,15 +67,6 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
           <p className="text-muted-foreground">
             The user you&apos;re looking for doesn&apos;t exist.
           </p>
-          {error && (
-            <p className="text-sm text-red-500">
-              Error: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          )}
-          <div className="text-sm text-muted-foreground">
-            <p>User ID: {userId}</p>
-            <p>Check console for more details</p>
-          </div>
           <Button onClick={() => router.push('/admin/users')} className="mt-4">
             Back to Users
           </Button>

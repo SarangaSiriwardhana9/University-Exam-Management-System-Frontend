@@ -16,21 +16,17 @@ import type { User } from '../types/users'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/constants/roles'
 
-const getRoleBadgeClass = (role: UserRole) => {
-  const roleClasses = {
-    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
-  } as const
-
-  return roleClasses[role] || 'bg-muted'
+const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
+  admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+  invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
 }
 
-const formatRole = (role: string) => {
-  return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-}
+const getRoleBadgeClass = (role: UserRole) => ROLE_BADGE_CLASSES[role] || 'bg-muted'
+
+const formatRole = (role: string) => role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
 
 type UserColumnsProps = {
   onEdit: (user: User) => void

@@ -284,11 +284,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                       )}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    {isStudent 
-                      ? "Select the student's department" 
-                      : "Select the faculty member's department"}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -321,9 +316,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                         <SelectItem value="4">Year 4</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Student&apos;s current year level
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -350,9 +342,6 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                         <SelectItem value="2">Semester 2</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Current semester
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

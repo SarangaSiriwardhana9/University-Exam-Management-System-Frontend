@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -15,6 +15,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -60,11 +64,12 @@ const getHeadOfDepartmentId = (headOfDepartment: Department['headOfDepartment'])
 
 export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: DepartmentFormProps) => {
   const isEditMode = !!department
+  const [open, setOpen] = useState(false)
 
- 
   const { data: usersData, isLoading: isLoadingUsers } = useUsersQuery({ 
     role: USER_ROLES.FACULTY, 
-    isActive: true 
+    isActive: true,
+    limit: 1000
   })
 
   const form = useForm<CreateDepartmentFormData | UpdateDepartmentFormData>({
@@ -83,6 +88,7 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
       const hodId = getHeadOfDepartmentId(department.headOfDepartment)
       
       form.reset({
+        departmentCode: department.departmentCode,
         departmentName: department.departmentName,
         headOfDepartment: hodId,
         description: department.description || ''
@@ -149,42 +155,70 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
             control={form.control}
             name="headOfDepartment"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Head of Department</FormLabel>
                 {isLoadingUsers ? (
                   <div className="text-sm text-muted-foreground">Loading faculty members...</div>
                 ) : (
                   <>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || undefined}
-                      disabled={isLoadingUsers}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select head of department (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {usersData?.data && usersData.data.length > 0 ? (
-                          usersData.data.map((faculty) => (
-                            <SelectItem key={faculty._id} value={faculty._id}>
-                              {faculty.fullName} ({faculty.email})
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="py-6 text-center text-sm text-muted-foreground">
-                            No faculty members available
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={open}
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? usersData?.data?.find((faculty) => faculty._id === field.value)?.fullName
+                              : "Select head of department (optional)"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search faculty..." />
+                          <CommandEmpty>No faculty member found.</CommandEmpty>
+                          <CommandGroup className="max-h-64 overflow-auto">
+                            {usersData?.data?.map((faculty) => (
+                              <CommandItem
+                                key={faculty._id}
+                                value={`${faculty.fullName} ${faculty.email}`}
+                                onSelect={() => {
+                                  field.onChange(faculty._id)
+                                  setOpen(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    field.value === faculty._id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span>{faculty.fullName}</span>
+                                  <span className="text-xs text-muted-foreground">{faculty.email}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {field.value && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => field.onChange('')}
+                        onClick={() => {
+                          field.onChange('')
+                          setOpen(false)
+                        }}
                         className="mt-2"
                       >
                         Clear selection
@@ -193,8 +227,7 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
                   </>
                 )}
                 <FormDescription>
-                  Select a faculty member to be the head of this department
-                  
+                  Search and select a faculty member to be the head of this department
                 </FormDescription>
                 <FormMessage />
               </FormItem>

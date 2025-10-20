@@ -16,9 +16,7 @@ const CreateUserPage = () => {
 
   const handleCreate = (data: CreateUserFormData) => {
     createMutation.mutate(data, {
-      onSuccess: () => {
-        router.push('/admin/users')
-      }
+      onSuccess: () => router.push('/admin/users')
     })
   }
 

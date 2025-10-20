@@ -11,16 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon } from 'lucide-react'
+import { MoreHorizontalIcon, EditIcon, TrashIcon, EyeIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react'
 import type { Department } from '../types/departments'
 
 type DepartmentColumnsProps = {
   onEdit: (department: Department) => void
   onDelete: (department: Department) => void
   onView: (department: Department) => void
+  onToggleActive: (department: Department) => void
 }
 
-export const getDepartmentColumns = ({ onEdit, onDelete, onView }: DepartmentColumnsProps): ColumnDef<Department>[] => [
+export const getDepartmentColumns = ({ onEdit, onDelete, onView, onToggleActive }: DepartmentColumnsProps): ColumnDef<Department>[] => [
   {
     accessorKey: 'departmentCode',
     header: 'Code',
@@ -100,6 +101,19 @@ export const getDepartmentColumns = ({ onEdit, onDelete, onView }: DepartmentCol
             <DropdownMenuItem onClick={() => onEdit(department)}>
               <EditIcon className="mr-2 h-4 w-4" />
               Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onToggleActive(department)}>
+              {department.isActive ? (
+                <>
+                  <XCircleIcon className="mr-2 h-4 w-4" />
+                  Mark as Inactive
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon className="mr-2 h-4 w-4" />
+                  Mark as Active
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

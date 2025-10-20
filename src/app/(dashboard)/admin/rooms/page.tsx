@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -13,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FilterIcon } from "lucide-react";
 import { DataTable } from "@/components/data-display/data-table";
 import { getRoomColumns } from "@/features/rooms/components/room-columns";
 import { useRoomsQuery } from "@/features/rooms/hooks/use-rooms-query";
@@ -27,8 +34,19 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 const RoomsPage = () => {
   const router = useRouter();
   const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
-  const { page, limit, pagination, onPaginationChange } = usePagination()
-  const { data, isLoading } = useRoomsQuery( { page, limit });
+  const [isActiveFilter, setIsActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [isLabFilter, setIsLabFilter] = useState<'all' | 'lab' | 'regular'>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const { page, limit, pagination, onPaginationChange } = usePagination();
+  
+  const { data, isLoading } = useRoomsQuery({ 
+    page, 
+    limit,
+    isActive: isActiveFilter === 'all' ? undefined : isActiveFilter === 'active',
+    isLab: isLabFilter === 'all' ? undefined : isLabFilter === 'lab',
+    sortBy: 'building',
+    sortOrder,
+  });
   const deleteMutation = useDeleteRoom();
 
   const handleDelete = () => {
@@ -63,6 +81,43 @@ const RoomsPage = () => {
             <PlusIcon className='mr-2 h-4 w-4' />
             Add Room
           </Button>
+        </div>
+
+        <div className='flex items-center gap-4'>
+          <div className='flex items-center gap-2'>
+            <FilterIcon className='h-4 w-4 text-muted-foreground' />
+            <Select value={isActiveFilter} onValueChange={(value) => setIsActiveFilter(value as 'all' | 'active' | 'inactive')}>
+              <SelectTrigger className='w-[180px]'>
+                <SelectValue placeholder='Filter by status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Rooms</SelectItem>
+                <SelectItem value='active'>Active Only</SelectItem>
+                <SelectItem value='inactive'>Inactive Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Select value={isLabFilter} onValueChange={(value) => setIsLabFilter(value as 'all' | 'lab' | 'regular')}>
+            <SelectTrigger className='w-[180px]'>
+              <SelectValue placeholder='Filter by type' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>All Types</SelectItem>
+              <SelectItem value='lab'>Labs Only</SelectItem>
+              <SelectItem value='regular'>Regular Rooms</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+            <SelectTrigger className='w-[180px]'>
+              <SelectValue placeholder='Sort order' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='asc'>A-Z (Building)</SelectItem>
+              <SelectItem value='desc'>Z-A (Building)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (

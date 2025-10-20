@@ -8,7 +8,7 @@ export const useUsersQuery = (params?: GetUsersParams) => {
   return useQuery({
     queryKey: ['users', params],
     queryFn: () => usersService.getAll(params),
-    staleTime: 30000,  
+    staleTime: 30000,
   })
 }
 
@@ -17,10 +17,7 @@ export const useUserQuery = (id: string | undefined) => {
     queryKey: ['users', id],
     queryFn: async () => {
       if (!id) throw new Error('User ID is required')
-      console.log('Fetching user with ID:', id)
-      const result = await usersService.getById(id)
-      console.log('User fetch result:', result)
-      return result
+      return usersService.getById(id)
     },
     enabled: !!id && id !== 'undefined',
     retry: 1,

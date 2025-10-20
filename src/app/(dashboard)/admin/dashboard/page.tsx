@@ -43,104 +43,110 @@ export default function AdminDashboard() {
     <RoleGuard allowedRoles={[USER_ROLES.ADMIN]}>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+        <div className="mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2 text-lg">
             Overview of the university examination management system
           </p>
         </div>
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardDescription>Total Students</CardDescription>
-                <UsersIcon className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Total Students</p>
+                  <p className="text-xl font-bold">{overview?.totalStudents || 0}</p>
+                </div>
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <UsersIcon className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
-              <CardTitle className="text-3xl">{overview?.totalStudents || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Active student accounts</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardDescription>Total Faculty</CardDescription>
-                <GraduationCapIcon className="h-4 w-4 text-muted-foreground" />
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 rounded-full">
+                  <GraduationCapIcon className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Faculty</p>
+                  <p className="text-xl font-bold">{overview?.totalFaculty || 0}</p>
+                </div>
               </div>
-              <CardTitle className="text-3xl">{overview?.totalFaculty || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Active faculty members</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-t-4 border-t-green-500 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardDescription>Total Subjects</CardDescription>
-                <BookOpenIcon className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Total Subjects</p>
+                  <p className="text-xl font-bold">{overview?.totalSubjects || 0}</p>
+                </div>
+                <BookOpenIcon className="h-5 w-5 text-green-600" />
               </div>
-              <CardTitle className="text-3xl">{overview?.totalSubjects || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Active subjects</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardDescription>Upcoming Exams</CardDescription>
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <Card className="bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Upcoming Exams</p>
+                  <p className="text-xl font-bold">{overview?.upcomingExams || 0}</p>
+                </div>
               </div>
-              <CardTitle className="text-3xl">{overview?.upcomingExams || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Next 30 days</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardDescription>Pending Results</CardDescription>
-                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Pending Results</p>
+                  <p className="text-xl font-bold">{overview?.pendingResults || 0}</p>
+                </div>
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <ClockIcon className="h-5 w-5 text-amber-600" />
+                </div>
               </div>
-              <CardTitle className="text-3xl">{overview?.pendingResults || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Awaiting publication</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardDescription>Overall Pass Rate</CardDescription>
-                <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
+          <Card className="bg-gradient-to-br from-emerald-50 to-white hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-full">
+                  <TrendingUpIcon className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pass Rate</p>
+                  <p className="text-xl font-bold text-emerald-600">
+                    {overview?.overallPassRate?.toFixed(1) || 0}%
+                  </p>
+                </div>
               </div>
-              <CardTitle className="text-3xl text-green-600">
-                {overview?.overallPassRate?.toFixed(1) || 0}%
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">All published results</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Exam Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3Icon className="h-5 w-5" />
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BarChart3Icon className="h-5 w-5 text-primary" />
+              </div>
               Exam Statistics
             </CardTitle>
-            <CardDescription>Current status of examination sessions</CardDescription>
+            <CardDescription className="text-base">Current status of examination sessions</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -214,9 +220,9 @@ export default function AdminDashboard() {
                               <span className="text-sm text-muted-foreground">{count} students</span>
                               <span className="text-sm font-medium">{percentage}%</span>
                             </div>
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-primary"
+                                className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
@@ -251,9 +257,9 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm text-muted-foreground">{count} exams</span>
                           </div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-600"
+                              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
@@ -268,10 +274,10 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Activities */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
-            <CardDescription>Latest system activities and notifications</CardDescription>
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+            <CardTitle className="text-xl">Recent Activities</CardTitle>
+            <CardDescription className="text-base">Latest system activities and notifications</CardDescription>
           </CardHeader>
           <CardContent>
             {recentActivities.length === 0 ? (
@@ -279,11 +285,11 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 {recentActivities.slice(0, 10).map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                  <div key={activity.id} className="flex items-start gap-3 pb-4 border-b last:border-0 hover:bg-muted/30 -mx-2 px-2 py-2 rounded-lg transition-colors">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                      <p className="text-sm font-semibold">{activity.description}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs font-medium">
                           {activity.type}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
@@ -291,7 +297,7 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                       {format(new Date(activity.timestamp), 'MMM dd, HH:mm')}
                     </span>
                   </div>

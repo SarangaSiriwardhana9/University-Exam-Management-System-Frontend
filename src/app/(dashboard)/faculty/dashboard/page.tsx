@@ -41,76 +41,76 @@ export default function FacultyDashboard() {
   return (
     <RoleGuard allowedRoles={[USER_ROLES.FACULTY]}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Faculty Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Overview of your teaching activities and exam management</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent">Faculty Dashboard</h1>
+            <p className="text-muted-foreground mt-2 text-lg">Overview of your teaching activities and exam management</p>
           </div>
-          <Button onClick={() => router.push('/faculty/questions/new')}>
+          <Button onClick={() => router.push('/faculty/questions/new')} className="gradient-primary text-white shadow-lg hover:shadow-xl">
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Question
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/faculty/subjects')}>
-            <CardHeader className="pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/subjects')}>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardDescription>My Subjects</CardDescription>
-                <BookOpenIcon className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">My Subjects</p>
+                  <p className="text-xl font-bold">{overview?.mySubjects || 0}</p>
+                </div>
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <BookOpenIcon className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
-              <CardTitle className="text-3xl">{overview?.mySubjects || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Active subjects</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/faculty/sessions')}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardDescription>Upcoming Exams</CardDescription>
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <Card className="bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/sessions')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Upcoming Exams</p>
+                  <p className="text-xl font-bold">{overview?.myUpcomingExams || 0}</p>
+                </div>
               </div>
-              <CardTitle className="text-3xl text-blue-600">{overview?.myUpcomingExams || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Scheduled sessions</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/faculty/marking')}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardDescription>Pending Marking</CardDescription>
-                <ClipboardListIcon className="h-4 w-4 text-muted-foreground" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/marking')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-50 rounded-full">
+                  <ClipboardListIcon className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pending Marking</p>
+                  <p className="text-xl font-bold">{overview?.myPendingResults || 0}</p>
+                </div>
               </div>
-              <CardTitle className="text-3xl text-orange-600">{overview?.myPendingResults || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Submissions to mark</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
+          <Card className="border-t-4 border-t-purple-500 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <CardDescription>Active Students</CardDescription>
-                <UsersIcon className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Active Students</p>
+                  <p className="text-xl font-bold">{overview?.myActiveStudents || 0}</p>
+                </div>
+                <UsersIcon className="h-5 w-5 text-purple-600" />
               </div>
-              <CardTitle className="text-3xl">{overview?.myActiveStudents || 0}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Enrolled students</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Exam Statistics</CardTitle>
-              <CardDescription>Overview of your exam sessions and resources</CardDescription>
+          <Card className="lg:col-span-2 border-0 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="text-xl">Exam Statistics</CardTitle>
+              <CardDescription className="text-base">Overview of your exam sessions and resources</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -153,13 +153,13 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks</CardDescription>
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="text-xl">Quick Actions</CardTitle>
+              <CardDescription className="text-base">Common tasks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/faculty/questions/new')}>
+              <Button variant="outline" className="w-full justify-start hover:bg-primary/5 hover:border-primary/50 transition-all" onClick={() => router.push('/faculty/questions/new')}>
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Create Question
               </Button>
@@ -183,10 +183,10 @@ export default function FacultyDashboard() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
-            <CardDescription>Latest exam sessions and updates</CardDescription>
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+            <CardTitle className="text-xl">Recent Activities</CardTitle>
+            <CardDescription className="text-base">Latest exam sessions and updates</CardDescription>
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (
@@ -197,10 +197,10 @@ export default function FacultyDashboard() {
             ) : (
               <div className="space-y-3">
                 {activities.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all duration-200 hover:shadow-md">
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{activity.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-semibold text-sm">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
                         {activity.date && formatDistanceToNow(new Date(activity.date), { addSuffix: true })}
                       </p>
                     </div>

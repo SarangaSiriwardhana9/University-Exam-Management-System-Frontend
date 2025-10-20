@@ -1,4 +1,4 @@
-// src/app/(dashboard)/admin/enrollments/page.tsx
+ 
 "use client";
 
 import { useState } from "react";
@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FilterIcon, XIcon } from "lucide-react";
 import { DataTable } from "@/components/data-display/data-table";
 import { getEnrollmentColumns } from "@/features/enrollments/components/enrollment-columns";
 import { useEnrollmentsQuery } from "@/features/enrollments/hooks/use-enrollments-query";
@@ -41,17 +41,21 @@ const EnrollmentsPage = () => {
   const router = useRouter();
   const [deletingEnrollment, setDeletingEnrollment] =
     useState<StudentEnrollment | null>(null);
-  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | "all">(
-    "all"
-  );
-  const [academicYearFilter, setAcademicYearFilter] = useState<string>("all");
-  const { page, limit, pagination, onPaginationChange } = usePagination()
-  const queryParams = {
-    ...(statusFilter !== "all" && { status: statusFilter as EnrollmentStatus }),
-    ...(academicYearFilter !== "all" && { academicYear: academicYearFilter }),
-  };
-
-  const { data, isLoading } = useEnrollmentsQuery({ ...queryParams, page, limit });
+  const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | "all">("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const { page, limit, pagination, onPaginationChange } = usePagination();
+  
+  const { data, isLoading } = useEnrollmentsQuery({ 
+    page, 
+    limit,
+    status: statusFilter !== "all" ? statusFilter as EnrollmentStatus : undefined,
+    year: yearFilter !== "all" ? parseInt(yearFilter) : undefined,
+    semester: semesterFilter !== "all" ? parseInt(semesterFilter) : undefined,
+    sortBy: 'createdAt',
+    sortOrder,
+  });
   const deleteMutation = useDeleteEnrollment();
 
   const handleDelete = () => {
@@ -152,60 +156,75 @@ const EnrollmentsPage = () => {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              <div>
-                <label className='text-sm font-medium mb-2 block'>Status</label>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) =>
-                    setStatusFilter(value as EnrollmentStatus | "all")
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='All statuses' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All Statuses</SelectItem>
-                    <SelectItem value={ENROLLMENT_STATUS.ACTIVE}>
-                      Active
-                    </SelectItem>
-                    <SelectItem value={ENROLLMENT_STATUS.WITHDRAWN}>
-                      Withdrawn
-                    </SelectItem>
-                    <SelectItem value={ENROLLMENT_STATUS.COMPLETED}>
-                      Completed
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className='space-y-4'>
+          <div className='flex items-center gap-2'>
+            <FilterIcon className='h-4 w-4 text-muted-foreground' />
+            <span className='text-sm font-medium'>Filters:</span>
+            {(statusFilter !== 'all' || yearFilter !== 'all' || semesterFilter !== 'all') && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => {
+                  setStatusFilter('all');
+                  setYearFilter('all');
+                  setSemesterFilter('all');
+                }}
+                className='h-8 px-2'
+              >
+                <XIcon className='h-3 w-3 mr-1' />
+                Clear All
+              </Button>
+            )}
+          </div>
 
-              <div>
-                <label className='text-sm font-medium mb-2 block'>
-                  Academic Year
-                </label>
-                <Select
-                  value={academicYearFilter}
-                  onValueChange={setAcademicYearFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='All years' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All Years</SelectItem>
-                    <SelectItem value='2024-2025'>2024-2025</SelectItem>
-                    <SelectItem value='2023-2024'>2023-2024</SelectItem>
-                    <SelectItem value='2022-2023'>2022-2023</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as EnrollmentStatus | "all")}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Statuses</SelectItem>
+                <SelectItem value={ENROLLMENT_STATUS.ACTIVE}>Active</SelectItem>
+                <SelectItem value={ENROLLMENT_STATUS.WITHDRAWN}>Withdrawn</SelectItem>
+                <SelectItem value={ENROLLMENT_STATUS.COMPLETED}>Completed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by year' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Years</SelectItem>
+                <SelectItem value='1'>Year 1</SelectItem>
+                <SelectItem value='2'>Year 2</SelectItem>
+                <SelectItem value='3'>Year 3</SelectItem>
+                <SelectItem value='4'>Year 4</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by semester' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Semesters</SelectItem>
+                <SelectItem value='1'>Semester 1</SelectItem>
+                <SelectItem value='2'>Semester 2</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+              <SelectTrigger>
+                <SelectValue placeholder='Sort by date' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='desc'>Newest First</SelectItem>
+                <SelectItem value='asc'>Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Enrollments Table */}
         {isLoading ? (

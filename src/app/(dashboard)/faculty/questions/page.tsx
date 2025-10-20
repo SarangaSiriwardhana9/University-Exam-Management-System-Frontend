@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DataTable } from '@/components/data-display/data-table'
-import { PlusIcon, Filter } from 'lucide-react'
+import { PlusIcon, Filter, XIcon } from 'lucide-react'
 import { getQuestionColumns } from '@/features/questions/components/question-columns'
 import { useQuestionsQuery } from '@/features/questions/hooks/use-questions-query'
 import { useDeleteQuestion } from '@/features/questions/hooks/use-question-mutations'
@@ -28,6 +28,8 @@ import {
 type QuestionFilters = {
   questionType: string
   subjectId: string
+  difficultyLevel: string
+  isPublic: string
 }
 
 export default function QuestionsPage() {
@@ -35,16 +37,25 @@ export default function QuestionsPage() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
   const [filters, setFilters] = useState<QuestionFilters>({
     questionType: 'all',
-    subjectId: 'all'
+    subjectId: 'all',
+    difficultyLevel: 'all',
+    isPublic: 'all',
   })
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null)
 
-  const { data, isLoading } = useQuestionsQuery({
+  const queryParams = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     questionType: filters.questionType !== 'all' ? (filters.questionType as QuestionType) : undefined,
     subjectId: filters.subjectId !== 'all' ? filters.subjectId : undefined,
-  })
+    difficultyLevel: filters.difficultyLevel !== 'all' ? filters.difficultyLevel as any : undefined,
+    isPublic: filters.isPublic === 'public' ? true : filters.isPublic === 'private' ? false : undefined,
+    sortBy: 'createdAt',
+    sortOrder,
+  };
+
+  const { data, isLoading } = useQuestionsQuery(queryParams)
 
   const { data: subjectsData } = useMySubjectsQuery()
 
@@ -93,43 +104,91 @@ export default function QuestionsPage() {
           </Button>
         </div>
 
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filters:</span>
+            {(filters.subjectId !== 'all' || filters.questionType !== 'all' || filters.difficultyLevel !== 'all' || filters.isPublic !== 'all') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFilters({ questionType: 'all', subjectId: 'all', difficultyLevel: 'all', isPublic: 'all' })}
+                className="h-8 px-2"
+              >
+                <XIcon className="h-3 w-3 mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Select value={filters.subjectId} onValueChange={(v) => setFilters(prev => ({ ...prev, subjectId: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subjects</SelectItem>
+                {subjectsData?.data?.map((subject) => (
+                  <SelectItem key={subject._id} value={subject._id}>
+                    {subject.subjectCode} - {subject.subjectName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.questionType} onValueChange={(v) => setFilters(prev => ({ ...prev, questionType: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value={QUESTION_TYPES.MCQ}>MCQ</SelectItem>
+                <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
+                <SelectItem value={QUESTION_TYPES.ESSAY}>Essay</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.difficultyLevel} onValueChange={(v) => setFilters(prev => ({ ...prev, difficultyLevel: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.isPublic} onValueChange={(v) => setFilters(prev => ({ ...prev, isPublic: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Questions</SelectItem>
+                <SelectItem value="public">Public Only</SelectItem>
+                <SelectItem value="private">Private Only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Newest First</SelectItem>
+                <SelectItem value="asc">Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>All Questions</CardTitle>
-                <CardDescription>
-                  {isLoading ? 'Loading questions...' : `${questions.length} question(s) found`}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={filters.subjectId} onValueChange={(v) => setFilters(prev => ({ ...prev, subjectId: v }))}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="All Subjects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Subjects</SelectItem>
-                    {subjectsData?.data?.map((subject) => (
-                      <SelectItem key={subject._id} value={subject._id}>
-                        {subject.subjectCode} - {subject.subjectName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filters.questionType} onValueChange={(v) => setFilters(prev => ({ ...prev, questionType: v }))}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value={QUESTION_TYPES.MCQ}>MCQ</SelectItem>
-                    <SelectItem value={QUESTION_TYPES.STRUCTURED}>Structured</SelectItem>
-                    <SelectItem value={QUESTION_TYPES.ESSAY}>Essay</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <CardTitle>All Questions</CardTitle>
+            <CardDescription>
+              {isLoading ? 'Loading questions...' : `${data?.total || 0} question(s) found`}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (

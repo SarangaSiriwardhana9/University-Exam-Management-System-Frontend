@@ -44,27 +44,50 @@ import {
   AwardIcon,
   UsersIcon,
   BarChart3Icon,
+  Trash2Icon,
 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { format } from 'date-fns'
-import { useResultsQuery, useResultStatsQuery } from '@/features/results/hooks/use-results-query'
+import { useResultsQuery, useResultStatsQuery, useDeleteResult } from '@/features/results/hooks/use-results-query'
 import { useExamSessionsQuery } from '@/features/exam-sessions/hooks/use-exam-sessions-query'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function FacultyResultsPage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [sessionFilter, setSessionFilter] = useState<string>('all')
   const [publishedFilter, setPublishedFilter] = useState<string>('all')
+  const [deletingResult, setDeletingResult] = useState<any>(null)
 
   const { data: resultsData, isLoading: resultsLoading } = useResultsQuery({ limit: 1000 })
   const { data: sessionsData } = useExamSessionsQuery({ limit: 100 })
   const { data: statsData } = useResultStatsQuery(
     sessionFilter !== 'all' ? { sessionId: sessionFilter } : undefined
   )
+  const deleteMutation = useDeleteResult()
 
   const results = resultsData?.data || []
   const sessions = sessionsData?.data || []
   const stats = statsData?.data
+
+  const handleDelete = () => {
+    if (!deletingResult) return
+
+    deleteMutation.mutate(deletingResult._id, {
+      onSuccess: () => {
+        setDeletingResult(null)
+      },
+    })
+  }
 
   const filteredResults = useMemo(() => {
     return results.filter(result => {
@@ -361,6 +384,14 @@ export default function FacultyResultsPage() {
                                 <FileTextIcon className="mr-2 h-4 w-4" />
                                 Download Report
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => setDeletingResult(result)}
+                              >
+                                <Trash2Icon className="mr-2 h-4 w-4" />
+                                Delete Result
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -374,6 +405,28 @@ export default function FacultyResultsPage() {
         </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingResult} onOpenChange={() => setDeletingResult(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Result</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this result for {deletingResult?.studentName}?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </RoleGuard>
   )
 }

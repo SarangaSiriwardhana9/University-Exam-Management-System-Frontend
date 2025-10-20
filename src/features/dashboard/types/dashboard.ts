@@ -16,13 +16,32 @@ export type DashboardStats = {
   recentActivity: DashboardActivity[]
 }
 
-export type AdminDashboard = DashboardStats & {
-  usersByRole: Record<string, number>
-  examsByStatus: Record<string, number>
-  systemHealth: {
-    database: boolean
-    storage: boolean
-    notifications: boolean
+export type AdminDashboard = {
+  overview: {
+    totalStudents: number
+    totalFaculty: number
+    totalSubjects: number
+    upcomingExams: number
+    pendingResults: number
+    overallPassRate: number
+  }
+  examStats: {
+    scheduledExams: number
+    ongoingExams: number
+    completedExams: number
+    cancelledExams: number
+    averageAttendanceRate: number
+  }
+  recentActivities: Array<{
+    id: string
+    type: string
+    description: string
+    timestamp: string
+    actor: string
+  }>
+  charts: {
+    examsByMonth: Record<string, number>
+    gradeDistribution: Record<string, number>
   }
 }
 

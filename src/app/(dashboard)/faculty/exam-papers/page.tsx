@@ -21,7 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PlusIcon, SparklesIcon } from "lucide-react";
+import { PlusIcon, SparklesIcon, FilterIcon, XIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EXAM_TYPES } from "@/features/exam-papers/types/exam-papers";
 import { DataTable } from "@/components/data-display/data-table";
 import { getExamPaperColumns } from "@/features/exam-papers/components/exam-paper-columns";
 import { useExamPapersQuery } from "@/features/exam-papers/hooks/use-exam-papers-query";
@@ -39,13 +41,24 @@ import { usePagination } from "@/lib/hooks/use-pagination";
 
 const ExamPapersPage = () => {
   const router = useRouter();
-  const { page, limit, pagination, onPaginationChange } = usePagination()
+  const { page, limit, pagination, onPaginationChange } = usePagination();
   const [deletingPaper, setDeletingPaper] = useState<ExamPaper | null>(null);
-  const [finalizingPaper, setFinalizingPaper] = useState<ExamPaper | null>(
-    null
-  );
+  const [finalizingPaper, setFinalizingPaper] = useState<ExamPaper | null>(null);
+  const [paperTypeFilter, setPaperTypeFilter] = useState<string>('all');
+  const [finalizedFilter, setFinalizedFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { data, isLoading } = useExamPapersQuery({ myPapers : true, page, limit });
+  const queryParams = {
+    myPapers: true, 
+    page, 
+    limit,
+    paperType: paperTypeFilter !== 'all' ? paperTypeFilter as any : undefined,
+    isFinalized: finalizedFilter === 'finalized' ? true : finalizedFilter === 'draft' ? false : undefined,
+    sortBy: 'createdAt',
+    sortOrder,
+  };
+
+  const { data, isLoading } = useExamPapersQuery(queryParams);
   const deleteMutation = useDeleteExamPaper();
   const duplicateMutation = useDuplicateExamPaper();
   const finalizeMutation = useFinalizeExamPaper();
@@ -120,6 +133,63 @@ const ExamPapersPage = () => {
               <PlusIcon className='mr-2 h-4 w-4' />
               Create Paper
             </Button>
+          </div>
+        </div>
+
+        <div className='space-y-4'>
+          <div className='flex items-center gap-2'>
+            <FilterIcon className='h-4 w-4 text-muted-foreground' />
+            <span className='text-sm font-medium'>Filters:</span>
+            {(paperTypeFilter !== 'all' || finalizedFilter !== 'all') && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => {
+                  setPaperTypeFilter('all');
+                  setFinalizedFilter('all');
+                }}
+                className='h-8 px-2'
+              >
+                <XIcon className='h-3 w-3 mr-1' />
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <Select value={paperTypeFilter} onValueChange={setPaperTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by paper type' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Types</SelectItem>
+                <SelectItem value={EXAM_TYPES.MIDTERM}>Midterm</SelectItem>
+                <SelectItem value={EXAM_TYPES.FINAL}>Final</SelectItem>
+                <SelectItem value={EXAM_TYPES.QUIZ}>Quiz</SelectItem>
+                <SelectItem value={EXAM_TYPES.ASSIGNMENT}>Assignment</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={finalizedFilter} onValueChange={setFinalizedFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Papers</SelectItem>
+                <SelectItem value='finalized'>Finalized Only</SelectItem>
+                <SelectItem value='draft'>Draft Only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
+              <SelectTrigger>
+                <SelectValue placeholder='Sort by date' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='desc'>Newest First</SelectItem>
+                <SelectItem value='asc'>Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

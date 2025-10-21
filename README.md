@@ -33,6 +33,66 @@ A comprehensive full-stack application for managing university examinations, bui
 
 The University Exam Management System is a modern, scalable solution designed to digitize and streamline the entire examination process at universities. From creating question banks to conducting online exams and generating comprehensive reports, this system handles it all with security, efficiency, and user-friendliness in mind.
 
+## 📸 Screenshots
+
+### 🔐 Authentication
+
+| Feature | Screenshot |
+|---------|-----------|
+| **Sign In** | <img width="800" alt="Sign In" src="https://github.com/user-attachments/assets/75a877fc-19b4-432d-800f-d8e0e517b45c" /> |
+| **Sign Up** | <img width="800" alt="Sign Up" src="https://github.com/user-attachments/assets/fa815954-7566-454d-9e2a-e7d8164cd7d5" /> |
+
+### 🔑 Admin Interface
+
+| Feature | Screenshot |
+|---------|-----------|
+| **Admin Dashboard** | <img width="800" alt="Admin Dashboard" src="https://github.com/user-attachments/assets/dd2ab08f-edc4-4029-953d-21c7c241caf7" /> |
+| **User Management** | <img width="800" alt="User Management" src="https://github.com/user-attachments/assets/de5c9633-f219-4672-af44-05fc9e86d2d7" /> |
+| **Department Management** | <img width="800" alt="Department Management" src="https://github.com/user-attachments/assets/066b48b4-23d9-42ba-9742-1551d180a056" /> |
+| **Create New Department** | <img width="800" alt="Create New Department" src="https://github.com/user-attachments/assets/8480c0ee-117c-4ad1-bbcc-d19bc161756a" /> |
+| **Rooms Management** | <img width="800" alt="Rooms Management" src="https://github.com/user-attachments/assets/c2523306-a32e-4a52-b60d-86581ad9878f" /> |
+| **Overall Exam Calendar** | <img width="800" alt="Overall Exam Calendar" src="https://github.com/user-attachments/assets/5664a12f-7088-48a1-be0f-2ef3bdec4936" /> |
+| **Student Enrollments** | <img width="800" alt="Student Enrollments" src="https://github.com/user-attachments/assets/5e4e4420-1377-4e14-85b6-f29694463e5f" /> |
+
+### 👨‍🏫 Faculty Interface
+
+| Feature | Screenshot |
+|---------|-----------|
+| **Faculty Dashboard** | <img width="800" alt="Faculty Dashboard" src="https://github.com/user-attachments/assets/0c6e6200-fef1-4c44-bbee-e0d7d8b75190" /> |
+| **Assigned Subject List** | <img width="800" alt="Assigned Subject List" src="https://github.com/user-attachments/assets/d773e111-9314-49b3-b463-c1d08916bcbf" /> |
+| **Question Bank** | <img width="800" alt="Question Bank" src="https://github.com/user-attachments/assets/23f56b86-e40c-4bee-96af-6e623aabc325" /> |
+| **Create Question** | <img width="800" alt="Create Question" src="https://github.com/user-attachments/assets/32751849-8c5b-4ea2-b3c0-3227d6b39004" /> |
+| **Create Question (Continued)** | <img width="800" alt="Create Question Details" src="https://github.com/user-attachments/assets/cc68e7b2-ed83-4312-a058-0c5254ec8f62" /> |
+| **Create New Paper** | <img width="800" alt="Create New Paper" src="https://github.com/user-attachments/assets/3b37bfcf-086b-400d-9c4f-c9bf9f74e80a" /> |
+| **Paper Details** | <img width="800" alt="Paper Details" src="https://github.com/user-attachments/assets/b1b3c026-d51a-46df-b1aa-f6eb22866abf" /> |
+| **View Exam Session List** | <img width="800" alt="View Exam Session List" src="https://github.com/user-attachments/assets/e9e81fa1-ff98-4ec8-b954-e3ac197ed0a2" /> |
+| **Mark Student Answers** | <img width="800" alt="Mark Student Answers" src="https://github.com/user-attachments/assets/b87f0cd5-a883-4c2f-81c1-a872da737658" /> |
+| **Answer Marking Interface** | <img width="800" alt="Answer Marking" src="https://github.com/user-attachments/assets/d5d96f9d-6d46-4dc5-b262-6bd30ea8186e" /> |
+| **Student Result List** | <img width="800" alt="Student Result List" src="https://github.com/user-attachments/assets/2a085e0d-ff8b-46cf-b053-9475cd5b7ebb" /> |
+
+### 📊 Exam Coordinator Interface
+
+| Feature | Screenshot |
+|---------|-----------|
+| **Exam Coordinator Dashboard** | <img width="800" alt="Exam Coordinator Dashboard" src="https://github.com/user-attachments/assets/529a036a-f659-4128-b6f0-8bde51d089e6" /> |
+| **Exam Session List** | <img width="800" alt="Exam Session List" src="https://github.com/user-attachments/assets/8d1e43fe-1401-4ae3-a777-79fdb9cad741" /> |
+| **Schedule a New Exam** | <img width="800" alt="Schedule New Exam" src="https://github.com/user-attachments/assets/f63befe3-2051-49d7-8dd6-0b25b0ef93fe" /> |
+| **Exam Registration List** | <img width="800" alt="Exam Registration List" src="https://github.com/user-attachments/assets/7a267285-e5c1-4a94-9554-c213b868cc50" /> |
+
+### 🎓 Student Interface
+
+| Feature | Screenshot |
+|---------|-----------|
+| **Student Dashboard** | <img width="800" alt="Student Dashboard" src="https://github.com/user-attachments/assets/d3a22a90-f0fe-4dae-8e11-f6e50979d912" /> |
+| **Subject Enrollments (Enroll New)** | <img width="800" alt="Subject Enrollments" src="https://github.com/user-attachments/assets/169da1d3-95c9-4003-aeee-5d380ed97b30" /> |
+| **Enrollment List** | <img width="800" alt="Enrollment List" src="https://github.com/user-attachments/assets/2dcf2c67-9846-4cb3-8d06-e71ca840fee8" /> |
+| **Exam Calendar** | <img width="800" alt="Exam Calendar" src="https://github.com/user-attachments/assets/d0219a9f-3c3a-40b5-b256-8525f325e914" /> |
+| **Exam Registrations** | <img width="800" alt="Exam Registrations" src="https://github.com/user-attachments/assets/124a2a2d-7716-4653-a9ea-9d5e5ecec969" /> |
+| **Results** | <img width="800" alt="Results" src="https://github.com/user-attachments/assets/839f4e8b-570f-4f2f-9bee-c84db1ac01bb" /> |
+| **Start Exam** | <img width="800" alt="Start Exam" src="https://github.com/user-attachments/assets/80708b26-e35f-4c92-a8ec-643a6c9b7edb" /> |
+| **Taking Exam** | <img width="800" alt="Taking Exam" src="https://github.com/user-attachments/assets/bcea3c28-19af-4999-baeb-49e6a422b34c" /> |
+| **Submit Exam** | <img width="800" alt="Submit Exam" src="https://github.com/user-attachments/assets/7352d6ac-2f36-4c86-bb08-62a194e70f84" /> |
+
 ### Why This System?
 
 - **Paperless Exams**: Conduct fully online examinations with automated grading

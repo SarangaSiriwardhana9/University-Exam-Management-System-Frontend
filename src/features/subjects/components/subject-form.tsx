@@ -16,8 +16,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { BookOpenIcon, BuildingIcon, UserIcon, FileTextIcon, GraduationCapIcon, CalendarIcon, InfoIcon } from 'lucide-react'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 import {
   Select,
   SelectContent,
@@ -198,11 +201,26 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Subject Information</h3>
-          {isLoadingInitialData && (
-            <div className="text-sm text-muted-foreground">Loading subject data...</div>
-          )}
+        {/* Basic Information */}
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BookOpenIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Subject Information</CardTitle>
+                <CardDescription>Basic details about the subject</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingInitialData && (
+              <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm text-muted-foreground">Loading subject data...</span>
+              </div>
+            )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!isEditMode && (
@@ -211,7 +229,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                 name="subjectCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subject Code *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <FileTextIcon className="h-4 w-4" />
+                      Subject Code *
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g., CS101, MATH201"
@@ -220,7 +241,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                         onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       />
                     </FormControl>
-                    <FormDescription>Unique code for the subject (uppercase)</FormDescription>
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Unique code for the subject (uppercase)</span>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -232,7 +256,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               name="subjectName"
               render={({ field }) => (
                 <FormItem className={!isEditMode ? '' : 'md:col-span-2'}>
-                  <FormLabel>Subject Name *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BookOpenIcon className="h-4 w-4" />
+                    Subject Name *
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Data Structures and Algorithms" {...field} />
                   </FormControl>
@@ -241,14 +268,33 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               )}
             />
           </div>
+          </CardContent>
+        </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Faculty Assignment */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <UserIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Faculty Assignment</CardTitle>
+                <CardDescription>Assign lecturers to this subject</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="licId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lecturer In Charge (LIC)</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Lecturer In Charge (LIC)
+                  </FormLabel>
                   <Popover open={licOpen} onOpenChange={setLicOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" className="w-full justify-between" disabled={Boolean(isFacultyLoading || (isEditMode && subjectLicId && isLicLoading))}>
@@ -276,14 +322,20 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <FormDescription>Optional lecturer in charge for this subject</FormDescription>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Optional lecturer in charge for this subject</span>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             <FormItem>
-              <FormLabel>Lecturers</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                Lecturers
+              </FormLabel>
               <div className="mb-2">
                 <Input placeholder="Search lecturers..." value={lecturerQuery} onChange={(e) => setLecturerQuery(e.target.value)} />
               </div>
@@ -331,16 +383,38 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                   <div className="py-6 text-center text-sm text-muted-foreground">No faculty available</div>
                 )}
               </div>
-              <FormDescription>Assign multiple lecturers to this subject</FormDescription>
+              <FormDescription className="flex items-start gap-2">
+                <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>Assign multiple lecturers to this subject</span>
+              </FormDescription>
             </FormItem>
           </div>
+          </CardContent>
+        </Card>
 
+        {/* Academic Details */}
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <GraduationCapIcon className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Academic Details</CardTitle>
+                <CardDescription>Department, year, semester, and credits</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           <FormField
             control={form.control}
             name="departmentId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Department *</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <BuildingIcon className="h-4 w-4" />
+                  Department *
+                </FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   value={field.value ?? undefined}
@@ -365,7 +439,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                     )}
                   </SelectContent>
                 </Select>
-                <FormDescription>Select the department this subject belongs to</FormDescription>
+                <FormDescription className="flex items-start gap-2">
+                  <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>Select the department this subject belongs to</span>
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -377,7 +454,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Year *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <GraduationCapIcon className="h-4 w-4" />
+                    Year *
+                  </FormLabel>
                   <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString() ?? undefined}>
                     <FormControl>
                       <SelectTrigger>
@@ -392,7 +472,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>Year level (1-4)</FormDescription>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Year level (1-4)</span>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -403,7 +486,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               name="semester"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Semester *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    Semester *
+                  </FormLabel>
                   <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString() ?? undefined}>
                     <FormControl>
                       <SelectTrigger>
@@ -415,7 +501,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       <SelectItem value="2">Semester 2</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>Semester (1 or 2)</FormDescription>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Semester (1 or 2)</span>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -426,7 +515,10 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
               name="credits"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Credits *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Credits *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -438,35 +530,69 @@ export const SubjectForm = ({ subject, onSubmit, onCancel, isLoading }: SubjectF
                       placeholder="3"
                     />
                   </FormControl>
-                  <FormDescription>Credit hours</FormDescription>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Credit hours</span>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
+          </CardContent>
+        </Card>
 
+        {/* Description */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <FileTextIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Description</CardTitle>
+                <CardDescription>Additional information about the subject</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
           <FormField
             control={form.control}
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <FileTextIcon className="h-4 w-4" />
+                  Description
+                </FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Enter subject description (optional)" className="resize-none" rows={4} {...field} />
+                  <Textarea placeholder="e.g., This subject covers fundamental concepts of data structures..." className="resize-none min-h-[120px]" {...field} />
                 </FormControl>
-                <FormDescription>Brief description of the subject content and objectives</FormDescription>
+                <FormDescription className="flex items-start gap-2">
+                  <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>Brief description of the subject content and objectives</span>
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading || isLoadingInitialData}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Subject' : 'Create Subject'}
+          <Button type="submit" disabled={isLoading || isLoadingInitialData} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update Subject' : 'Create Subject'
+            )}
           </Button>
         </div>
       </form>

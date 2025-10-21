@@ -23,9 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import {
   createQuestionSchema,
   type CreateQuestionFormData,
@@ -33,7 +36,8 @@ import {
 import type { Question } from '../types/questions'
 import { useMySubjectsQuery } from '@/features/subjects/hooks/use-subjects-query'
 import { QUESTION_TYPES, DIFFICULTY_LEVELS, BLOOMS_TAXONOMY, SUB_QUESTION_TYPES } from '@/constants/roles'
-import { PlusIcon, TrashIcon, ListTreeIcon } from 'lucide-react'
+import { PlusIcon, TrashIcon, ListTreeIcon, BookOpenIcon, FileTextIcon, InfoIcon, CheckCircle2Icon } from 'lucide-react'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 import {
   getDefaultQuestionFormData,
   getDefaultMcqOptions,
@@ -312,9 +316,17 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
   return (
     <Form {...form}>
       <form key={formKey} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Card>
+        <Card className="border-l-4 border-l-primary">
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BookOpenIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Question details and type</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -364,7 +376,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
                 name="questionType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Question Type *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <FileTextIcon className="h-4 w-4" />
+                      Question Type *
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
@@ -387,7 +402,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
                 name="difficultyLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Difficulty Level *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <InfoIcon className="h-4 w-4" />
+                      Difficulty Level *
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
@@ -411,7 +429,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
               name="questionText"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Question Text *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Question Text *
+                  </FormLabel>
                   <FormControl>
                     <Textarea placeholder="Enter the question text..." className="min-h-[100px]" {...field} />
                   </FormControl>
@@ -425,7 +446,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
               name="questionDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Additional Instructions (Optional)</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <InfoIcon className="h-4 w-4" />
+                    Additional Instructions (Optional)
+                  </FormLabel>
                   <FormControl>
                     <Textarea placeholder="Additional context or instructions..." className="min-h-[80px]" {...field} value={field.value || ''} />
                   </FormControl>
@@ -476,25 +500,39 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
         </Card>
 
         {questionType === QUESTION_TYPES.MCQ && (
-          <Card>
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <CardTitle>Answer Options</CardTitle>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <CheckCircle2Icon className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <CardTitle>Answer Options</CardTitle>
+                      <CardDescription>Configure MCQ options and correct answers</CardDescription>
+                    </div>
+                  </div>
                   <FormField
                     control={form.control}
                     name="allowMultipleAnswers"
                     render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
+                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 bg-muted/50">
                         <FormControl>
-                          <Switch
+                          <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            className="h-5 w-5 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                           />
                         </FormControl>
-                        <FormLabel className="!mt-0 cursor-pointer">
-                          Allow multiple correct answers
-                        </FormLabel>
+                        <div className="space-y-0.5">
+                          <FormLabel className="!mt-0 cursor-pointer font-medium">
+                            Multiple Correct Answers
+                          </FormLabel>
+                          <FormDescription className="text-xs">
+                            {field.value ? 'Students can select multiple correct answers' : 'Only one correct answer allowed'}
+                          </FormDescription>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -506,69 +544,102 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {optionFields.map((field, index) => {
+              {(() => {
                 const allowMultiple = form.watch('allowMultipleAnswers')
+                const selectedCorrectIndex = optionFields.findIndex((_, idx) => form.watch(`options.${idx}.isCorrect`))
+                
                 return (
-                  <div key={field.id} className="flex gap-2 items-start">
-                    <FormField
-                      control={form.control}
-                      name={`options.${index}.isCorrect`}
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 mt-2">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              disabled={!allowMultiple}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex-1">
-                      <FormField
-                        control={form.control}
-                        name={`options.${index}.optionText`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder={`Option ${index + 1}`}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                  <div className="space-y-3">
+                    {optionFields.map((field, index) => (
+                      <div key={field.id} className="flex gap-3 items-start p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                        {allowMultiple ? (
+                          <FormField
+                            control={form.control}
+                            name={`options.${index}.isCorrect`}
+                            render={({ field }) => (
+                              <FormItem className="flex items-center mt-2">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="h-5 w-5 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name={`options.${index}.isCorrect`}
+                            render={({ field }) => (
+                              <FormItem className="flex items-center mt-2">
+                                <FormControl>
+                                  <RadioGroup
+                                    value={selectedCorrectIndex.toString()}
+                                    onValueChange={(val) => {
+                                      optionFields.forEach((_, idx) => {
+                                        form.setValue(`options.${idx}.isCorrect`, idx === parseInt(val))
+                                      })
+                                    }}
+                                  >
+                                    <RadioGroupItem value={index.toString()} className="h-5 w-5 border-2 border-primary" />
+                                  </RadioGroup>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                         )}
-                      />
-                    </div>
-                    {optionFields.length > 2 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeOption(index)}
-                        className="mt-1"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    )}
+                        <div className="flex-1">
+                          <FormField
+                            control={form.control}
+                            name={`options.${index}.optionText`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                                    {...field}
+                                    className="font-medium"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {optionFields.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeOption(index)}
+                            className="mt-1"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )
-              })}
+              })()}
             </CardContent>
           </Card>
         )}
 
         {(questionType === QUESTION_TYPES.STRUCTURED || questionType === QUESTION_TYPES.ESSAY) && (
-          <Card>
+          <Card className="border-l-4 border-l-purple-500">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <ListTreeIcon className="h-5 w-5" />
-                    Sub-Questions
-                  </CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <ListTreeIcon className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Sub-Questions</CardTitle>
+                    <CardDescription>Add structured parts and sub-parts</CardDescription>
+                  </div>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addSubQuestion}>
                   <PlusIcon className="h-4 w-4 mr-2" />
@@ -599,9 +670,17 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
           </Card>
         )}
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader>
-            <CardTitle>Additional Information</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <InfoIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Additional Information</CardTitle>
+                <CardDescription>Metadata and categorization</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -697,12 +776,19 @@ export const QuestionForm = ({ question, onSubmit, onCancel, isLoading, initialD
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading || subjects.length === 0}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Question' : 'Create Question'}
+          <Button type="submit" disabled={isLoading || subjects.length === 0} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update Question' : 'Create Question'
+            )}
           </Button>
         </div>
       </form>

@@ -4,32 +4,14 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
- 
-import type { ExamPaper, PaperQuestion, SubPaperQuestion } from '../types/exam-papers'
 import { LockIcon, ClockIcon, FileTextIcon, ListTreeIcon } from 'lucide-react'
-import { JSX } from 'react'
 import { cn } from '@/lib/utils'
+import type { ExamPaper, PaperQuestion, SubPaperQuestion } from '../types/exam-papers'
+import { getLevelColors, getLevelBadgeColors } from '../constants/exam-paper-styles'
+import { JSX } from 'react'
 
 type ExamPaperDetailsProps = {
   paper: ExamPaper
-}
-
-const getLevelColors = (level: number) => {
-  const colors = [
-    'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
-    'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
-    'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950'
-  ]
-  return colors[level] || colors[0]
-}
-
-const getLevelBadgeColors = (level: number) => {
-  const colors = [
-    'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-  ]
-  return colors[level] || colors[0]
 }
 
 export const ExamPaperDetails = ({ paper }: ExamPaperDetailsProps) => {
@@ -268,12 +250,12 @@ export const ExamPaperDetails = ({ paper }: ExamPaperDetailsProps) => {
                                     {question.difficultyLevel}
                                   </Badge>
                                   {question.isOptional && (
-                                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
                                       Optional
                                     </Badge>
                                   )}
                                   {hasSubParts && (
-                                    <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                    <Badge variant="default" className="text-xs bg-purple-100 text-purple-700">
                                       Structured Question
                                     </Badge>
                                   )}

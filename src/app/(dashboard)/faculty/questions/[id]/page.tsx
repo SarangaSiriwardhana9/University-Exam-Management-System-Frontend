@@ -47,17 +47,17 @@ export default function QuestionDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/faculty/questions')}>
+          <Button variant="outline" size="icon" onClick={() => router.push('/faculty/questions')}>
             <ArrowLeftIcon className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Question Details</h1>
-            <p className="text-muted-foreground">View complete question information</p>
+            <p className="text-muted-foreground mt-1">View complete question information</p>
           </div>
         </div>
-        <Button onClick={() => router.push(`/faculty/questions/${questionId}/edit`)}>
+        <Button onClick={() => router.push(`/faculty/questions/${questionId}/edit`)} size="lg">
           <EditIcon className="mr-2 h-4 w-4" />
           Edit Question
         </Button>

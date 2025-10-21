@@ -156,9 +156,9 @@ const ExamPapersPage = () => {
             )}
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <Select value={paperTypeFilter} onValueChange={setPaperTypeFilter}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='Filter by paper type' />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +171,7 @@ const ExamPapersPage = () => {
             </Select>
 
             <Select value={finalizedFilter} onValueChange={setFinalizedFilter}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[160px]'>
                 <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent>
@@ -182,7 +182,7 @@ const ExamPapersPage = () => {
             </Select>
 
             <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[160px]'>
                 <SelectValue placeholder='Sort by date' />
               </SelectTrigger>
               <SelectContent>

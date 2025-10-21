@@ -22,9 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
+import { CalendarIcon, ClockIcon, UsersIcon, MapPinIcon, FileTextIcon, InfoIcon, GraduationCapIcon, BookOpenIcon } from 'lucide-react'
 import { createExamSessionSchema, updateExamSessionSchema, type CreateExamSessionFormData, type UpdateExamSessionFormData } from '../validations/exam-session-schemas'
 import type { ExamSession } from '../types/exam-sessions'
 import { useExamPapersQuery, useExamPaperQuery } from '@/features/exam-papers/hooks/use-exam-papers-query'
@@ -169,13 +170,25 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <Card>
+        {/* Exam Paper Selection */}
+        <Card className="border-l-4 border-l-primary">
           <CardHeader>
-            <CardTitle>Exam Session Details</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileTextIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Exam Paper Selection</CardTitle>
+                <CardDescription>Choose the exam paper for this session</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {isLoadingInitialData && (
-              <div className="text-sm text-muted-foreground">Loading session data...</div>
+              <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm text-muted-foreground">Loading session data...</span>
+              </div>
             )}
             <FormField
               control={form.control}
@@ -218,14 +231,34 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
               )}
             />
 
+          </CardContent>
+        </Card>
+
+        {/* Basic Information */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <BookOpenIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Exam title and delivery mode</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="examTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Exam Title *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BookOpenIcon className="h-4 w-4" />
+                    Exam Title *
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter exam title" {...field} />
+                    <Input placeholder="e.g., Midterm Exam - Mathematics" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -237,7 +270,10 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
               name="deliveryMode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Delivery Mode *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPinIcon className="h-4 w-4" />
+                    Delivery Mode *
+                  </FormLabel>
                   <Select 
                     onValueChange={(value) => {
                       field.onChange(value)
@@ -258,21 +294,41 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                       <SelectItem value="online">Online</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    {field.value === 'online' ? 'Online exams must be conducted in computer labs' : 'Exam will be conducted in a physical room'}
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{field.value === 'online' ? 'Online exams must be conducted in computer labs' : 'Exam will be conducted in a physical room'}</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
 
+        {/* Date & Time */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <CalendarIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Date & Time</CardTitle>
+                <CardDescription>Schedule the exam session</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="examDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Exam Date *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      Exam Date *
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
@@ -289,7 +345,10 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Time *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <ClockIcon className="h-4 w-4" />
+                      Start Time *
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         type="time" 
@@ -306,29 +365,52 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 name="endTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Time *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <ClockIcon className="h-4 w-4" />
+                      End Time *
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         type="time" 
                         {...field} 
                       />
                     </FormControl>
-                    <FormDescription>
-                      Students can register until this time
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Students can register until this time</span>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+          </CardContent>
+        </Card>
 
+        {/* Capacity & Location */}
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                <UsersIcon className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <CardTitle>Capacity & Location</CardTitle>
+                <CardDescription>Set student capacity and exam venue</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="maxStudents"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max Students *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <UsersIcon className="h-4 w-4" />
+                      Max Students *
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -347,7 +429,10 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 name="roomId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{deliveryMode === 'online' ? 'Computer Lab *' : 'Room *'}</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <MapPinIcon className="h-4 w-4" />
+                      {deliveryMode === 'online' ? 'Computer Lab *' : 'Room *'}
+                    </FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}
@@ -373,9 +458,12 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                         )}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      {deliveryMode === 'online' && 'Only computer labs are shown for online exams'}
-                    </FormDescription>
+                    {deliveryMode === 'online' && (
+                      <FormDescription className="flex items-start gap-2">
+                        <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span>Only computer labs are shown for online exams</span>
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -383,34 +471,59 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
             </div>
 
             {deliveryMode === 'online' && (
-              <FormField
-                control={form.control}
-                name="enrollmentKey"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Enrollment Key</FormLabel>
+              <div className="pt-4 border-t">
+                <FormField
+                  control={form.control}
+                  name="enrollmentKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <InfoIcon className="h-4 w-4" />
+                        Enrollment Key
+                      </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Leave empty to auto-generate" 
                         {...field} 
                       />
                     </FormControl>
-                    <FormDescription>
-                      Students will need this key to access the online exam. Leave empty to auto-generate a unique key.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormDescription className="flex items-start gap-2">
+                        <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span>Students will need this key to access the online exam. Leave empty to auto-generate a unique key.</span>
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
+          </CardContent>
+        </Card>
 
+        {/* Academic Details */}
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <GraduationCapIcon className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Academic Details</CardTitle>
+                <CardDescription>Year and semester information</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Year *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <GraduationCapIcon className="h-4 w-4" />
+                      Year *
+                    </FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
@@ -425,8 +538,9 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Year level (1-4)
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Year level (1-4)</span>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -438,7 +552,10 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 name="semester"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Semester *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      Semester *
+                    </FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
@@ -453,28 +570,52 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Semester (1 or 2)
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Semester (1 or 2)</span>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+          </CardContent>
+        </Card>
 
+        {/* Additional Instructions */}
+        <Card className="border-l-4 border-l-gray-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gray-500/10 rounded-lg">
+                <InfoIcon className="h-5 w-5 text-gray-500" />
+              </div>
+              <div>
+                <CardTitle>Additional Instructions</CardTitle>
+                <CardDescription>Optional special instructions for students</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             <FormField
               control={form.control}
               name="instructions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instructions</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <InfoIcon className="h-4 w-4" />
+                    Instructions
+                  </FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter special instructions for the exam..."
-                      className="min-h-[100px]"
+                      placeholder="e.g., Bring your student ID, calculators are allowed, no mobile phones..."
+                      className="min-h-[120px] resize-none"
                       {...field} 
                     />
                   </FormControl>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>These instructions will be shown to students when they register for the exam</span>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -482,12 +623,20 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={!!isLoading || !!isLoadingInitialData}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Session' : 'Create Session'}
+          <Button type="submit" disabled={!!isLoading || !!isLoadingInitialData} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update Session' : 'Create Session'
+            )}
           </Button>
         </div>
       </form>

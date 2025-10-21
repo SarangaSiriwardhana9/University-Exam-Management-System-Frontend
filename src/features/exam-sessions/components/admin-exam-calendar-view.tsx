@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format, parseISO, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isPast, isFuture } from 'date-fns'
-import { Calendar, Clock, BookOpen, ChevronLeft, ChevronRight, Filter, MonitorIcon, BuildingIcon, Users, History, Eye, EyeOff } from 'lucide-react'
+import { Calendar, Clock, BookOpen, ChevronLeft, ChevronRight, Filter, MonitorIcon, BuildingIcon, Users, History, Eye, EyeOff, CheckCircle as CheckCircleIcon } from 'lucide-react'
 import { useExamSessionsQuery } from '../hooks/use-exam-sessions-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -83,18 +83,66 @@ export function AdminExamCalendarView() {
 
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-gray-600">Total Exams</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold">{totalExams}</div></CardContent></Card>
-        <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-gray-600">Upcoming</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold text-blue-600">{upcomingExams}</div></CardContent></Card>
-        <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-gray-600">Ongoing</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold text-orange-600">{ongoingExams}</div></CardContent></Card>
-        <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle></CardHeader><CardContent><div className="text-3xl font-bold text-green-600">{completedExams}</div></CardContent></Card>
+        <Card className="border-l-4 border-l-gray-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Exams</CardTitle>
+              <Calendar className="h-5 w-5 text-gray-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalExams}</div>
+            <p className="text-xs text-muted-foreground mt-1">All scheduled exams</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming</CardTitle>
+              <Clock className="h-5 w-5 text-blue-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{upcomingExams}</div>
+            <p className="text-xs text-muted-foreground mt-1">Future exams</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ongoing</CardTitle>
+              <History className="h-5 w-5 text-orange-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{ongoingExams}</div>
+            <p className="text-xs text-muted-foreground mt-1">In progress</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
+              <CheckCircleIcon className="h-5 w-5 text-green-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{completedExams}</div>
+            <p className="text-xs text-muted-foreground mt-1">Finished exams</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
+      {/* Filters and View Controls */}
+      <Card className="border-l-4 border-l-primary">
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <Filter className="h-5 w-5 text-gray-500" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Filter className="h-5 w-5 text-primary" />
+              </div>
               <div className="flex gap-2">
                 <Select value={filterYear?.toString() || 'all'} onValueChange={(v) => setFilterYear(v === 'all' ? undefined : parseInt(v))}>
                   <SelectTrigger className="w-32"><SelectValue placeholder="Year" /></SelectTrigger>
@@ -135,12 +183,18 @@ export function AdminExamCalendarView() {
         </CardHeader>
       </Card>
 
+      {/* Calendar/List View */}
       {viewMode === 'calendar' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 border-l-4 border-l-blue-500">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div><CardTitle className="text-2xl">{format(currentDate, 'MMMM yyyy')}</CardTitle></div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <CardTitle className="text-2xl">{format(currentDate, 'MMMM yyyy')}</CardTitle>
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}><ChevronLeft className="h-4 w-4" /></Button>
                   <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
@@ -151,7 +205,7 @@ export function AdminExamCalendarView() {
             <CardContent>
               <div className="grid grid-cols-7 gap-1">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center font-semibold text-sm py-3 bg-gray-50">{day}</div>
+                  <div key={day} className="text-center font-semibold text-sm py-3 bg-gradient-to-b from-primary/5 to-primary/10 rounded-t-lg">{day}</div>
                 ))}
                 {Array.from({ length: monthStart.getDay() }).map((_, i) => (
                   <div key={`empty-${i}`} className="min-h-24 border rounded bg-gray-50/50" />
@@ -198,23 +252,30 @@ export function AdminExamCalendarView() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 border-l-4 border-l-green-500">
             <CardHeader>
-              <CardTitle className="text-lg">
-                {selectedDate ? format(selectedDate, 'EEEE, MMMM d') : 'Select a Date'}
-              </CardTitle>
-              <CardDescription>
-                {selectedDate && getSessionsForDate(selectedDate).length > 0 
-                  ? `${getSessionsForDate(selectedDate).length} exam${getSessionsForDate(selectedDate).length > 1 ? 's' : ''} scheduled`
-                  : 'Click on a date with exams to view details'}
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">
+                    {selectedDate ? format(selectedDate, 'EEEE, MMMM d') : 'Select a Date'}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedDate && getSessionsForDate(selectedDate).length > 0 
+                      ? `${getSessionsForDate(selectedDate).length} exam${getSessionsForDate(selectedDate).length > 1 ? 's' : ''} scheduled`
+                      : 'Click on a date with exams to view details'}
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="max-h-[600px] overflow-y-auto">
               {selectedDate && getSessionsForDate(selectedDate).length > 0 ? (
                 <div className="space-y-4">
                   {getSessionsForDate(selectedDate).map(s => (
-                    <div key={s._id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                      <div className="space-y-3">
+                    <div key={s._id} className="p-4 border-l-4 border-1 border-l-primary rounded-lg bg-gradient-to-r from-primary/5 to-transparent hover:shadow-md transition-all">
+                      <div className="space-y-3 ">
                         <div>
                           <h4 className="font-semibold text-base mb-2">{s.examTitle}</h4>
                           <div className="flex gap-2 flex-wrap">
@@ -267,15 +328,20 @@ export function AdminExamCalendarView() {
       ) : (
         <div className="space-y-4">
           {sessions.length > 0 ? sessions.map(s => (
-            <Card key={s._id}>
+            <Card key={s._id} className="border-l-4 border-l-primary hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="flex justify-between">
-                  <CardTitle className="text-xl">{s.examTitle}</CardTitle>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">{s.examTitle}</CardTitle>
+                  </div>
                   <div className="flex gap-2">{getDeliveryModeBadge(s.deliveryMode)}{getStatusBadge(s.status)}</div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid  grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-gray-500" />{s.examDate && format(parseISO(s.examDate), 'MMM d, yyyy')}</div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />

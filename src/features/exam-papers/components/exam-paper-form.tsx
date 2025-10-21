@@ -275,45 +275,121 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full">
         <div className="flex flex-col h-full">
-          <div className="border-b bg-muted/30 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {isEditMode ? 'Edit Exam Paper' : 'Create Exam Paper'}
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {currentStep === 1 ? 'Step 1: Basic Information & Sections' : 'Step 2: Add Questions to Sections'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-lg px-4 py-1">
-                  {allocatedMarks} / {targetMarks} marks
-                </Badge>
-                {marksMatch && questionFields.length > 0 && (
-                  <CheckCircle2Icon className="h-5 w-5 text-green-600" />
-                )}
+          {/* Enhanced Step Indicator */}
+          <div className="border-b bg-gradient-to-r from-primary/5 to-primary/10 px-8 py-6">
+            {/* Step Progress Bar */}
+            <div className="max-w-3xl mx-auto mb-6">
+              <div className="flex items-start justify-between relative">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center gap-2 z-10 relative">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-300 shadow-lg bg-white",
+                    currentStep === 1 
+                      ? "bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110" 
+                      : "bg-green-600 text-white"
+                  )}>
+                    {currentStep === 1 ? '1' : <CheckCircle2Icon className="h-6 w-6" />}
+                  </div>
+                  <div className="text-center">
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      currentStep === 1 ? "text-primary" : "text-green-600"
+                    )}>
+                      Basic Info
+                    </p>
+                    <p className="text-xs text-muted-foreground">Subject & Details</p>
+                  </div>
+                </div>
+
+                {/* Connector Line 1 - Between Step 1 and 2 */}
+                <div className="flex-1 flex items-start pt-6 px-4">
+                  <div className="w-full h-1 bg-muted relative overflow-hidden rounded-full">
+                    <div 
+                      className={cn(
+                        "absolute top-0 left-0 h-full bg-gradient-to-r from-green-600 to-primary transition-all duration-500",
+                        currentStep === 1 ? "w-0" : "w-full"
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex flex-col items-center gap-2 z-10 relative">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-300 shadow-lg bg-white",
+                    currentStep === 2 
+                      ? "bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110" 
+                      : currentStep > 2
+                      ? "bg-green-600 text-white"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {currentStep > 2 ? <CheckCircle2Icon className="h-6 w-6" /> : '2'}
+                  </div>
+                  <div className="text-center">
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      currentStep === 2 ? "text-primary" : currentStep > 2 ? "text-green-600" : "text-muted-foreground"
+                    )}>
+                      Sections
+                    </p>
+                    <p className="text-xs text-muted-foreground">Define Parts</p>
+                  </div>
+                </div>
+
+                {/* Connector Line 2 - Between Step 2 and 3 */}
+                <div className="flex-1 flex items-start pt-6 px-4">
+                  <div className="w-full h-1 bg-muted relative overflow-hidden rounded-full">
+                    <div 
+                      className={cn(
+                        "absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-green-600 transition-all duration-500",
+                        currentStep <= 1 ? "w-0" : "w-full"
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex flex-col items-center gap-2 z-10 relative">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-300 shadow-lg bg-white",
+                    currentStep === 2 
+                      ? "bg-primary text-primary-foreground ring-4 ring-primary/20 scale-110" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    3
+                  </div>
+                  <div className="text-center">
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      currentStep === 2 ? "text-primary" : "text-muted-foreground"
+                    )}>
+                      Questions
+                    </p>
+                    <p className="text-xs text-muted-foreground">Add & Review</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                  currentStep === 1 ? "bg-primary text-primary-foreground" : "bg-green-600 text-white"
-                )}>
-                  {currentStep === 1 ? '1' : <CheckCircle2Icon className="h-5 w-5" />}
-                </div>
-                <span className="text-sm font-medium">Setup</span>
+            {/* Current Step Info */}
+            <div className="flex items-center justify-between max-w-5xl mx-auto">
+              <div>
+                <h2 className="text-xl font-bold">
+                  {currentStep === 1 ? 'Step 1: Basic Information & Sections' : 'Step 2: Add Questions to Sections'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {currentStep === 1 
+                    ? 'Fill in exam details and define paper structure' 
+                    : 'Select questions from the question bank for each section'}
+                </p>
               </div>
-              <div className="h-[2px] flex-1 bg-muted" />
               <div className="flex items-center gap-2">
-                <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                  currentStep === 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>
-                  2
-                </div>
-                <span className="text-sm font-medium">Add Questions</span>
+                <Badge variant="outline" className="text-base px-4 py-2 font-semibold">
+                  {allocatedMarks} / {targetMarks} marks
+                </Badge>
+                {marksMatch && questionFields.length > 0 && (
+                  <CheckCircle2Icon className="h-6 w-6 text-green-600" />
+                )}
               </div>
             </div>
           </div>
@@ -737,14 +813,32 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                     <CardContent className="p-4">
                                       <div className="flex items-start gap-3">
                                         <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-2">
-                                            <Badge variant="outline" className="font-mono">Q{idx + 1}</Badge>
-                                            {questionDetails?.hasSubQuestions && (
-                                              <Badge variant="default" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                                                <ListTreeIcon className="h-3 w-3 mr-1" />
-                                                Has Sub-parts
-                                              </Badge>
-                                            )}
+                                          <div className="flex items-center justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="outline" className="font-mono">Q{idx + 1}</Badge>
+                                              {questionDetails?.hasSubQuestions && (
+                                                <Badge variant="default" className="bg-purple-100 text-purple-700">
+                                                  <ListTreeIcon className="h-3 w-3 mr-1" />
+                                                  Has Sub-parts
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                              onClick={() => {
+                                                removeQuestion(questionIndex)
+                                                setSelectedQuestionIds(prev => {
+                                                  const newSet = new Set(prev)
+                                                  newSet.delete(field.questionId)
+                                                  return newSet
+                                                })
+                                              }}
+                                            >
+                                              <TrashIcon className="h-3.5 w-3.5" />
+                                            </Button>
                                           </div>
                                           <p className="font-medium mb-2">{questionDetails?.questionText}</p>
                                           
@@ -767,7 +861,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                                       {String.fromCharCode(65 + optIdx)}.
                                                     </span>
                                                     <span className={cn(
-                                                      option.isCorrect && "text-green-600 dark:text-green-400 font-medium"
+                                                      option.isCorrect && "text-green-600 font-medium"
                                                     )}>
                                                       {option.optionText}
                                                       {option.isCorrect && (
@@ -801,12 +895,12 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                             </div>
                                           )}
 
-                                          <div className="grid grid-cols-3 gap-3">
+                                          <div className="flex items-end gap-4">
                                             <FormField
                                               control={form.control}
                                               name={`questions.${questionIndex}.marksAllocated`}
                                               render={({ field }) => (
-                                                <FormItem>
+                                                <FormItem className="w-32">
                                                   <FormLabel className="text-xs">Marks *</FormLabel>
                                                   <FormControl>
                                                     <Input 
@@ -827,7 +921,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                               control={form.control}
                                               name={`questions.${questionIndex}.isOptional`}
                                               render={({ field }) => (
-                                                <FormItem className="flex flex-col justify-end">
+                                                <FormItem>
                                                   <div className="flex items-center space-x-2 pb-2">
                                                     <FormControl>
                                                       <Checkbox checked={field.value} onCheckedChange={field.onChange} />
@@ -837,26 +931,6 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                                 </FormItem>
                                               )}
                                             />
-
-                                            <div className="flex items-end">
-                                              <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
-                                                className="w-full"
-                                                onClick={() => {
-                                                  removeQuestion(questionIndex)
-                                                  setSelectedQuestionIds(prev => {
-                                                    const newSet = new Set(prev)
-                                                    newSet.delete(field.questionId)
-                                                    return newSet
-                                                  })
-                                                }}
-                                              >
-                                                <TrashIcon className="h-4 w-4 mr-1" />
-                                                Remove
-                                              </Button>
-                                            </div>
                                           </div>
                                         </div>
                                       </div>
@@ -992,7 +1066,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                       {question.marks}m
                                     </Badge>
                                     {question.hasSubQuestions && (
-                                      <Badge variant="default" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                      <Badge variant="default" className="text-xs bg-purple-100 text-purple-700">
                                         Sub-parts
                                       </Badge>
                                     )}

@@ -3,9 +3,9 @@
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeftIcon, EditIcon, TrashIcon } from 'lucide-react'
+import { ChevronLeftIcon, EditIcon, TrashIcon, UserIcon, MailIcon, ShieldIcon, BuildingIcon, GraduationCapIcon, PhoneIcon, MapPinIcon, ClockIcon, CheckCircle2Icon } from 'lucide-react'
 import { useUserQuery } from '@/features/users/hooks/use-users-query'
 import { useDepartmentQuery } from '@/features/departments/hooks/use-departments-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
@@ -120,26 +120,35 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* User Profile Card */}
-          <Card className="md:col-span-1">
+          <Card className="md:col-span-1 border-l-4 border-l-primary">
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle>Profile</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-3xl font-bold text-primary border-4 border-primary/20">
                   {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
-                <h3 className="mt-4 font-semibold text-lg">{user.fullName}</h3>
-                <p className="text-sm text-muted-foreground">@{user.username}</p>
-                <Badge
-                  variant="outline"
-                  className={cn('mt-2', getRoleBadgeClass(user.role))}
-                >
-                  {formatRole(user.role)}
-                </Badge>
-                <Badge variant={user.isActive ? 'default' : 'secondary'} className="mt-2">
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
+                <h3 className="mt-4 font-semibold text-xl">{user.fullName}</h3>
+                <p className="text-sm text-muted-foreground font-mono">@{user.username}</p>
+                <div className="flex flex-col gap-2 mt-3 w-full">
+                  <Badge
+                    variant="outline"
+                    className={cn('justify-center font-medium', getRoleBadgeClass(user.role))}
+                  >
+                    <ShieldIcon className="h-3 w-3 mr-1" />
+                    {formatRole(user.role)}
+                  </Badge>
+                  <Badge variant={user.isActive ? 'default' : 'secondary'} className="justify-center">
+                    <CheckCircle2Icon className="h-3 w-3 mr-1" />
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -147,27 +156,47 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
           {/* User Information Cards */}
           <div className="md:col-span-2 space-y-6">
             {/* Basic Information */}
-            <Card>
+            <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <UserIcon className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Basic Information</CardTitle>
+                    <CardDescription>Account details and credentials</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Email</p>
-                    <p className="mt-1">{user.email}</p>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MailIcon className="h-4 w-4" />
+                      <span>Email</span>
+                    </div>
+                    <p className="font-medium">{user.email}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Username</p>
-                    <p className="mt-1">{user.username}</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <UserIcon className="h-4 w-4" />
+                      <span>Username</span>
+                    </div>
+                    <p className="font-medium font-mono">{user.username}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                    <p className="mt-1">{user.fullName}</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <UserIcon className="h-4 w-4" />
+                      <span>Full Name</span>
+                    </div>
+                    <p className="font-medium">{user.fullName}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Role</p>
-                    <p className="mt-1">{formatRole(user.role)}</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ShieldIcon className="h-4 w-4" />
+                      <span>Role</span>
+                    </div>
+                    <p className="font-medium">{formatRole(user.role)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -175,42 +204,59 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
 
             {/* Academic Information - Show for Students and Faculty */}
             {(isStudent || isFaculty) && (
-              <Card>
+              <Card className="border-l-4 border-l-purple-500">
                 <CardHeader>
-                  <CardTitle>Academic Information</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                      <GraduationCapIcon className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <CardTitle>Academic Information</CardTitle>
+                      <CardDescription>Department and academic details</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Department</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <BuildingIcon className="h-4 w-4" />
+                        <span>Department</span>
+                      </div>
                       {isDepartmentLoading ? (
-                        <div className="flex items-center mt-1">
+                        <div className="flex items-center gap-2">
                           <LoadingSpinner size="sm" />
-                          <span className="ml-2 text-sm">Loading...</span>
+                          <span className="text-sm">Loading...</span>
                         </div>
                       ) : department ? (
-                        <div className="mt-1">
+                        <div>
                           <p className="font-medium">{department.departmentName}</p>
                           <p className="text-sm text-muted-foreground">
                             Code: {department.departmentCode}
                           </p>
                         </div>
                       ) : (
-                        <p className="mt-1 text-muted-foreground">Not assigned</p>
+                        <p className="text-muted-foreground">Not assigned</p>
                       )}
                     </div>
                     
                     {isStudent && (
                       <>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Academic Year</p>
-                          <p className="mt-1">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCapIcon className="h-4 w-4" />
+                            <span>Academic Year</span>
+                          </div>
+                          <p className="font-medium">
                             {getYearLabel(user.year)}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Semester</p>
-                          <p className="mt-1">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCapIcon className="h-4 w-4" />
+                            <span>Semester</span>
+                          </div>
+                          <p className="font-medium">
                             {user.semester ? `Semester ${user.semester}` : '—'}
                           </p>
                         </div>
@@ -219,9 +265,9 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
                   </div>
                   
                   {department?.description && (
-                    <div className="pt-2 border-t">
-                      <p className="text-sm font-medium text-muted-foreground">Department Description</p>
-                      <p className="mt-1 text-sm">{department.description}</p>
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Department Description</p>
+                      <p className="text-sm p-3 bg-muted/50 rounded-lg">{department.description}</p>
                     </div>
                   )}
                 </CardContent>
@@ -229,67 +275,111 @@ const ViewUserPage = ({ params }: ViewUserPageProps) => {
             )}
 
             {/* Contact Information */}
-            <Card>
+            <Card className="border-l-4 border-l-green-500">
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Primary Phone</p>
-                    <p className="mt-1">{user.contactPrimary || '—'}</p>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <PhoneIcon className="h-5 w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Secondary Phone</p>
-                    <p className="mt-1">{user.contactSecondary || '—'}</p>
+                    <CardTitle>Contact Information</CardTitle>
+                    <CardDescription>Phone numbers for communication</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <PhoneIcon className="h-4 w-4" />
+                      <span>Primary Phone</span>
+                    </div>
+                    <p className="font-medium">{user.contactPrimary || '—'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <PhoneIcon className="h-4 w-4" />
+                      <span>Secondary Phone</span>
+                    </div>
+                    <p className="font-medium">{user.contactSecondary || '—'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Address Information */}
-            <Card>
+            <Card className="border-l-4 border-l-orange-500">
               <CardHeader>
-                <CardTitle>Address Information</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <MapPinIcon className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Address Information</CardTitle>
+                    <CardDescription>Residential address details</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="mt-1">
-                    {[
-                      user.addressLine1,
-                      user.addressLine2,
-                      user.city,
-                      user.state,
-                      user.postalCode,
-                      user.country
-                    ]
-                      .filter(Boolean)
-                      .join(', ') || '—'}
-                  </p>
+              <CardContent>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPinIcon className="h-4 w-4" />
+                    <span>Address</span>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="font-medium">
+                      {[
+                        user.addressLine1,
+                        user.addressLine2,
+                        user.city,
+                        user.state,
+                        user.postalCode,
+                        user.country
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || '—'}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Metadata */}
-            <Card>
+            <Card className="border-l-4 border-l-gray-500">
               <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                    <p className="mt-1">{new Date(user.createdAt).toLocaleString()}</p>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-gray-500/10 rounded-lg">
+                    <ClockIcon className="h-5 w-5 text-gray-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
-                    <p className="mt-1">{new Date(user.updatedAt).toLocaleString()}</p>
+                    <CardTitle>Account Information</CardTitle>
+                    <CardDescription>Creation and activity timestamps</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ClockIcon className="h-4 w-4" />
+                      <span>Created At</span>
+                    </div>
+                    <p className="font-medium">{new Date(user.createdAt).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ClockIcon className="h-4 w-4" />
+                      <span>Last Updated</span>
+                    </div>
+                    <p className="font-medium">{new Date(user.updatedAt).toLocaleString()}</p>
                   </div>
                   {user.lastLoginAt && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Last Login</p>
-                      <p className="mt-1">{new Date(user.lastLoginAt).toLocaleString()}</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2Icon className="h-4 w-4" />
+                        <span>Last Login</span>
+                      </div>
+                      <p className="font-medium">{new Date(user.lastLoginAt).toLocaleString()}</p>
                     </div>
                   )}
                 </div>

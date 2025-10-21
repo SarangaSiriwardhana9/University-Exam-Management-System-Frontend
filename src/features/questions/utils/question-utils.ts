@@ -1,5 +1,5 @@
 import type { CreateQuestionFormData, CreateSubQuestionDto } from '../validations/question-schemas'
-import type { Question } from '../types/questions'
+import type { Question, SubQuestion } from '../types/questions'
 import { QUESTION_TYPES, SUB_QUESTION_TYPES } from '@/constants/roles'
 
 const SUB_LABELS = {
@@ -154,4 +154,55 @@ export const mapQuestionToFormData = (question: Question): CreateQuestionFormDat
     })) || [],
     subQuestions: question.subQuestions?.length ? mapSubQuestionsToFormData(question.subQuestions) : [],
   }
+}
+
+export const parseStringifiedField = (field: string, pattern: string): string | null => {
+  if (!field || typeof field !== 'string') return null
+  
+  try {
+    const match = field.match(new RegExp(`${pattern}:\\s*'([^']+)'`))
+    return match ? match[1] : null
+  } catch {
+    return null
+  }
+}
+
+export const getSubjectInfo = (question: Question) => {
+  if (question.subjectCode && question.subjectName) {
+    return { code: question.subjectCode, name: question.subjectName }
+  }
+  
+  if (typeof question.subjectId === 'string' && question.subjectId.includes('subjectCode')) {
+    const code = parseStringifiedField(question.subjectId, 'subjectCode')
+    const name = parseStringifiedField(question.subjectId, 'subjectName')
+    if (code && name) return { code, name }
+  }
+  
+  return { code: null, name: null }
+}
+
+export const getCreatedByName = (question: Question): string | null => {
+  if (question.createdByName) return question.createdByName
+  
+  if (typeof question.createdBy === 'string' && question.createdBy.includes('fullName')) {
+    return parseStringifiedField(question.createdBy, 'fullName')
+  }
+  
+  return null
+}
+
+export const calculateQuestionTotalMarks = (question: Question): number => {
+  if (!question.hasSubQuestions) return question.marks
+
+  const calculateSubMarks = (sqs: SubQuestion[]): number => {
+    return sqs.reduce((sum, sq) => {
+      let total = sq.marks
+      if (sq.subQuestions?.length) {
+        total += calculateSubMarks(sq.subQuestions)
+      }
+      return sum + total
+    }, 0)
+  }
+
+  return question.subQuestions ? calculateSubMarks(question.subQuestions) : question.marks
 }

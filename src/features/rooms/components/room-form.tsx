@@ -14,8 +14,11 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
+import { DoorOpenIcon, BuildingIcon, UsersIcon, MonitorIcon, WifiIcon, FileTextIcon, InfoIcon } from 'lucide-react'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { createRoomSchema, updateRoomSchema, type CreateRoomFormData, type UpdateRoomFormData } from '../validations/room-schemas'
 import type { Room } from '../types/rooms'
 
@@ -96,8 +99,19 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Basic Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Basic Information</h3>
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <DoorOpenIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Room identification and capacity details</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
@@ -105,7 +119,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="roomNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Number *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <DoorOpenIcon className="h-4 w-4" />
+                    Room Number *
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., 101" {...field} />
                   </FormControl>
@@ -119,7 +136,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="building"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Building</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BuildingIcon className="h-4 w-4" />
+                    Building
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Main Building" {...field} />
                   </FormControl>
@@ -133,7 +153,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="floorNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Floor Number</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BuildingIcon className="h-4 w-4" />
+                    Floor Number
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -154,7 +177,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="capacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Capacity *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    Total Capacity *
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -163,8 +189,9 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
                       onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Maximum number of people the room can accommodate
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Maximum number of people the room can accommodate</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -176,7 +203,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="examCapacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Exam Capacity *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    Exam Capacity *
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -185,8 +215,9 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
                       onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Maximum capacity during exams (with spacing)
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Maximum capacity during exams (with spacing)</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -210,8 +241,9 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
                     <FormLabel>
                       Computer Lab
                     </FormLabel>
-                    <FormDescription>
-                      Mark this room as a computer lab for online exams
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Mark this room as a computer lab for online exams</span>
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -233,19 +265,32 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
                     <FormLabel>
                       Wheelchair Accessible
                     </FormLabel>
-                    <FormDescription>
-                      This room has accessibility features for people with disabilities
+                    <FormDescription className="flex items-start gap-2">
+                      <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>This room has accessibility features for people with disabilities</span>
                     </FormDescription>
                   </div>
                 </FormItem>
               )}
             />
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Facilities */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Facilities</h3>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <WifiIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Facilities</CardTitle>
+                <CardDescription>Available amenities and features</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <FormField
@@ -350,7 +395,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
             name="facilities.powerOutlets"
             render={({ field }) => (
               <FormItem className="max-w-xs">
-                <FormLabel>Power Outlets</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <InfoIcon className="h-4 w-4" />
+                  Power Outlets
+                </FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -363,11 +411,23 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               </FormItem>
             )}
           />
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Equipment */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Equipment</h3>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <MonitorIcon className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Equipment</CardTitle>
+                <CardDescription>Furniture and technology inventory</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <FormField
@@ -375,7 +435,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="equipment.tables"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tables</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Tables
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -394,7 +457,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="equipment.chairs"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Chairs</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Chairs
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -413,7 +479,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="equipment.computers"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Computers</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MonitorIcon className="h-4 w-4" />
+                    Computers
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -432,7 +501,10 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               name="equipment.printers"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Printers</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MonitorIcon className="h-4 w-4" />
+                    Printers
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -446,21 +518,36 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               )}
             />
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Description */}
-        <div className="space-y-4">
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <FileTextIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Description</CardTitle>
+                <CardDescription>Additional notes and information</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
           <FormField
             control={form.control}
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <FileTextIcon className="h-4 w-4" />
+                  Description
+                </FormLabel>
                 <FormControl>
                   <Textarea 
-                    placeholder="Additional notes about this room..."
-                    className="resize-none"
-                    rows={3}
+                    placeholder="e.g., Large lecture hall with tiered seating..."
+                    className="resize-none min-h-[100px]"
                     {...field}
                   />
                 </FormControl>
@@ -468,15 +555,23 @@ export const RoomForm = ({ room, onSubmit, onCancel, isLoading }: RoomFormProps)
               </FormItem>
             )}
           />
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Room' : 'Create Room'}
+          <Button type="submit" disabled={isLoading} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update Room' : 'Create Room'
+            )}
           </Button>
         </div>
       </form>

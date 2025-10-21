@@ -121,9 +121,9 @@ export default function QuestionsPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="flex flex-wrap gap-2">
             <Select value={filters.subjectId} onValueChange={(v) => setFilters(prev => ({ ...prev, subjectId: v }))}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by subject" />
               </SelectTrigger>
               <SelectContent>
@@ -137,7 +137,7 @@ export default function QuestionsPage() {
             </Select>
 
             <Select value={filters.questionType} onValueChange={(v) => setFilters(prev => ({ ...prev, questionType: v }))}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
@@ -149,7 +149,7 @@ export default function QuestionsPage() {
             </Select>
 
             <Select value={filters.difficultyLevel} onValueChange={(v) => setFilters(prev => ({ ...prev, difficultyLevel: v }))}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by difficulty" />
               </SelectTrigger>
               <SelectContent>
@@ -161,7 +161,7 @@ export default function QuestionsPage() {
             </Select>
 
             <Select value={filters.isPublic} onValueChange={(v) => setFilters(prev => ({ ...prev, isPublic: v }))}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by visibility" />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +172,7 @@ export default function QuestionsPage() {
             </Select>
 
             <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
-              <SelectTrigger>
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Sort by date" />
               </SelectTrigger>
               <SelectContent>

@@ -3,9 +3,9 @@
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeftIcon, EditIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react'
+import { ChevronLeftIcon, EditIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DoorOpenIcon, BuildingIcon, UsersIcon, WifiIcon, MonitorIcon, FileTextIcon, ClockIcon, CheckCircle2Icon } from 'lucide-react'
 import { useRoomQuery } from '@/features/rooms/hooks/use-rooms-query'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { RoleGuard } from '@/lib/auth/role-guard'
@@ -94,27 +94,42 @@ const ViewRoomPage = ({ params }: ViewRoomPageProps) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Room Profile Card */}
-          <Card className="md:col-span-1">
+          <Card className="md:col-span-1 border-l-4 border-l-primary">
             <CardHeader>
-              <CardTitle>Room Profile</CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <DoorOpenIcon className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle>Room Profile</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary mx-auto">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-3xl font-bold text-primary mx-auto border-4 border-primary/20">
                   {room.roomNumber}
                 </div>
-                <h3 className="mt-4 font-semibold text-lg">{room.fullRoomNumber}</h3>
+                <h3 className="mt-4 font-semibold text-xl">{room.fullRoomNumber}</h3>
                 {room.building && (
-                  <p className="text-sm text-muted-foreground">{room.building}</p>
+                  <p className="text-sm text-muted-foreground font-medium">{room.building}</p>
                 )}
-                <Badge variant={room.isActive ? 'default' : 'secondary'} className="mt-2">
-                  {room.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-                {room.isAccessible && (
-                  <Badge variant="outline" className="mt-2 ml-2">
-                    Accessible
+                <div className="flex flex-col gap-2 mt-3">
+                  <Badge variant={room.isActive ? 'default' : 'secondary'} className="justify-center">
+                    <CheckCircle2Icon className="h-3 w-3 mr-1" />
+                    {room.isActive ? 'Active' : 'Inactive'}
                   </Badge>
-                )}
+                  {room.isLab && (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 justify-center">
+                      <MonitorIcon className="h-3 w-3 mr-1" />
+                      Computer Lab
+                    </Badge>
+                  )}
+                  {room.isAccessible && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 justify-center">
+                      <CheckCircleIcon className="h-3 w-3 mr-1" />
+                      Accessible
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -122,46 +137,88 @@ const ViewRoomPage = ({ params }: ViewRoomPageProps) => {
           {/* Room Information Cards */}
           <div className="md:col-span-2 space-y-6">
             {/* Basic Information */}
-            <Card>
+            <Card className="border-l-4 border-l-blue-500">
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <DoorOpenIcon className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Basic Information</CardTitle>
+                    <CardDescription>Room details and capacity</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Room Number</p>
-                    <p className="mt-1">{room.roomNumber}</p>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <DoorOpenIcon className="h-4 w-4" />
+                      <span>Room Number</span>
+                    </div>
+                    <p className="font-semibold text-lg">{room.roomNumber}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Building</p>
-                    <p className="mt-1">{room.building || '—'}</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <BuildingIcon className="h-4 w-4" />
+                      <span>Building</span>
+                    </div>
+                    <p className="font-medium">{room.building || '—'}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Floor</p>
-                    <p className="mt-1">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <BuildingIcon className="h-4 w-4" />
+                      <span>Floor</span>
+                    </div>
+                    <p className="font-medium">
                       {room.floorNumber !== undefined ? `Floor ${room.floorNumber}` : '—'}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Capacity Ratio</p>
-                    <p className="mt-1">{Math.round(room.capacityRatio * 100)}%</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <UsersIcon className="h-4 w-4" />
+                      <span>Total Capacity</span>
+                    </div>
+                    <p className="font-semibold text-lg">{room.capacity} people</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Capacity</p>
-                    <p className="mt-1 font-semibold">{room.capacity} people</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <UsersIcon className="h-4 w-4" />
+                      <span>Exam Capacity</span>
+                    </div>
+                    <p className="font-semibold text-lg">{room.examCapacity} people</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Exam Capacity</p>
-                    <p className="mt-1 font-semibold">{room.examCapacity} people</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <UsersIcon className="h-4 w-4" />
+                      <span>Capacity Ratio</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full" 
+                          style={{ width: `${Math.round(room.capacityRatio * 100)}%` }}
+                        />
+                      </div>
+                      <span className="font-medium text-sm">{Math.round(room.capacityRatio * 100)}%</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Facilities */}
-            <Card>
+            <Card className="border-l-4 border-l-purple-500">
               <CardHeader>
-                <CardTitle>Facilities</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <WifiIcon className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Facilities</CardTitle>
+                    <CardDescription>Available amenities and features</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {room.facilities ? (
@@ -228,9 +285,17 @@ const ViewRoomPage = ({ params }: ViewRoomPageProps) => {
             </Card>
 
             {/* Equipment */}
-            <Card>
+            <Card className="border-l-4 border-l-orange-500">
               <CardHeader>
-                <CardTitle>Equipment</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <MonitorIcon className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Equipment</CardTitle>
+                    <CardDescription>Furniture and technology inventory</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {room.equipment ? (
@@ -268,30 +333,54 @@ const ViewRoomPage = ({ params }: ViewRoomPageProps) => {
 
             {/* Description */}
             {room.description && (
-              <Card>
+              <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
-                  <CardTitle>Description</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-green-500/10 rounded-lg">
+                      <FileTextIcon className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <CardTitle>Description</CardTitle>
+                      <CardDescription>Additional notes about this room</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{room.description}</p>
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm leading-relaxed">{room.description}</p>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Metadata */}
-            <Card>
+            <Card className="border-l-4 border-l-gray-500">
               <CardHeader>
-                <CardTitle>Room Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                    <p className="mt-1">{new Date(room.createdAt).toLocaleString()}</p>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-gray-500/10 rounded-lg">
+                    <ClockIcon className="h-5 w-5 text-gray-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
-                    <p className="mt-1">{new Date(room.updatedAt).toLocaleString()}</p>
+                    <CardTitle>System Information</CardTitle>
+                    <CardDescription>Creation and update timestamps</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ClockIcon className="h-4 w-4" />
+                      <span>Created At</span>
+                    </div>
+                    <p className="font-medium">{new Date(room.createdAt).toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ClockIcon className="h-4 w-4" />
+                      <span>Last Updated</span>
+                    </div>
+                    <p className="font-medium">{new Date(room.updatedAt).toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>

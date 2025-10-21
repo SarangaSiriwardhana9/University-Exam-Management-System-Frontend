@@ -3,31 +3,22 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import type { Question, SubQuestion } from '../types/questions'
-import { CheckCircle2Icon, CircleIcon } from 'lucide-react'
-import { JSX } from 'react'
+import { CheckCircle2Icon, CircleIcon, BookOpenIcon, FileTextIcon, InfoIcon, ListTreeIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { Question, SubQuestion } from '../types/questions'
+import { getSubjectInfo, getCreatedByName, calculateQuestionTotalMarks } from '../utils/question-utils'
+import { getLevelColors, getLevelBadgeColors } from '../constants/question-styles'
+import { JSX } from 'react'
 
 type QuestionDetailsProps = {
   question: Question
 }
 
-const LEVEL_COLORS = [
-  'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
-  'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
-  'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950'
-] as const
-
-const LEVEL_BADGE_COLORS = [
-  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-  'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-] as const
-
-const getLevelColors = (level: number): string => LEVEL_COLORS[level] || LEVEL_COLORS[0]
-const getLevelBadgeColors = (level: number): string => LEVEL_BADGE_COLORS[level] || LEVEL_BADGE_COLORS[0]
-
 export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
+  const subjectInfo = getSubjectInfo(question)
+  const createdByName = getCreatedByName(question)
+  const totalMarks = calculateQuestionTotalMarks(question)
+
   const renderSubQuestions = (subQuestions: SubQuestion[], level: number = 0, parentLabel: string = ''): JSX.Element => {
     return (
       <div className={cn("space-y-3", level > 0 && "ml-6 mt-3")}>
@@ -35,7 +26,7 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
           const fullLabel = parentLabel ? `${parentLabel}.${sq.subQuestionLabel}` : sq.subQuestionLabel
           
           return (
-            <div key={sq._id} className={cn("p-4 border-2 rounded-lg", getLevelColors(level))}>
+            <div key={sq._id} className={cn("p-4 border rounded-lg", getLevelColors(level))}>
               <div className="flex items-start gap-3">
                 <Badge variant="outline" className={cn("font-mono font-bold mt-0.5", getLevelBadgeColors(level))}>
                   {fullLabel}
@@ -67,69 +58,69 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
     )
   }
 
-  const calculateTotalMarks = (): number => {
-    if (!question.hasSubQuestions) return question.marks
-
-    const calculateSubMarks = (sqs: SubQuestion[]): number => {
-      return sqs.reduce((sum, sq) => {
-        let total = sq.marks
-        if (sq.subQuestions && sq.subQuestions.length > 0) {
-          total += calculateSubMarks(sq.subQuestions)
-        }
-        return sum + total
-      }, 0)
-    }
-
-    return question.subQuestions ? calculateSubMarks(question.subQuestions) : question.marks
-  }
-
-  const totalMarks = calculateTotalMarks()
-
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-l-4 border-l-primary">
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg mt-1">
+              <BookOpenIcon className="h-6 w-6 text-primary" />
+            </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <CardTitle>{question.questionText}</CardTitle>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <CardTitle className="text-2xl">{question.questionText}</CardTitle>
                 {question.hasSubQuestions && (
                   <Badge variant="default" className="bg-purple-600">
+                    <ListTreeIcon className="h-3 w-3 mr-1" />
                     Structured
                   </Badge>
                 )}
               </div>
               {question.questionDescription && (
-                <CardDescription className="mt-2">
+                <CardDescription className="mt-2 text-base">
                   {question.questionDescription}
                 </CardDescription>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Subject</p>
-              <p className="mt-1">
-                {question.subjectCode} - {question.subjectName}
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpenIcon className="h-4 w-4" />
+                <span>Subject</span>
+              </div>
+              <p className="font-medium">
+                {subjectInfo.code && subjectInfo.name 
+                  ? `${subjectInfo.code} - ${subjectInfo.name}`
+                  : subjectInfo.code || subjectInfo.name || 'N/A'}
               </p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Type</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <FileTextIcon className="h-4 w-4" />
+                <span>Type</span>
+              </div>
               <Badge variant="outline" className="mt-1">
                 {question.questionType.replace('_', ' ').toUpperCase()}
               </Badge>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Difficulty</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <InfoIcon className="h-4 w-4" />
+                <span>Difficulty</span>
+              </div>
               <Badge variant="outline" className="mt-1">
                 {question.difficultyLevel.charAt(0).toUpperCase() + question.difficultyLevel.slice(1)}
               </Badge>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Marks</p>
-              <p className="mt-1 font-semibold text-lg">{totalMarks}</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle2Icon className="h-4 w-4" />
+                <span>Total Marks</span>
+              </div>
+              <p className="font-bold text-2xl text-primary">{totalMarks}</p>
             </div>
           </div>
 
@@ -195,12 +186,12 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
             </div>
           </div>
 
-          {question.createdByName && (
+          {createdByName && (
             <>
               <Separator />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Created By</p>
-                <p className="mt-1">{question.createdByName}</p>
+                <p className="mt-1">{createdByName}</p>
               </div>
             </>
           )}
@@ -208,32 +199,43 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
       </Card>
 
       {question.options && question.options.length > 0 && (
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader>
-            <CardTitle>Answer Options</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <CheckCircle2Icon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Answer Options</CardTitle>
+                <CardDescription>
+                  {question.allowMultipleAnswers ? 'Multiple correct answers allowed' : 'Single correct answer'}
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {question.options.map((option, index) => (
                 <div
                   key={option._id}
                   className={cn(
-                    "flex items-start gap-3 p-3 border rounded-lg",
-                    option.isCorrect && "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800"
+                    "flex items-start gap-3 p-4 border rounded-lg transition-all",
+                    option.isCorrect && "bg-green-50 border-green-200"
                   )}
                 >
                   {option.isCorrect ? (
-                    <CheckCircle2Icon className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    <CheckCircle2Icon className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
                   ) : (
-                    <CircleIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <CircleIcon className="h-6 w-6 text-muted-foreground flex-shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1">
-                    <p className={option.isCorrect ? 'font-medium' : ''}>
-                      {String.fromCharCode(97 + index)}. {option.optionText}
+                    <p className={cn("text-base", option.isCorrect && 'font-semibold')}>
+                      <span className="font-bold text-primary">{String.fromCharCode(65 + index)}.</span> {option.optionText}
                     </p>
                   </div>
                   {option.isCorrect && (
                     <Badge variant="default" className="bg-green-600">
+                      <CheckCircle2Icon className="h-3 w-3 mr-1" />
                       Correct
                     </Badge>
                   )}
@@ -245,12 +247,19 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
       )}
 
       {question.hasSubQuestions && question.subQuestions && question.subQuestions.length > 0 && (
-        <Card>
+        <Card className="border-l-4 border-l-purple-500">
           <CardHeader>
-            <CardTitle>Question Parts & Sub-parts</CardTitle>
-            <CardDescription>
-              This structured question contains {question.subQuestions.length} main part(s) with nested sub-parts
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <ListTreeIcon className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Question Parts & Sub-parts</CardTitle>
+                <CardDescription>
+                  This structured question contains {question.subQuestions.length} main part(s) with nested sub-parts
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {renderSubQuestions(question.subQuestions)}

@@ -15,9 +15,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, BuildingIcon, UserIcon, FileTextIcon, InfoIcon } from 'lucide-react'
+import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -109,8 +111,20 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Department Information</h3>
+        {/* Basic Information */}
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BuildingIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Department Information</CardTitle>
+                <CardDescription>Basic details about the department</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -118,7 +132,10 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
               name="departmentCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department Code *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Department Code *
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="e.g., CS, EE, ME" 
@@ -128,8 +145,9 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Unique code for the department (uppercase letters and numbers only)
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Unique code for the department (uppercase letters and numbers only)</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -141,7 +159,10 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
               name="departmentName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department Name *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BuildingIcon className="h-4 w-4" />
+                    Department Name *
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Computer Science" {...field} />
                   </FormControl>
@@ -150,16 +171,38 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
               )}
             />
           </div>
+          </CardContent>
+        </Card>
 
-          <FormField
-            control={form.control}
-            name="headOfDepartment"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Head of Department</FormLabel>
-                {isLoadingUsers ? (
-                  <div className="text-sm text-muted-foreground">Loading faculty members...</div>
-                ) : (
+        {/* Head of Department */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <UserIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Head of Department</CardTitle>
+                <CardDescription>Assign a faculty member as department head</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="headOfDepartment"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Select Faculty Member
+                  </FormLabel>
+                  {isLoadingUsers ? (
+                    <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                      <LoadingSpinner size="sm" />
+                      <span className="text-sm text-muted-foreground">Loading faculty members...</span>
+                    </div>
+                  ) : (
                   <>
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
@@ -225,44 +268,73 @@ export const DepartmentForm = ({ department, onSubmit, onCancel, isLoading }: De
                       </Button>
                     )}
                   </>
-                )}
-                <FormDescription>
-                  Search and select a faculty member to be the head of this department
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  )}
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Search and select a faculty member to be the head of this department</span>
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Enter department description (optional)" 
-                    className="resize-none"
-                    rows={4}
-                    {...field} 
-                  />
-                </FormControl>
-                <FormDescription>
-                  Brief description of the department
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        {/* Description */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <FileTextIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Description</CardTitle>
+                <CardDescription>Additional information about the department</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4" />
+                    Description
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="e.g., The Computer Science department focuses on software development, AI, and data science..." 
+                      className="resize-none min-h-[120px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription className="flex items-start gap-2">
+                    <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Brief description of the department's focus and activities</span>
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update Department' : 'Create Department'}
+          <Button type="submit" disabled={isLoading} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update Department' : 'Create Department'
+            )}
           </Button>
         </div>
       </form>

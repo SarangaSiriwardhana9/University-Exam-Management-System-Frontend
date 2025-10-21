@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { UserIcon, MailIcon, KeyIcon, ShieldIcon, BuildingIcon, GraduationCapIcon, PhoneIcon, MapPinIcon, CalendarIcon } from 'lucide-react'
 import { USER_ROLES } from '@/constants/roles'
 import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../validations/user-schemas'
 import type { User } from '../types/users'
@@ -158,11 +160,25 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Basic Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Basic Information</h3>
-          {isLoadingInitialData && (
-            <div className="text-sm text-muted-foreground">Loading user data...</div>
-          )}
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <UserIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Personal details and account credentials</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingInitialData && (
+              <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm text-muted-foreground">Loading user data...</span>
+              </div>
+            )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -170,7 +186,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Full Name *
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Enter full name" {...field} />
                   </FormControl>
@@ -184,7 +203,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Username *
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Enter username" 
@@ -204,7 +226,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MailIcon className="h-4 w-4" />
+                    Email *
+                  </FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="Enter email" {...field} />
                   </FormControl>
@@ -218,7 +243,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <ShieldIcon className="h-4 w-4" />
+                    Role *
+                  </FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value}
@@ -250,7 +278,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="departmentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department {requiresDepartment && '*'}</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <BuildingIcon className="h-4 w-4" />
+                    Department {requiresDepartment && '*'}
+                  </FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || undefined}
@@ -297,7 +328,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                 name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Year *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <GraduationCapIcon className="h-4 w-4" />
+                      Year *
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
                       value={field.value?.toString() || undefined}
@@ -324,7 +358,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                 name="semester"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Semester *</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      Semester *
+                    </FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
                       value={field.value?.toString() || undefined}
@@ -352,7 +389,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <KeyIcon className="h-4 w-4" />
+                    Password *
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="password" 
@@ -365,11 +405,23 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               )}
             />
           )}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <PhoneIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <CardTitle>Contact Information</CardTitle>
+                <CardDescription>Phone numbers for communication</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -377,7 +429,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="contactPrimary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Primary Phone</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <PhoneIcon className="h-4 w-4" />
+                    Primary Phone
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Enter primary phone" {...field} />
                   </FormControl>
@@ -391,7 +446,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="contactSecondary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Secondary Phone</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <PhoneIcon className="h-4 w-4" />
+                    Secondary Phone
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Enter secondary phone" {...field} />
                   </FormControl>
@@ -400,18 +458,33 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               )}
             />
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Address Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Address Information</h3>
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <MapPinIcon className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Address Information</CardTitle>
+                <CardDescription>Residential address details</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
           
           <FormField
             control={form.control}
             name="addressLine1"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <MapPinIcon className="h-4 w-4" />
+                  Address Line 1
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Street address" {...field} />
                 </FormControl>
@@ -425,7 +498,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
             name="addressLine2"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <MapPinIcon className="h-4 w-4" />
+                  Address Line 2
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Apartment, suite, etc." {...field} />
                 </FormControl>
@@ -440,7 +516,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPinIcon className="h-4 w-4" />
+                    City
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="City" {...field} />
                   </FormControl>
@@ -454,7 +533,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>State</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPinIcon className="h-4 w-4" />
+                    State
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="State" {...field} />
                   </FormControl>
@@ -468,7 +550,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               name="postalCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Postal Code</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPinIcon className="h-4 w-4" />
+                    Postal Code
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="ZIP" {...field} />
                   </FormControl>
@@ -483,7 +568,10 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
             name="country"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Country</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <MapPinIcon className="h-4 w-4" />
+                  Country
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Country" {...field} />
                 </FormControl>
@@ -491,15 +579,23 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
               </FormItem>
             )}
           />
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel} size="lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
+          <Button type="submit" disabled={isLoading} size="lg" className="min-w-[150px]">
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              isEditMode ? 'Update User' : 'Create User'
+            )}
           </Button>
         </div>
       </form>

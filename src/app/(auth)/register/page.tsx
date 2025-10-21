@@ -1,5 +1,5 @@
-import { RegisterForm } from '@/features/auth/components/register-form'
+import { RegisterFormMultiStep } from '@/features/auth/components/register-form-multistep'
 
 export default function RegisterPage() {
-  return <RegisterForm />
+  return <RegisterFormMultiStep />
 }

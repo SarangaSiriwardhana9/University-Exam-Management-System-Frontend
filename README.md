@@ -1,4 +1,6 @@
-# 🎓 University Exam Management System
+# 🎓 University Exam Management System - Frontend
+
+> **Note**: This repository contains the **frontend application only**. For the complete system, you'll also need the backend API repository.
 
 A comprehensive full-stack application for managing university examinations, built with modern technologies. This system provides end-to-end solutions for exam scheduling, question management, student enrollment, online exam taking, result processing, and administrative oversight.
 
@@ -60,6 +62,7 @@ The University Exam Management System is a modern, scalable solution designed to
 
 #### For Exam Coordinators
 - **Exam Scheduling**: Schedule exams with room and time slot management
+- **Calendar View**: Visual calendar interface for exam scheduling and overview
 - **Invigilator Assignment**: Assign and manage invigilators for exam sessions
 - **Student Registration**: Manage exam registrations and eligibility
 - **Session Monitoring**: Real-time monitoring of ongoing exams
@@ -85,14 +88,19 @@ The University Exam Management System is a modern, scalable solution designed to
 - **Real-Time Notifications**: Instant updates for exam schedules, results, and announcements
 - **File Upload Support**: Upload exam materials, images, and documents
 - **Responsive Design**: Fully responsive UI for desktop, tablet, and mobile
-- **Dark Mode**: Built-in dark mode support
+- **Dark Mode**: Built-in dark mode support (Coming Soon)
 - **Auto-Grading**: Automatic grading for MCQ questions
 - **Answer Auto-Save**: Periodic auto-save during online exams
 - **Exam Timer**: Visual countdown timer with warnings
-- **Question Navigation**: Easy navigation between questions during exams
+- **Question Navigation**: Interactive question number panel with answer status indicators
+- **Calendar Integration**: Visual exam calendar with filtering by year and semester
+- **Sub-Question Support**: Hierarchical questions with automatic marks calculation
+- **Marks Allocation**: Flexible marks distribution for structured questions
 - **Search & Filter**: Advanced search and filtering across all modules
 - **Data Export**: Export data to various formats (CSV, PDF)
 - **Audit Logging**: Track all system activities for security
+- **Student Enrollment**: Subject enrollment management with year/semester filtering
+- **Marking Interface**: Faculty marking interface with student submission tracking
 
 ## 🛠 Tech Stack
 
@@ -119,6 +127,7 @@ The University Exam Management System is a modern, scalable solution designed to
 - **Date Handling**: date-fns
 - **HTTP Client**: Axios
 - **Notifications**: Sonner
+- **Calendar**: Custom calendar component with full-calendar integration
 
 ### DevOps & Tools
 - **Version Control**: Git
@@ -129,63 +138,92 @@ The University Exam Management System is a modern, scalable solution designed to
 
 ## 📁 Project Structure
 
+> **Note**: This repository contains only the frontend code structure shown below.
+
 ```
-exam-new/
-├── University-Exam-Management-System/          # Backend (NestJS)
-│   ├── src/
-│   │   ├── common/                             # Shared utilities
-│   │   │   ├── constants/                      # Application constants
-│   │   │   ├── decorators/                     # Custom decorators
-│   │   │   ├── guards/                         # Auth guards
-│   │   │   └── utils/                          # Utility functions
-│   │   ├── config/                             # Configuration files
-│   │   ├── modules/                            # Feature modules
-│   │   │   ├── auth/                           # Authentication
-│   │   │   ├── users/                          # User management
-│   │   │   ├── departments/                    # Departments
-│   │   │   ├── subjects/                       # Subjects
-│   │   │   ├── questions/                      # Question bank
-│   │   │   ├── exam-papers/                    # Exam papers
-│   │   │   ├── exam-sessions/                  # Exam scheduling
-│   │   │   ├── exam-registrations/             # Exam registrations
-│   │   │   ├── student-answers/                # Answer submissions
-│   │   │   ├── results/                        # Results
-│   │   │   ├── rooms/                          # Room management
-│   │   │   ├── invigilator-assignments/        # Invigilators
-│   │   │   ├── student-enrollments/            # Enrollments
-│   │   │   ├── academic-calendar/              # Calendar
-│   │   │   ├── notifications/                  # Notifications
-│   │   │   ├── file-uploads/                   # File management
-│   │   │   ├── reports/                        # Reports
-│   │   │   └── dashboard/                      # Dashboard
-│   │   └── schemas/                            # MongoDB schemas
-│   ├── test/                                   # Test files
-│   └── package.json
-│
-├── University-Exam-Management-System-Frontend/ # Frontend (Next.js)
-│   ├── src/
-│   │   ├── app/                                # Next.js App Router
-│   │   │   ├── (auth)/                         # Auth pages
-│   │   │   └── (dashboard)/                    # Dashboard pages
-│   │   ├── components/                         # Reusable components
-│   │   │   ├── ui/                             # shadcn/ui components
-│   │   │   └── ...                             # Custom components
-│   │   ├── features/                           # Feature modules
-│   │   │   ├── auth/                           # Auth features
-│   │   │   ├── dashboard/                      # Dashboard features
-│   │   │   ├── exam-papers/                    # Exam paper features
-│   │   │   ├── exam-sessions/                  # Exam session features
-│   │   │   ├── questions/                      # Question features
-│   │   │   ├── results/                        # Result features
-│   │   │   ├── users/                          # User features
-│   │   │   └── ...                             # Other features
-│   │   ├── lib/                                # Utilities & configs
-│   │   ├── types/                              # TypeScript types
-│   │   └── constants/                          # Frontend constants
-│   ├── public/                                 # Static assets
-│   └── package.json
-│
+University-Exam-Management-System-Frontend/     # This Repository
+├── src/
+│   ├── app/                                    # Next.js App Router
+│   │   ├── (auth)/                             # Auth pages (login, register)
+│   │   │   ├── login/
+│   │   │   └── register/
+│   │   ├── (dashboard)/                        # Dashboard pages
+│   │   │   ├── admin/                          # Admin pages
+│   │   │   │   ├── users/                      # User management
+│   │   │   │   ├── departments/                # Department management
+│   │   │   │   ├── subjects/                   # Subject management
+│   │   │   │   ├── enrollments/                # Enrollment management
+│   │   │   │   └── dashboard/                  # Admin dashboard
+│   │   │   ├── faculty/                        # Faculty pages
+│   │   │   │   ├── questions/                  # Question bank
+│   │   │   │   ├── exam-papers/                # Exam papers
+│   │   │   │   ├── marking/                    # Marking interface
+│   │   │   │   └── dashboard/                  # Faculty dashboard
+│   │   │   ├── exam-coordinator/               # Coordinator pages
+│   │   │   │   ├── exam-sessions/              # Exam scheduling
+│   │   │   │   ├── calendar/                   # Calendar view
+│   │   │   │   ├── registrations/              # Registration management
+│   │   │   │   └── dashboard/                  # Coordinator dashboard
+│   │   │   ├── student/                        # Student pages
+│   │   │   │   ├── exams/                      # Exam registration
+│   │   │   │   ├── exam-paper/                 # Online exam taking
+│   │   │   │   ├── results/                    # Results viewing
+│   │   │   │   ├── enrollments/                # Subject enrollment
+│   │   │   │   └── dashboard/                  # Student dashboard
+│   │   │   └── invigilator/                    # Invigilator pages
+│   │   ├── globals.css                         # Global styles
+│   │   └── layout.tsx                          # Root layout
+│   ├── components/                             # Reusable components
+│   │   ├── ui/                                 # shadcn/ui components
+│   │   ├── common/                             # Common components
+│   │   ├── navigation/                         # Navigation components
+│   │   └── data-display/                       # Data display components
+│   ├── features/                               # Feature modules
+│   │   ├── auth/                               # Auth features
+│   │   ├── dashboard/                          # Dashboard features
+│   │   ├── exam-papers/                        # Exam paper features
+│   │   ├── exam-sessions/                      # Exam session features
+│   │   ├── questions/                          # Question features
+│   │   ├── results/                            # Result features
+│   │   ├── users/                              # User features
+│   │   ├── enrollments/                        # Enrollment features
+│   │   ├── exam-registrations/                 # Registration features
+│   │   └── ...                                 # Other features
+│   ├── lib/                                    # Utilities & configs
+│   │   ├── api/                                # API client
+│   │   ├── auth/                               # Auth utilities
+│   │   ├── hooks/                              # Custom hooks
+│   │   └── utils/                              # Helper functions
+│   ├── types/                                  # TypeScript types
+│   └── constants/                              # Frontend constants
+├── public/                                     # Static assets
+│   ├── logo.png
+│   └── ...
+├── .env.local                                  # Environment variables
+├── package.json                                # Dependencies
+├── tsconfig.json                               # TypeScript config
+├── tailwind.config.ts                          # Tailwind config
+├── next.config.mjs                             # Next.js config
 └── README.md                                   # This file
+```
+
+### Backend Repository Structure
+
+The backend is in a separate repository with the following structure:
+
+```
+University-Exam-Management-System/              # Backend Repository (Separate)
+├── src/
+│   ├── modules/                                # Feature modules
+│   │   ├── auth/                               # Authentication
+│   │   ├── users/                              # User management
+│   │   ├── questions/                          # Question bank
+│   │   ├── exam-papers/                        # Exam papers
+│   │   ├── exam-sessions/                      # Exam scheduling
+│   │   └── ...                                 # Other modules
+│   ├── common/                                 # Shared utilities
+│   └── schemas/                                # MongoDB schemas
+└── package.json
 ```
 
 ## 🚀 Getting Started
@@ -194,33 +232,38 @@ exam-new/
 
 Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **MongoDB** (v6 or higher) - [Download](https://www.mongodb.com/try/download/community)
 - **npm** or **yarn** - Comes with Node.js
 - **Git** - [Download](https://git-scm.com/)
+- **Backend API** - Running instance of the backend server (see Backend Setup section)
 
 ### Quick Start
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd exam-new
+   git clone <frontend-repository-url>
+   cd University-Exam-Management-System-Frontend
    ```
 
-2. **Set up Backend** (See [Backend Setup](#-backend-setup))
+2. **Ensure Backend is Running**
+   - The backend API must be running on `http://localhost:3001`
+   - See [Backend Setup](#-backend-setup) section for backend installation
 
 3. **Set up Frontend** (See [Frontend Setup](#-frontend-setup))
 
 4. **Access the application**
    - Frontend: `http://localhost:3000`
-   - Backend API: `http://localhost:3001/api/v1`
+   - Backend API: `http://localhost:3001/api/v1` (must be running separately)
    - API Docs: `http://localhost:3001/api-docs`
 
 ## 🔧 Backend Setup
 
+> **Important**: The backend is in a separate repository. Clone and set it up before running the frontend.
+
 ### Installation
 
-1. **Navigate to backend directory**
+1. **Clone the backend repository**
    ```bash
+   git clone <backend-repository-url>
    cd University-Exam-Management-System
    ```
 
@@ -412,14 +455,34 @@ The system implements a comprehensive role-based access control (RBAC) system wi
 - Activity logs and audit trails
 
 ### Faculty Dashboard
-- Question bank management
-- Exam paper creation wizard
+- **Question Bank Management**:
+  - Create questions with multiple types (MCQ, Structured, Essay)
+  - Support for sub-questions with hierarchical structure (up to 3 levels)
+  - Automatic marks calculation for parent questions
+  - Bloom's taxonomy classification
+  - Topic and subtopic organization
+  - Public/private question sharing
+- **Exam Paper Creation Wizard**:
+  - Select questions from question bank
+  - Organize questions into parts (A, B, C, etc.)
+  - Set optional questions and minimum requirements
+  - Automatic total marks calculation
+  - Preview exam paper before publishing
+- **Marking Interface**:
+  - View student submissions
+  - Mark answers with detailed feedback
+  - Track marking progress
+  - Filter by marked/unmarked status
 - Student performance analytics
 - Result management interface
 - Subject-wise statistics
 
 ### Exam Coordinator Dashboard
-- Exam scheduling calendar
+- **Exam Scheduling Calendar**: Interactive calendar view with month/year navigation
+  - Visual representation of all scheduled exams
+  - Color-coded exam status (upcoming, ongoing, completed)
+  - Filter exams by year and semester
+  - Quick access to exam details
 - Room and resource allocation
 - Invigilator assignment interface
 - Registration management
@@ -428,13 +491,21 @@ The system implements a comprehensive role-based access control (RBAC) system wi
 
 ### Student Dashboard
 - Upcoming exam schedule
-- Exam registration portal
-- Online exam interface with:
-  - Question navigation
-  - Timer with warnings
-  - Auto-save functionality
-  - Flag questions for review
-  - Submit confirmation
+- **Subject Enrollment**: Enroll in subjects by year and semester
+- **Exam Registration Portal**: Register for available exam sessions
+  - View exam details (date, time, mode, duration)
+  - Check registration eligibility
+  - Cancel registrations before deadline
+- **Online Exam Interface** with:
+  - **Question Navigator Panel**: Visual grid showing all questions
+    - Green highlight for answered questions
+    - Click to jump to any question
+    - Organized by exam parts
+  - Real-time timer with warnings (red when < 5 minutes)
+  - Auto-save functionality (every 30 seconds)
+  - Support for MCQ, structured, and essay questions
+  - Sub-question navigation and tracking
+  - Submit confirmation dialog
 - Results and grade history
 - Notification center
 
@@ -520,13 +591,13 @@ _Add screenshots of your application here_
 
 ### Development Workflow
 
-1. **Backend Development**
+1. **Ensure Backend is Running** (from separate backend repository)
    ```bash
    cd University-Exam-Management-System
    npm run start:dev
    ```
 
-2. **Frontend Development**
+2. **Frontend Development** (this repository)
    ```bash
    cd University-Exam-Management-System-Frontend
    npm run dev
@@ -534,15 +605,9 @@ _Add screenshots of your application here_
 
 3. **Make changes** and test in real-time with hot reload
 
-4. **Run tests** before committing
+4. **Run linting** before committing
    ```bash
-   # Backend tests
-   cd University-Exam-Management-System
-   npm run test
-
-   # Frontend tests (if configured)
-   cd University-Exam-Management-System-Frontend
-   npm run test
+   npm run lint
    ```
 
 ### Code Style Guidelines
@@ -759,15 +824,33 @@ For support, questions, or feedback:
 
 ## 📊 Project Status
 
-- ✅ Backend API - Complete
-- ✅ Frontend UI - Complete
-- ✅ Authentication System - Complete
-- ✅ Exam Management - Complete
-- ✅ Online Exam Taking - Complete
-- ✅ Result Management - Complete
-- ✅ Reports & Analytics - Complete
-- 🚧 Mobile App - Planned
-- 🚧 Email Notifications - Planned
+### Completed Features ✅
+- **Backend API** - Fully functional REST API with Swagger documentation
+- **Frontend UI** - Modern, responsive interface with TailwindCSS
+- **Authentication System** - JWT-based auth with refresh tokens
+- **User Management** - Complete RBAC system with 5 user roles
+- **Department & Subject Management** - Full CRUD operations
+- **Question Bank** - Multi-type questions with sub-question support
+- **Exam Paper Creation** - Flexible paper design with parts and optional questions
+- **Exam Scheduling** - Calendar view with session management
+- **Student Enrollment** - Subject enrollment with year/semester filtering
+- **Exam Registration** - Student registration for exam sessions
+- **Online Exam Taking** - Full-featured exam interface with:
+  - Question navigator panel
+  - Real-time timer
+  - Auto-save functionality
+  - Sub-question support
+- **Marking System** - Faculty marking interface with submission tracking
+- **Result Management** - Result viewing and publishing
+- **Reports & Analytics** - Dashboard analytics and insights
+
+### Planned Features 🚧
+- **Email Notifications** - Automated email alerts for exams and results
+- **Mobile App** - Native mobile application
+- **Advanced Analytics** - ML-based performance predictions
+- **Plagiarism Detection** - AI-powered answer similarity checking
+- **Video Proctoring** - Live monitoring for online exams
+- **Question Import/Export** - Bulk question management
 
 ---
 

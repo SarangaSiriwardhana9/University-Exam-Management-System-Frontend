@@ -10,14 +10,20 @@ import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { EyeIcon, EyeOffIcon, UserPlusIcon, AlertCircleIcon, GraduationCapIcon, MailIcon, UserIcon, ShieldCheckIcon, BookOpenIcon } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { EyeIcon, EyeOffIcon, AlertCircleIcon, GraduationCapIcon, MailIcon, UserIcon, ShieldCheckIcon, BookOpenIcon, ArrowRightIcon, ArrowLeftIcon, CheckCircle2Icon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { useRegister } from '../hooks/use-auth-mutations'
 import { registerSchema, type RegisterFormData } from '../validations/auth-schemas'
+import { cn } from '@/lib/utils'
 
 export const RegisterForm = () => {
+  const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const registerMutation = useRegister()
+
+  const totalSteps = 3
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -41,8 +47,33 @@ export const RegisterForm = () => {
     registerMutation.mutate(data)
   }
 
+  const nextStep = async () => {
+    let fieldsToValidate: (keyof RegisterFormData)[] = []
+    
+    if (currentStep === 1) {
+      fieldsToValidate = ['fullName', 'email', 'year']
+    } else if (currentStep === 2) {
+      fieldsToValidate = ['password', 'confirmPassword']
+    }
+
+    const isValid = await form.trigger(fieldsToValidate)
+    if (isValid && currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const getStepProgress = () => {
+    return (currentStep / totalSteps) * 100
+  }
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-hidden">
       {/* Left Side - Branding & Image */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
         <div className="absolute inset-0 bg-black/30" />
@@ -123,8 +154,9 @@ export const RegisterForm = () => {
       </div>
 
       {/* Right Side - Registration Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background overflow-y-auto">
-        <div className="w-full max-w-md space-y-6 my-8">
+      <div className="w-full lg:w-1/2 flex flex-col bg-background overflow-y-auto">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-8">
+          <div className="w-full max-w-lg space-y-6 my-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center space-x-3 mb-8">
             <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
@@ -142,14 +174,26 @@ export const RegisterForm = () => {
             </div>
           </div>
 
-          {/* Form Header */}
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              Sign Up
-            </h2>
-            <p className="text-muted-foreground">
-              Create your account to get started
-            </p>
+          {/* Form Header with Progress */}
+          <div className="space-y-4">
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
+                Create Account
+              </h2>
+              <p className="text-muted-foreground">
+                Step {currentStep} of {totalSteps}: {currentStep === 1 ? 'Personal Information' : currentStep === 2 ? 'Security' : 'Additional Details'}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <Progress value={getStepProgress()} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className={cn(currentStep >= 1 && 'text-primary font-medium')}>Personal</span>
+                <span className={cn(currentStep >= 2 && 'text-primary font-medium')}>Security</span>
+                <span className={cn(currentStep >= 3 && 'text-primary font-medium')}>Details</span>
+              </div>
+            </div>
           </div>
 
           {/* Error Alert */}
@@ -164,52 +208,81 @@ export const RegisterForm = () => {
 
           {/* Registration Form */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Full Name */}
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        Full Name *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your full name"
-                          className="h-12 border-border focus:border-primary focus:ring-primary/20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="border-2">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      {currentStep === 1 && <UserIcon className="w-5 h-5 text-primary" />}
+                      {currentStep === 2 && <ShieldCheckIcon className="w-5 h-5 text-primary" />}
+                      {currentStep === 3 && <MapPinIcon className="w-5 h-5 text-primary" />}
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {currentStep === 1 && 'Personal Information'}
+                        {currentStep === 2 && 'Account Security'}
+                        {currentStep === 3 && 'Additional Details'}
+                      </CardTitle>
+                      <CardDescription>
+                        {currentStep === 1 && 'Tell us about yourself'}
+                        {currentStep === 2 && 'Create a secure password'}
+                        {currentStep === 3 && 'Optional contact information'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Step 1: Personal Information */}
+                  {currentStep === 1 && (
+                    <div className="space-y-4">
+                      {/* Full Name */}
+                      <FormField
+                        control={form.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground font-medium">
+                              Full Name *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter your full name"
+                                className="h-11"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                {/* University Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground font-medium">
-                        University Email *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="SE12345678@alfa.uni.lk"
-                          className="h-12 border-border focus:border-primary focus:ring-primary/20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Use your university email (e.g., SE12345678@alfa.uni.lk)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      {/* University Email */}
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-foreground font-medium">
+                              University Email *
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                  type="email"
+                                  placeholder="SE12345678@alfa.uni.lk"
+                                  className="h-11 pl-10"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Use your university email (e.g., SE12345678@alfa.uni.lk)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                 {/* Username & Year Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

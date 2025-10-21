@@ -19,18 +19,18 @@ import { parseSubjectData } from '../utils/subject-parser'
 
 const getQuestionTypeBadge = (type: QuestionType | string): string => {
   const styles: Record<string, string> = {
-    mcq: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    structured: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300',
-    essay: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    mcq: 'bg-blue-100 text-blue-700',
+    structured: 'bg-indigo-100 text-indigo-700',
+    essay: 'bg-purple-100 text-purple-700',
   }
   return styles[type] || 'bg-muted'
 }
 
 const getDifficultyBadge = (level: DifficultyLevel | string): string => {
   const styles: Record<string, string> = {
-    easy: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-    hard: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+    easy: 'bg-green-100 text-green-700',
+    medium: 'bg-yellow-100 text-yellow-700',
+    hard: 'bg-red-100 text-red-700'
   }
   return styles[level] || 'bg-muted'
 }

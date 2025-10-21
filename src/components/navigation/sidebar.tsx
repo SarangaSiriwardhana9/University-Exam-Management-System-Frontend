@@ -79,11 +79,11 @@ const getIconComponent = (iconName?: string): LucideIcon => {
 
 const getRoleStyle = (role: UserRole) => {
   const roleStyles = {
-    admin: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    faculty: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    student: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    exam_coordinator: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    invigilator: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
+    admin: 'bg-blue-100 text-blue-700',
+    faculty: 'bg-purple-100 text-purple-700',
+    student: 'bg-green-100 text-green-700',
+    exam_coordinator: 'bg-orange-100 text-orange-700',
+    invigilator: 'bg-indigo-100 text-indigo-700'
   } as const
 
   return roleStyles[role] || 'bg-muted text-muted-foreground'
@@ -262,7 +262,7 @@ const SidebarContent = ({ isCollapsed = false, onNavigate }: SidebarContentProps
         <Button
           variant="ghost"
           className={cn(
-            "w-full justify-start relative rounded-xl hover:bg-primary/5 hover:shadow-md transition-all duration-200",
+            "w-full justify-start relative rounded-xl border border-transparent hover:border-primary hover:!bg-transparent hover:text-foreground transition-all duration-200",
             isCollapsed && "justify-center px-2"
           )}
         >
@@ -278,7 +278,7 @@ const SidebarContent = ({ isCollapsed = false, onNavigate }: SidebarContentProps
           onClick={handleLogout}
           disabled={logoutMutation.isPending}
           className={cn(
-            "w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl hover:shadow-md transition-all duration-200 font-medium",
+            "w-full justify-start text-destructive hover:text-destructive border border-transparent hover:border-destructive hover:!bg-transparent rounded-xl transition-all duration-200 font-medium",
             isCollapsed && "justify-center px-2"
           )}
         >

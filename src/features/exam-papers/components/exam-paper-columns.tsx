@@ -17,10 +17,10 @@ import { cn } from '@/lib/utils'
 
 const getExamTypeBadge = (type: ExamType) => {
   const typeStyles = {
-    midterm: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    final: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    quiz: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    assignment: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+    midterm: 'bg-blue-100 text-blue-700',
+    final: 'bg-purple-100 text-purple-700',
+    quiz: 'bg-green-100 text-green-700',
+    assignment: 'bg-orange-100 text-orange-700'
   } as const
   return typeStyles[type] || 'bg-muted'
 }
@@ -144,7 +144,7 @@ export const getExamPaperColumns = ({
       return (
         <div className="flex gap-1">
           {isFinalized && (
-            <Badge variant="default" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+            <Badge variant="default" className="bg-purple-100 text-purple-700">
               <LockIcon className="h-3 w-3 mr-1" />
               Finalized
             </Badge>

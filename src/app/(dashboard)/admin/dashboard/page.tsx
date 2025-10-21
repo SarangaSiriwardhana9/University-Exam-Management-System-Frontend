@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-gray-900">
             Admin Dashboard
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+          <Card className="border-l-4 border-l-blue-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-50 rounded-full">
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-green-500 hover:shadow-md transition-shadow">
+          <Card className="border-t-4 border-t-green-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-orange-50 to-white border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <CalendarIcon className="h-5 w-5 text-orange-600" />
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
+          <Card className="border-l-4 border-l-amber-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-50 to-white hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-100 rounded-full">
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Exam Statistics */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardTitle className="flex items-center gap-2 text-xl">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Grade Distribution */}
           {charts?.gradeDistribution && Object.keys(charts.gradeDistribution).length > 0 && (
-            <Card>
+            <Card className="border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChartIcon className="h-5 w-5" />
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
 
           {/* Exams by Month */}
           {charts?.examsByMonth && Object.keys(charts.examsByMonth).length > 0 && (
-            <Card>
+            <Card className="border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3Icon className="h-5 w-5" />
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Activities */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardTitle className="text-xl">Recent Activities</CardTitle>
             <CardDescription className="text-base">Latest system activities and notifications</CardDescription>

@@ -32,13 +32,13 @@ export const LoginForm = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding & Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-secondary to-accent overflow-hidden">
-        <div className="absolute inset-0 bg-black/20" />
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+        <div className="absolute inset-0 bg-black/30" />
         <Image
           src="/uni.jpeg"
           alt="University Campus"
           fill
-          className="object-cover mix-blend-overlay opacity-40"
+          className="object-cover mix-blend-overlay opacity-60"
           priority
         />
         

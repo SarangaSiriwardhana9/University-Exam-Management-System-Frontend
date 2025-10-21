@@ -253,8 +253,7 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                   <FormLabel>Department {requiresDepartment && '*'}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value || ''}
-                    defaultValue={field.value || ''}
+                    value={field.value || undefined}
                     disabled={isDepartmentsLoading}
                   >
                     <FormControl>
@@ -301,8 +300,7 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                     <FormLabel>Year *</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
-                      value={field.value?.toString() || ''}
-                      defaultValue={field.value?.toString() || ''}
+                      value={field.value?.toString() || undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -329,8 +327,7 @@ export const UserForm = ({ user, onSubmit, onCancel, isLoading }: UserFormProps)
                     <FormLabel>Semester *</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
-                      value={field.value?.toString() || ''}
-                      defaultValue={field.value?.toString() || ''}
+                      value={field.value?.toString() || undefined}
                     >
                       <FormControl>
                         <SelectTrigger>

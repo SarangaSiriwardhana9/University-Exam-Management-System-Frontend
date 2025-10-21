@@ -15,10 +15,10 @@ import type { ExamSessionStatus } from '@/features/exam-sessions/types/exam-sess
 
 const getStatusBadgeClass = (status: ExamSessionStatus) => {
   const statusClasses = {
-    scheduled: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    in_progress: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-    completed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    cancelled: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+    scheduled: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-orange-100 text-orange-700',
+    completed: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700'
   } as const
 
   return statusClasses[status] || 'bg-muted'

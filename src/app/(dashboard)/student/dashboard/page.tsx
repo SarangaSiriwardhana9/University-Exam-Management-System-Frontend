@@ -30,12 +30,12 @@ export default function StudentDashboard() {
     <RoleGuard allowedRoles={[USER_ROLES.STUDENT]}>
       <div className="space-y-6">
         <div className="mb-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent">Student Dashboard</h1>
+          <h1 className="text-4xl font-bold text-gray-900">Student Dashboard</h1>
           <p className="text-muted-foreground mt-2 text-lg">Welcome back! Here's your academic overview.</p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+          <Card className="border-l-4 border-l-blue-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -49,7 +49,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-orange-50 to-white border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <CalendarIcon className="h-5 w-5 text-orange-600" />
@@ -61,7 +61,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-50 rounded-full">
@@ -75,7 +75,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-amber-500 hover:shadow-md transition-shadow">
+          <Card className="border-t-4 border-t-amber-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -89,7 +89,7 @@ export default function StudentDashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
               <div className="flex items-center justify-between">
                 <div>
@@ -140,7 +140,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
               <div className="flex items-center justify-between">
                 <div>
@@ -192,7 +192,7 @@ export default function StudentDashboard() {
         </div>
 
         {dashboard?.notifications && dashboard.notifications.length > 0 && (
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
               <CardTitle className="text-xl">Notifications</CardTitle>
               <CardDescription className="text-base">Important updates and announcements</CardDescription>
@@ -220,7 +220,7 @@ export default function StudentDashboard() {
           </Card>
         )}
 
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardTitle className="text-xl">Quick Actions</CardTitle>
             <CardDescription className="text-base">Access frequently used features</CardDescription>
@@ -229,7 +229,7 @@ export default function StudentDashboard() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Button
                 variant="outline"
-                className="justify-start h-auto py-4 hover:bg-primary/5 hover:border-primary/50 hover:shadow-md transition-all duration-200"
+                className="justify-start h-auto py-4 hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all duration-200"
                 onClick={() => router.push('/student/enrollments')}
               >
                 <BookOpenIcon className="h-5 w-5 mr-2" />
@@ -241,7 +241,7 @@ export default function StudentDashboard() {
 
               <Button
                 variant="outline"
-                className="justify-start h-auto py-4"
+                className="justify-start h-auto py-4 hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all duration-200"
                 onClick={() => router.push('/student/exams')}
               >
                 <CalendarIcon className="h-5 w-5 mr-2" />
@@ -253,7 +253,7 @@ export default function StudentDashboard() {
 
               <Button
                 variant="outline"
-                className="justify-start h-auto py-4"
+                className="justify-start h-auto py-4 hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all duration-200"
                 onClick={() => router.push('/student/results')}
               >
                 <TrophyIcon className="h-5 w-5 mr-2" />
@@ -265,7 +265,7 @@ export default function StudentDashboard() {
 
               <Button
                 variant="outline"
-                className="justify-start h-auto py-4"
+                className="justify-start h-auto py-4 hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all duration-200"
                 onClick={() => router.push('/student/exam-calendar')}
               >
                 <ClockIcon className="h-5 w-5 mr-2" />

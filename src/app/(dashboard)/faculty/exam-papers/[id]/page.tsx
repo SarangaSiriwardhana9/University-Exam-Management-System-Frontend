@@ -32,10 +32,10 @@ type ViewExamPaperPageProps = {
 
 const getExamTypeBadge = (type: string) => {
   const typeStyles = {
-    midterm: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    final: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    quiz: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    assignment: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+    midterm: 'bg-blue-100 text-blue-700',
+    final: 'bg-purple-100 text-purple-700',
+    quiz: 'bg-green-100 text-green-700',
+    assignment: 'bg-orange-100 text-orange-700'
   } as const
   return typeStyles[type as keyof typeof typeStyles] || 'bg-muted'
 }
@@ -375,21 +375,21 @@ const ViewExamPaperPage = ({ params }: ViewExamPaperPageProps) => {
                                             key={option._id}
                                             className={cn(
                                               "flex items-start gap-3 p-3 rounded-lg border",
-                                              option.isCorrect && "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                                              option.isCorrect && "bg-green-50 border-green-200"
                                             )}
                                           >
                                             <span className={cn(
                                               "font-semibold min-w-[28px]",
-                                              option.isCorrect ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                                              option.isCorrect ? "text-green-600" : "text-muted-foreground"
                                             )}>
                                               {String.fromCharCode(65 + optIdx)}.
                                             </span>
                                             <span className={cn(
-                                              option.isCorrect && "text-green-700 dark:text-green-300 font-medium"
+                                              option.isCorrect && "text-green-700 font-medium"
                                             )}>
                                               {option.optionText}
                                               {option.isCorrect && (
-                                                <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400">
+                                                <span className="ml-2 text-xs font-semibold text-green-600">
                                                   ✓ Correct Answer
                                                 </span>
                                               )}

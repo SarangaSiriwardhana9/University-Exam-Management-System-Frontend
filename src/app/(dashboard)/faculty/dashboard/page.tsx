@@ -43,7 +43,7 @@ export default function FacultyDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent">Faculty Dashboard</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Faculty Dashboard</h1>
             <p className="text-muted-foreground mt-2 text-lg">Overview of your teaching activities and exam management</p>
           </div>
           <Button onClick={() => router.push('/faculty/questions/new')} className="gradient-primary text-white shadow-lg hover:shadow-xl">
@@ -53,7 +53,7 @@ export default function FacultyDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/subjects')}>
+          <Card className="border-l-4 border-l-blue-500 border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => router.push('/faculty/subjects')}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -67,7 +67,7 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/sessions')}>
+          <Card className="bg-gradient-to-br from-orange-50 to-white border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => router.push('/faculty/sessions')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <CalendarIcon className="h-5 w-5 text-orange-600" />
@@ -79,7 +79,7 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/faculty/marking')}>
+          <Card className="border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => router.push('/faculty/marking')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-50 rounded-full">
@@ -93,7 +93,7 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-purple-500 hover:shadow-md transition-shadow">
+          <Card className="border-t-4 border-t-purple-500 border hover:border-primary/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -107,7 +107,7 @@ export default function FacultyDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 border-0 shadow-lg">
+          <Card className="lg:col-span-2 border">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
               <CardTitle className="text-xl">Exam Statistics</CardTitle>
               <CardDescription className="text-base">Overview of your exam sessions and resources</CardDescription>
@@ -153,29 +153,29 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
               <CardTitle className="text-xl">Quick Actions</CardTitle>
               <CardDescription className="text-base">Common tasks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start hover:bg-primary/5 hover:border-primary/50 transition-all" onClick={() => router.push('/faculty/questions/new')}>
+              <Button variant="outline" className="w-full justify-start hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all" onClick={() => router.push('/faculty/questions/new')}>
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Create Question
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/faculty/exam-papers/create')}>
+              <Button variant="outline" className="w-full justify-start hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all" onClick={() => router.push('/faculty/exam-papers/create')}>
                 <FileTextIcon className="h-4 w-4 mr-2" />
                 Create Exam Paper
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/faculty/sessions')}>
+              <Button variant="outline" className="w-full justify-start hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all" onClick={() => router.push('/faculty/sessions')}>
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 View Exam Sessions
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/faculty/marking')}>
+              <Button variant="outline" className="w-full justify-start hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all" onClick={() => router.push('/faculty/marking')}>
                 <ClipboardListIcon className="h-4 w-4 mr-2" />
                 Mark Submissions
               </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/faculty/results')}>
+              <Button variant="outline" className="w-full justify-start hover:border-primary/50 hover:bg-transparent hover:text-foreground transition-all" onClick={() => router.push('/faculty/results')}>
                 <EyeIcon className="h-4 w-4 mr-2" />
                 View Results
               </Button>
@@ -183,7 +183,7 @@ export default function FacultyDashboard() {
           </Card>
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="border">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardTitle className="text-xl">Recent Activities</CardTitle>
             <CardDescription className="text-base">Latest exam sessions and updates</CardDescription>

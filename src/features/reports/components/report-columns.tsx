@@ -17,10 +17,10 @@ import { cn } from '@/lib/utils'
 
 const getFormatBadgeClass = (format: string) => {
   const formatClasses = {
-    pdf: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-    excel: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-    csv: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    json: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+    pdf: 'bg-red-100 text-red-700',
+    excel: 'bg-green-100 text-green-700',
+    csv: 'bg-blue-100 text-blue-700',
+    json: 'bg-purple-100 text-purple-700'
   } as const
 
   return formatClasses[format as keyof typeof formatClasses] || 'bg-muted'

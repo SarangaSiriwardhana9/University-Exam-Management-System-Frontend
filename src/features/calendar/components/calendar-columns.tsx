@@ -128,7 +128,7 @@ export const getCalendarColumns = ({
       
       if (isCurrent) {
         return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+          <Badge className="bg-green-100 text-green-700">
             Current
           </Badge>
         )

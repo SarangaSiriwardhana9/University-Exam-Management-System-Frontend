@@ -27,8 +27,8 @@ export default function ExamSubmittedPage() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-green-100 dark:bg-green-900/20 p-6">
-              <CheckCircle2Icon className="h-16 w-16 text-green-600 dark:text-green-400" />
+            <div className="rounded-full bg-green-100 p-6">
+              <CheckCircle2Icon className="h-16 w-16 text-green-600" />
             </div>
           </div>
           <CardTitle className="text-3xl">Exam Submitted Successfully!</CardTitle>

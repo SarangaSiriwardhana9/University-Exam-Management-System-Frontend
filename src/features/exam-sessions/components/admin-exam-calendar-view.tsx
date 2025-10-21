@@ -78,7 +78,7 @@ export function AdminExamCalendarView() {
   const completedExams = sessions.filter(s => s.status === 'completed').length
   const ongoingExams = sessions.filter(s => s.status === 'in_progress').length
 
-  if (isLoading) return <div className="space-y-4"><Skeleton className="h-12 w-full" /><Skeleton className="h-96 w-full" /></div>
+  if (isLoading) return <div className="space-y-4"><Skeleton className="h-12 w-full bg-gray-100" /><Skeleton className="h-96 w-full bg-gray-100" /></div>
   if (error) return <Card><CardContent className="pt-6"><p className="text-red-600">Error loading exam calendar.</p></CardContent></Card>
 
   return (

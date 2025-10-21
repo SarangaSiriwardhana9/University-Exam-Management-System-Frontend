@@ -255,7 +255,6 @@ export default function MarkingPage({ params }: MarkingPageProps) {
                 <TableRow>
                   <TableHead>Student</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Student ID</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead className="text-center">Marks</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -265,7 +264,7 @@ export default function MarkingPage({ params }: MarkingPageProps) {
               <TableBody>
                 {filteredAndSortedSubmissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                       <UserIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                       <p>{search ? 'No submissions match your search' : 'No submissions found'}</p>
                     </TableCell>
@@ -286,11 +285,6 @@ export default function MarkingPage({ params }: MarkingPageProps) {
                           <MailIcon className="h-3 w-3" />
                           <span>{submission.studentId.email}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {submission.studentId.studentId || 'N/A'}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">

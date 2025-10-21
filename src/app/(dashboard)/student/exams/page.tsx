@@ -189,7 +189,7 @@ export default function StudentExamsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active" className="space-y-3">
+        <TabsContent value="active">
           {sortedRegistrations.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -199,21 +199,23 @@ export default function StudentExamsPage() {
               </CardContent>
             </Card>
           ) : (
-            sortedRegistrations.map((registration) => (
-              <CompactExamCard
-                key={registration._id}
-                registration={registration}
-                onCancel={(reg) => {
-                  setSelectedRegistration(reg)
-                  setIsCancelDialogOpen(true)
-                }}
-                onStart={() => router.push(`/student/exam-paper/${registration.paperId}?session=${registration._id}`)}
-              />
-            ))
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sortedRegistrations.map((registration) => (
+                <CompactExamCard
+                  key={registration._id}
+                  registration={registration}
+                  onCancel={(reg) => {
+                    setSelectedRegistration(reg)
+                    setIsCancelDialogOpen(true)
+                  }}
+                  onStart={() => router.push(`/student/exam-paper/${registration.paperId}?session=${registration._id}`)}
+                />
+              ))}
+            </div>
           )}
         </TabsContent>
 
-        <TabsContent value="available" className="space-y-3">
+        <TabsContent value="available">
           {availableSessions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -223,17 +225,19 @@ export default function StudentExamsPage() {
               </CardContent>
             </Card>
           ) : (
-            availableSessions.map((session) => (
-              <CompactSessionCard
-                key={session._id}
-                session={session}
-                canRegister={canRegisterForSession(session)}
-                onRegister={(s) => {
-                  setSelectedSession(s)
-                  setIsRegisterDialogOpen(true)
-                }}
-              />
-            ))
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableSessions.map((session) => (
+                <CompactSessionCard
+                  key={session._id}
+                  session={session}
+                  canRegister={canRegisterForSession(session)}
+                  onRegister={(s) => {
+                    setSelectedSession(s)
+                    setIsRegisterDialogOpen(true)
+                  }}
+                />
+              ))}
+            </div>
           )}
         </TabsContent>
 
@@ -337,38 +341,39 @@ function CompactExamCard({ registration, onCancel, onStart }: { registration: Ex
   const canStart = registration.canEnroll && !hasStarted && !isExpired
 
   return (
-    <Card className={cn('transition-all hover:shadow-md', isTodayExam && 'border-primary border-2', isCancelled && 'opacity-60')}>
+    <Card className={cn('flex flex-col transition-all hover:shadow-lg border-l-4', isTodayExam && 'border-l-primary', isCancelled && 'opacity-60 border-l-gray-300', !isTodayExam && !isCancelled && 'border-l-blue-500')}>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-base truncate">{registration.examTitle}</CardTitle>
-            <p className="text-xs text-muted-foreground truncate">{registration.subjectCode} - {registration.subjectName}</p>
+            <CardTitle className="text-lg mb-1 line-clamp-1">{registration.examTitle}</CardTitle>
+            <p className="text-xs text-muted-foreground font-mono font-semibold">{registration.subjectCode}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{registration.subjectName}</p>
           </div>
           <div className="flex flex-col gap-1 items-end flex-shrink-0">
             {isCancelled && <Badge variant="destructive" className="text-xs">Cancelled</Badge>}
             {isSubmitted && <Badge variant="default" className="bg-green-600 text-xs"><CheckCircle2Icon className="h-3 w-3 mr-1" />Submitted</Badge>}
             {hasStarted && !isExpired && !isSubmitted && <Badge variant="default" className="bg-blue-600 text-xs">In Progress</Badge>}
-            {isTodayExam && !isSubmitted && <Badge variant="destructive" className="text-xs">Today</Badge>}
+            {isTodayExam && !isSubmitted && <Badge variant="default" className="bg-orange-600 text-xs">Today</Badge>}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
-        <div className="grid grid-cols-2 gap-2 text-sm">
+      <CardContent className="flex flex-col flex-1 space-y-3 pt-0">
+        <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs">{examDate ? format(examDate, 'PP') : 'TBD'}</span>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium">{examDate ? format(examDate, 'PPP') : 'TBD'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs">{examDate ? format(examDate, 'p') : 'TBD'}</span>
           </div>
           <div className="flex items-center gap-2">
-            {registration.deliveryMode === 'online' ? <MonitorIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <BuildingIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-            <span className="text-xs capitalize">{registration.deliveryMode}</span>
+            {registration.deliveryMode === 'online' ? <MonitorIcon className="h-4 w-4 text-blue-600" /> : <BuildingIcon className="h-4 w-4 text-green-600" />}
+            <span className="text-xs capitalize font-medium">{registration.deliveryMode}</span>
           </div>
           {registration.roomNumber && (
             <div className="flex items-center gap-2">
-              <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <MapPinIcon className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs">{registration.roomNumber}</span>
             </div>
           )}
@@ -382,7 +387,7 @@ function CompactExamCard({ registration, onCancel, onStart }: { registration: Ex
         )}
 
         {!isCancelled && !isSubmitted && registration.deliveryMode === 'online' && (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 mt-auto">
             {hasStarted && !isExpired ? (
               <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700" onClick={onStart}>
                 <MonitorIcon className="h-4 w-4 mr-2" />Continue Exam
@@ -397,8 +402,8 @@ function CompactExamCard({ registration, onCancel, onStart }: { registration: Ex
               </Alert>
             ) : null}
             {!hasStarted && !isExpired && isFuture(examDate!) && (
-              <Button size="sm" variant="destructive" onClick={() => onCancel(registration)}>
-                <XCircleIcon className="h-4 w-4 mr-2" />Cancel
+              <Button size="sm" variant="outline" className="w-full text-destructive hover:bg-destructive hover:text-white" onClick={() => onCancel(registration)}>
+                <XCircleIcon className="h-4 w-4 mr-2" />Cancel Registration
               </Button>
             )}
           </div>
@@ -414,42 +419,43 @@ function CompactSessionCard({ session, canRegister, onRegister }: { session: Exa
   const isFull = availableSeats <= 0
 
   return (
-    <Card className="transition-all hover:shadow-md">
+    <Card className="flex flex-col transition-all hover:shadow-lg border-l-4 border-l-green-500">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-base truncate">{session.examTitle}</CardTitle>
-            <p className="text-xs text-muted-foreground truncate">{session.subjectCode} - {session.subjectName}</p>
+            <CardTitle className="text-lg mb-1 line-clamp-1">{session.examTitle}</CardTitle>
+            <p className="text-xs text-muted-foreground font-mono font-semibold">{session.subjectCode}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{session.subjectName}</p>
           </div>
-          <Badge variant={isFull ? 'destructive' : 'secondary'} className="text-xs flex-shrink-0">
+          <Badge variant={isFull ? 'destructive' : 'default'} className={cn('text-xs flex-shrink-0', !isFull && 'bg-green-600')}>
             {isFull ? 'Full' : `${availableSeats} seats`}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
-        <div className="grid grid-cols-2 gap-2 text-sm">
+      <CardContent className="flex flex-col flex-1 space-y-3 pt-0">
+        <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs">{format(examDate, 'PP')}</span>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium">{format(examDate, 'PPP')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <ClockIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs">{format(examDate, 'p')}</span>
           </div>
           <div className="flex items-center gap-2">
-            {session.deliveryMode === 'online' ? <MonitorIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <BuildingIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-            <span className="text-xs capitalize">{session.deliveryMode}</span>
+            {session.deliveryMode === 'online' ? <MonitorIcon className="h-4 w-4 text-blue-600" /> : <BuildingIcon className="h-4 w-4 text-green-600" />}
+            <span className="text-xs capitalize font-medium">{session.deliveryMode}</span>
           </div>
           {session.roomNumber && (
             <div className="flex items-center gap-2">
-              <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <MapPinIcon className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs">{session.roomNumber}</span>
             </div>
           )}
         </div>
-        <Button size="sm" className="w-full" onClick={() => onRegister(session)} disabled={!canRegister || isFull}>
+        <Button size="sm" className="w-full mt-auto" onClick={() => onRegister(session)} disabled={!canRegister || isFull}>
           <CheckCircle2Icon className="h-4 w-4 mr-2" />
-          {isFull ? 'Session Full' : 'Register'}
+          {isFull ? 'Session Full' : 'Register Now'}
         </Button>
       </CardContent>
     </Card>

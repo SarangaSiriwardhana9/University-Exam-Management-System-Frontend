@@ -154,34 +154,27 @@ const StudentEnrollmentsPage = () => {
             </CardHeader>
             <CardContent>
               {/* Period selection */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label htmlFor="year-select" className="text-sm font-medium mb-2 block">Year</label>
-                  <Select value={year.toString()} onValueChange={(v) => setYear(Number(v))}>
-                    <SelectTrigger id="year-select">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Year 1</SelectItem>
-                      <SelectItem value="2">Year 2</SelectItem>
-                      <SelectItem value="3">Year 3</SelectItem>
-                      <SelectItem value="4">Year 4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label htmlFor="semester-select" className="text-sm font-medium mb-2 block">Semester</label>
-                  <Select value={semester.toString()} onValueChange={(v) => setSemester(Number(v))}>
-                    <SelectTrigger id="semester-select">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Semester 1</SelectItem>
-                      <SelectItem value="2">Semester 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex gap-2 mb-4">
+                <Select value={year.toString()} onValueChange={(v) => setYear(Number(v))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Year 1</SelectItem>
+                    <SelectItem value="2">Year 2</SelectItem>
+                    <SelectItem value="3">Year 3</SelectItem>
+                    <SelectItem value="4">Year 4</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={semester.toString()} onValueChange={(v) => setSemester(Number(v))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Semester 1</SelectItem>
+                    <SelectItem value="2">Semester 2</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {isAvailableLoading ? (
@@ -197,7 +190,7 @@ const StudentEnrollmentsPage = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {availableSubjects.map((subject: AvailableSubject) => (
-                    <Card key={subject._id} className={subject.isEnrolled ? 'border-green-200 bg-green-50/50' : ''}>
+                    <Card key={subject._id} className={`flex flex-col ${subject.isEnrolled ? 'border-green-200 bg-green-50/50' : ''}`}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -212,8 +205,15 @@ const StudentEnrollmentsPage = () => {
                           )}
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        {subject.description && <p className="text-sm text-muted-foreground line-clamp-2">{subject.description}</p>}
+                      <CardContent className="flex flex-col flex-1 space-y-4">
+                        <div className="min-h-[2.5rem]">
+                          {subject.description ? (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{subject.description}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No description available</p>
+                          )}
+                        </div>
+                        
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center space-x-4">
                             <div>
@@ -231,13 +231,15 @@ const StudentEnrollmentsPage = () => {
                           </div>
                         </div>
 
-                        {subject.departmentName && (
-                          <div className="pt-2 border-t">
+                        <div className="pt-2 border-t min-h-[2rem]">
+                          {subject.departmentName ? (
                             <p className="text-xs text-muted-foreground">{subject.departmentName}</p>
-                          </div>
-                        )}
+                          ) : (
+                            <p className="text-xs text-muted-foreground invisible">-</p>
+                          )}
+                        </div>
 
-                        <Button className="w-full" disabled={subject.isEnrolled || enrollMutation.isPending} onClick={() => enrollMutation.mutate({ subjectId: subject._id, year, semester }, { onSuccess: () => setShowEnrollPanel(false) })} variant={subject.isEnrolled ? 'outline' : 'default'}>
+                        <Button className="w-full mt-auto" disabled={subject.isEnrolled || enrollMutation.isPending} onClick={() => enrollMutation.mutate({ subjectId: subject._id, year, semester }, { onSuccess: () => setShowEnrollPanel(false) })} variant={subject.isEnrolled ? 'outline' : 'default'}>
                           {enrollMutation.isPending ? (
                             <div className="flex items-center space-x-2"><div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> <span>Enrolling...</span></div>
                           ) : subject.isEnrolled ? (

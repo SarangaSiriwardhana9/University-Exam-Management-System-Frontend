@@ -177,9 +177,9 @@ const EnrollmentsPage = () => {
             )}
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+          <div className='flex flex-wrap items-center gap-2'>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as EnrollmentStatus | "all")}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent>
@@ -191,7 +191,7 @@ const EnrollmentsPage = () => {
             </Select>
 
             <Select value={yearFilter} onValueChange={setYearFilter}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='Filter by year' />
               </SelectTrigger>
               <SelectContent>
@@ -204,7 +204,7 @@ const EnrollmentsPage = () => {
             </Select>
 
             <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='Filter by semester' />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +215,7 @@ const EnrollmentsPage = () => {
             </Select>
 
             <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
-              <SelectTrigger>
+              <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='Sort by date' />
               </SelectTrigger>
               <SelectContent>

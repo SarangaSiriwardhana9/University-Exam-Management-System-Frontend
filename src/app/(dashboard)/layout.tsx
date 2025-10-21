@@ -8,7 +8,7 @@ type DashboardLayoutProps = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-gradient-to-br from-background via-background to-muted/10">
+      <div className="flex h-screen overflow-hidden bg-gradient-to-br from-background via-background to-muted/10">
         <Sidebar />
         
         <main className="flex-1 overflow-y-auto overflow-x-hidden">

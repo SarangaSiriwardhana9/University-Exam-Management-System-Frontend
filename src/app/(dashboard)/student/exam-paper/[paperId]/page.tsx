@@ -356,6 +356,23 @@ export default function ExamPaperPage() {
     return acc
   }, {} as Record<string, PaperQuestion[]>) || {}
 
+  // Get all question IDs including sub-questions for proper counting
+  const getAllQuestionIds = () => {
+    const ids: string[] = []
+    paper.questions?.forEach(q => {
+      if (q.subQuestions && q.subQuestions.length > 0) {
+        q.subQuestions.forEach(sq => ids.push(sq._id))
+      } else {
+        ids.push(q._id)
+      }
+    })
+    return ids
+  }
+
+  const allQuestionIds = getAllQuestionIds()
+  const totalQuestions = allQuestionIds.length
+  const answeredCount = allQuestionIds.filter(id => answers[id]?.value).length
+
 
   if (examStatus?.deliveryMode === 'online' && !hasStarted && examStatus?.canStart) {
     return (
@@ -433,38 +450,127 @@ export default function ExamPaperPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background border-b">
-        <div className="container max-w-5xl mx-auto py-4">
+      <div className="sticky top-0 z-50 bg-background border-b shadow-sm">
+        <div className="container max-w-7xl mx-auto py-3 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <FileTextIcon className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileTextIcon className="h-5 w-5 text-primary" />
+              </div>
               <div>
-                <h1 className="text-xl font-bold">{paper.paperTitle}</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-lg font-bold">{paper.paperTitle}</h1>
+                <p className="text-xs text-muted-foreground">
                   {paper.subjectCode} - {paper.subjectName}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right">
+              <div className="text-center px-4 py-2 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground">Answered</p>
+                <p className="text-lg font-bold">{answeredCount}/{totalQuestions}</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-muted rounded-lg">
                 <div className="flex items-center gap-2">
                   <ClockIcon className="h-4 w-4" />
                   <span className={`text-lg font-mono font-bold ${timeRemaining !== null && timeRemaining < 300 ? 'text-destructive' : ''}`}>
                     {timeRemaining !== null ? formatTime(timeRemaining) : '--:--:--'}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Time Remaining</p>
               </div>
-              <Button onClick={handleSubmitClick} size="lg" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit Exam'}
+              <Button onClick={handleSubmitClick} size="lg" disabled={isSubmitting} className="gap-2">
+                <CheckCircle2Icon className="h-4 w-4" />
+                {isSubmitting ? 'Submitting...' : 'Submit'}
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container max-w-5xl mx-auto py-8">
-        <Card className="mb-6">
+      <div className="container max-w-7xl mx-auto py-6 px-4">
+        <div className="flex gap-6">
+          {/* Question Navigation Panel */}
+          <div className="w-64 flex-shrink-0">
+            <div className="sticky top-24">
+              <Card className="border-l-4 border-l-primary">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Question Navigator</CardTitle>
+                  <CardDescription className="text-xs">
+                    Click to jump to question
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {paper.parts.map((part) => {
+                      const partQuestions = groupedQuestions[part.partLabel] || []
+                      let questionCounter = 0
+                      
+                      return (
+                        <div key={part.partLabel}>
+                          <p className="text-xs font-semibold text-muted-foreground mb-2">Part {part.partLabel}</p>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {partQuestions.map((q) => {
+                              if (q.subQuestions && q.subQuestions.length > 0) {
+                                return q.subQuestions.map((sq) => {
+                                  questionCounter++
+                                  const isAnswered = !!answers[sq._id]?.value
+                                  return (
+                                    <button
+                                      key={sq._id}
+                                      onClick={() => document.getElementById(`question-${sq._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                      className={`h-9 w-9 rounded-md text-xs font-semibold transition-all ${
+                                        isAnswered 
+                                          ? 'bg-green-600 text-white hover:bg-green-700' 
+                                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                      }`}
+                                      title={`Question ${questionCounter}${isAnswered ? ' (Answered)' : ''}`}
+                                    >
+                                      {questionCounter}
+                                    </button>
+                                  )
+                                })
+                              } else {
+                                questionCounter++
+                                const isAnswered = !!answers[q._id]?.value
+                                return (
+                                  <button
+                                    key={q._id}
+                                    onClick={() => document.getElementById(`question-${q._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                    className={`h-9 w-9 rounded-md text-xs font-semibold transition-all ${
+                                      isAnswered 
+                                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                    }`}
+                                    title={`Question ${questionCounter}${isAnswered ? ' (Answered)' : ''}`}
+                                  >
+                                    {questionCounter}
+                                  </button>
+                                )
+                              }
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <Separator className="my-3" />
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded bg-green-600"></div>
+                      <span>Answered</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded bg-muted"></div>
+                      <span>Not Answered</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            <Card className="mb-6">
           <CardHeader>
             <CardTitle>Exam Information</CardTitle>
           </CardHeader>
@@ -480,7 +586,7 @@ export default function ExamPaperPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Questions</p>
-                <p className="text-2xl font-bold">{paper.questionCount || paper.questions?.length || 0}</p>
+                <p className="text-2xl font-bold">{totalQuestions}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Type</p>
@@ -526,76 +632,76 @@ export default function ExamPaperPage() {
           </CardContent>
         </Card>
 
-        {paper.parts.map((part) => {
-          const partQuestions = groupedQuestions[part.partLabel] || []
-          
-          return (
-            <Card key={part.partLabel} className="mb-6">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>Part {part.partLabel}: {part.partTitle}</CardTitle>
-                    <CardDescription>
-                      {part.questionCount} question{part.questionCount !== 1 ? 's' : ''} • {part.totalMarks} marks
-                    </CardDescription>
-                  </div>
-                  {part.hasOptionalQuestions && (
-                    <Badge variant="secondary">
-                      Answer {part.minimumQuestionsToAnswer} of {part.questionCount}
-                    </Badge>
-                  )}
-                </div>
-                {part.partInstructions && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {part.partInstructions}
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {partQuestions.map((question, index) => (
-                  <QuestionCard
-                    key={question._id}
-                    question={question}
-                    questionNumber={index + 1}
-                    answer={answers[question._id]?.value || (question.questionType === 'mcq' && (typeof question.questionId === 'object' && question.questionId.allowMultipleAnswers) ? [] : '')}
-                    onAnswerChange={(answer) => handleAnswerChange(question._id, answer, question.questionType)}
-                    onClearAnswer={() => handleClearAnswer(question._id)}
-                    onSubQuestionAnswerChange={handleAnswerChange}
-                    onSubQuestionClearAnswer={handleClearAnswer}
-                    answers={answers}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          )
-        })}
-
-        <Card className="sticky bottom-4 bg-background/95 backdrop-blur">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Questions Answered</p>
-                  <p className="text-lg font-bold">
-                    {Object.keys(answers).length} / {paper.questions?.length || 0}
-                  </p>
-                </div>
-                {timeRemaining !== null && timeRemaining < 300 && (
-                  <Alert variant="destructive" className="py-2">
-                    <AlertCircleIcon className="h-4 w-4" />
-                    <AlertDescription>
-                      Less than 5 minutes remaining!
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-              <Button onClick={handleSubmitClick} size="lg" disabled={isSubmitting}>
-                <CheckCircle2Icon className="h-5 w-5 mr-2" />
-                {isSubmitting ? 'Submitting...' : 'Submit Exam'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            {paper.parts.map((part) => {
+              const partQuestions = groupedQuestions[part.partLabel] || []
+              let questionCounter = 0
+              
+              return (
+                <Card key={part.partLabel} className="mb-6 border-l-4 border-l-blue-500">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl">Part {part.partLabel}: {part.partTitle}</CardTitle>
+                        <CardDescription>
+                          {part.questionCount} question{part.questionCount !== 1 ? 's' : ''} • {part.totalMarks} marks
+                        </CardDescription>
+                      </div>
+                      {part.hasOptionalQuestions && (
+                        <Badge variant="secondary" className="text-xs">
+                          Answer {part.minimumQuestionsToAnswer} of {part.questionCount}
+                        </Badge>
+                      )}
+                    </div>
+                    {part.partInstructions && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {part.partInstructions}
+                      </p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    {partQuestions.map((question) => {
+                      if (question.subQuestions && question.subQuestions.length > 0) {
+                        return question.subQuestions.map((sq) => {
+                          questionCounter++
+                          return (
+                            <QuestionCard
+                              key={sq._id}
+                              question={sq}
+                              questionNumber={questionCounter}
+                              answer={answers[sq._id]?.value || (sq.questionType === 'mcq' && (typeof sq.questionId === 'object' && sq.questionId.allowMultipleAnswers) ? [] : '')}
+                              onAnswerChange={(answer) => handleAnswerChange(sq._id, answer, sq.questionType)}
+                              onClearAnswer={() => handleClearAnswer(sq._id)}
+                              onSubQuestionAnswerChange={handleAnswerChange}
+                              onSubQuestionClearAnswer={handleClearAnswer}
+                              answers={answers}
+                              isSubQuestion={true}
+                              subQuestionLabel={sq.subQuestionLabel}
+                            />
+                          )
+                        })
+                      } else {
+                        questionCounter++
+                        return (
+                          <QuestionCard
+                            key={question._id}
+                            question={question}
+                            questionNumber={questionCounter}
+                            answer={answers[question._id]?.value || (question.questionType === 'mcq' && (typeof question.questionId === 'object' && question.questionId.allowMultipleAnswers) ? [] : '')}
+                            onAnswerChange={(answer) => handleAnswerChange(question._id, answer, question.questionType)}
+                            onClearAnswer={() => handleClearAnswer(question._id)}
+                            onSubQuestionAnswerChange={handleAnswerChange}
+                            onSubQuestionClearAnswer={handleClearAnswer}
+                            answers={answers}
+                          />
+                        )
+                      }
+                    })}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
@@ -628,6 +734,8 @@ function QuestionCard({
   onSubQuestionAnswerChange,
   onSubQuestionClearAnswer,
   answers,
+  isSubQuestion,
+  subQuestionLabel,
 }: {
   question: PaperQuestion
   questionNumber: number
@@ -637,6 +745,8 @@ function QuestionCard({
   onSubQuestionAnswerChange?: (subQId: string, answer: string | string[], questionType: string) => void
   onSubQuestionClearAnswer?: (subQId: string) => void
   answers: Record<string, { type: string; value: string | string[] }>
+  isSubQuestion?: boolean
+  subQuestionLabel?: string
 }) {
   const questionData = typeof question.questionId === 'object' ? question.questionId : null
   const questionType = questionData?.questionType || question.questionType
@@ -733,12 +843,21 @@ function QuestionCard({
     )
   }
 
+  const isAnswered = !!answer && (Array.isArray(answer) ? answer.length > 0 : answer.trim() !== '')
+
   return (
-    <div className="space-y-3">
+    <div id={`question-${question._id}`} className="scroll-mt-24 p-4 rounded-lg border-2 transition-all hover:border-primary/50 bg-card">
       <div className="flex items-start gap-3">
-        <Badge variant="outline" className="mt-1">
-          Q{questionNumber}
-        </Badge>
+        <div className="flex flex-col items-center gap-2">
+          <Badge variant={isAnswered ? 'default' : 'outline'} className={`text-sm font-bold min-w-[3rem] justify-center ${isAnswered ? 'bg-green-600' : ''}`}>
+            Q{questionNumber}
+          </Badge>
+          {isSubQuestion && subQuestionLabel && (
+            <Badge variant="secondary" className="text-xs">
+              ({subQuestionLabel})
+            </Badge>
+          )}
+        </div>
         <div className="flex-1">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">

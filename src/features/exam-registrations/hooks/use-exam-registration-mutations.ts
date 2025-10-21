@@ -15,7 +15,17 @@ export const useCreateExamRegistrationMutation = () => {
       toast.success('Successfully registered for exam')
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to register for exam')
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to register for exam'
+      
+      // Check if error is about not being enrolled
+      if (errorMessage.includes('must be enrolled')) {
+        toast.error(errorMessage, {
+          description: 'Please enroll in the subject first before registering for the exam.',
+          duration: 5000,
+        })
+      } else {
+        toast.error(errorMessage)
+      }
     },
   })
 }

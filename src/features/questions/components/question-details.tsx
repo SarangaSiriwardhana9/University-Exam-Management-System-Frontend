@@ -19,16 +19,16 @@ export const QuestionDetails = ({ question }: QuestionDetailsProps) => {
   const createdByName = getCreatedByName(question)
   const totalMarks = calculateQuestionTotalMarks(question)
 
-  const renderSubQuestions = (subQuestions: SubQuestion[], level: number = 0, parentLabel: string = ''): JSX.Element => {
+  const renderSubQuestions = (subQuestions: SubQuestion[], level: number = 1, parentLabel: string = ''): JSX.Element => {
     return (
-      <div className={cn("space-y-3", level > 0 && "ml-6 mt-3")}>
+      <div className={cn("space-y-3", level > 1 && "ml-6 mt-3")}>
         {subQuestions.map((sq) => {
           const fullLabel = parentLabel ? `${parentLabel}.${sq.subQuestionLabel}` : sq.subQuestionLabel
           
           return (
-            <div key={sq._id} className={cn("p-4 border rounded-lg", getLevelColors(level))}>
+            <div key={sq._id} className={cn("p-4 border rounded-lg", getLevelColors(level - 1))}>
               <div className="flex items-start gap-3">
-                <Badge variant="outline" className={cn("font-mono font-bold mt-0.5", getLevelBadgeColors(level))}>
+                <Badge variant="outline" className={cn("font-mono font-bold mt-0.5", getLevelBadgeColors(level - 1))}>
                   {fullLabel}
                 </Badge>
                 <div className="flex-1">

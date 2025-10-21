@@ -116,13 +116,17 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
       const endTime = session.endTime ?
         new Date(session.endTime).toTimeString().slice(0, 5) : '12:00'
       
+      // Sync delivery mode state
+      const sessionDeliveryMode = session.deliveryMode || 'onsite'
+      setDeliveryMode(sessionDeliveryMode)
+      
       form.reset({
         paperId: session.paperId,
         examTitle: session.examTitle,
         examDate,
         startTime,
         endTime,
-        deliveryMode: session.deliveryMode || 'onsite',
+        deliveryMode: sessionDeliveryMode,
         roomId: session.roomId || '',
         enrollmentKey: session.enrollmentKey || '',
         maxStudents: session.maxStudents,
@@ -197,6 +201,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                 <FormItem>
                   <FormLabel>Exam Paper *</FormLabel>
                   <Select 
+                    key={field.value || 'empty-paper'}
                     onValueChange={field.onChange} 
                     value={field.value}
                     disabled={isEditMode}
@@ -275,6 +280,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                     Delivery Mode *
                   </FormLabel>
                   <Select 
+                    key={field.value || 'empty-delivery'}
                     onValueChange={(value) => {
                       field.onChange(value)
                       setDeliveryMode(value as 'onsite' | 'online')
@@ -434,6 +440,7 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                       {deliveryMode === 'online' ? 'Computer Lab *' : 'Room *'}
                     </FormLabel>
                     <Select 
+                      key={field.value || 'empty-room'}
                       onValueChange={field.onChange} 
                       value={field.value}
                       disabled={isLoadingRooms || (isEditMode && !!sessionRoomId && isLoadingSessionRoom)}
@@ -524,7 +531,11 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                       <GraduationCapIcon className="h-4 w-4" />
                       Year *
                     </FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select 
+                      key={field.value?.toString() || 'empty-year'}
+                      onValueChange={(value) => field.onChange(parseInt(value))} 
+                      value={field.value?.toString()}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select year" />
@@ -556,7 +567,11 @@ export const ExamSessionForm = ({ session, onSubmit, onCancel, isLoading }: Exam
                       <CalendarIcon className="h-4 w-4" />
                       Semester *
                     </FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select 
+                      key={field.value?.toString() || 'empty-semester'}
+                      onValueChange={(value) => field.onChange(parseInt(value))} 
+                      value={field.value?.toString()}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select semester" />

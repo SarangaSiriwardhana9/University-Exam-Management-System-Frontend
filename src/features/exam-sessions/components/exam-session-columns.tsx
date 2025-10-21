@@ -61,7 +61,7 @@ const getSessionTimeStatus = (session: ExamSession) => {
   }
 
   if (startTime <= now && endTime >= now) {
-    return { label: 'Ongoing', variant: 'default' as const, color: 'text-orange-600' }
+    return { label: 'Ongoing', variant: 'outline' as const, color: 'text-orange-600' }
   }
 
   if (startTime > now) {

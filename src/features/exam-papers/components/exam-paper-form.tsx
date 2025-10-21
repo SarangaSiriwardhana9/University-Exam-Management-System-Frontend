@@ -157,13 +157,39 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
       const part = partFields.find(p => p.partLabel === activePartTab)
       const questionOrder = questionFields.length + 1
 
+      // Helper function to map sub-questions with their marks
+      const mapSubQuestions = (subQuestions: any[]): any[] => {
+        if (!subQuestions || subQuestions.length === 0) return []
+        return subQuestions.map(sq => ({
+          questionId: sq._id,
+          marksAllocated: sq.marks,
+          subQuestionLabel: sq.subQuestionLabel,
+          subQuestionOrder: sq.subQuestionOrder,
+          subQuestions: sq.subQuestions ? mapSubQuestions(sq.subQuestions) : []
+        }))
+      }
+
+      // Calculate total marks from sub-questions if they exist
+      const calculateTotalMarks = (subQuestions: any[]): number => {
+        if (!subQuestions || subQuestions.length === 0) return 0
+        return subQuestions.reduce((sum, sq) => {
+          const marks = sq.marks || 0
+          const nestedMarks = sq.subQuestions?.length ? calculateTotalMarks(sq.subQuestions) : 0
+          return sum + marks + nestedMarks
+        }, 0)
+      }
+
+      const hasSubQuestions = question.hasSubQuestions && question.subQuestions && question.subQuestions.length > 0
+      const totalMarks = hasSubQuestions ? calculateTotalMarks(question.subQuestions!) : question.marks
+
       const newQuestion: PaperQuestionDto = {
         questionId: question._id,
         questionOrder,
-        marksAllocated: question.marks,
+        marksAllocated: totalMarks,
         partLabel: activePartTab,
         partTitle: part?.partTitle,
-        isOptional: false
+        isOptional: false,
+        subQuestions: hasSubQuestions ? mapSubQuestions(question.subQuestions!) : undefined
       }
       appendQuestion(newQuestion)
     }
@@ -171,10 +197,12 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
     setSelectedQuestionIds(newSelectedIds)
   }
 
-  const allocatedMarks = useMemo(() => 
-    questionFields.reduce((sum, field) => sum + (field.marksAllocated || 0), 0),
-    [questionFields]
-  )
+  const watchedQuestions = form.watch('questions')
+  
+  const allocatedMarks = useMemo(() => {
+    if (!watchedQuestions || watchedQuestions.length === 0) return 0
+    return watchedQuestions.reduce((sum, field) => sum + (field.marksAllocated || 0), 0)
+  }, [watchedQuestions])
 
   const targetMarks = form.watch('totalMarks') || 0
   const marksMatch = allocatedMarks === targetMarks
@@ -222,6 +250,7 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
           createdByName: undefined,
           isActive: true,
           subQuestionLevel: fromPaper.subQuestionLevel || 0,
+          subQuestions: fromPaper.subQuestions as any,
           createdAt: fromPaper.createdAt,
           updatedAt: fromPaper.createdAt,
           subjectId: paper.subjectId,
@@ -875,6 +904,89 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                               })()}
                                             </div>
                                           )}
+
+                                          {/* Display and Edit Sub-parts */}
+                                          {questionDetails?.hasSubQuestions && questionDetails?.subQuestions && questionDetails.subQuestions.length > 0 && (
+                                            <div className="mb-3 pl-4 space-y-2">
+                                              <div className="text-xs font-semibold text-muted-foreground mb-2">Sub-parts (Edit marks for paper):</div>
+                                              {(() => {
+                                                const renderSubQuestions = (subQuestions: any[], level: number = 1, parentLabel: string = '', parentPath: string = ''): any => {
+                                                  return subQuestions.map((sq, sqIndex) => {
+                                                    const fullLabel = parentLabel ? `${parentLabel}.${sq.subQuestionLabel}` : sq.subQuestionLabel
+                                                    const currentPath = parentPath ? `${parentPath}.subQuestions.${sqIndex}` : `questions.${questionIndex}.subQuestions.${sqIndex}`
+                                                    
+                                                    return (
+                                                      <div key={sq._id} className={cn("p-2 border rounded-md bg-muted/30", level > 1 && "ml-4 mt-2")}>
+                                                        <div className="flex items-start gap-2">
+                                                          <Badge variant="outline" className="font-mono text-xs h-5">
+                                                            {fullLabel}
+                                                          </Badge>
+                                                          <div className="flex-1">
+                                                            <p className="text-sm font-medium">{sq.questionText}</p>
+                                                            {sq.questionDescription && (
+                                                              <p className="text-xs text-muted-foreground mt-1 italic">{sq.questionDescription}</p>
+                                                            )}
+                                                            <div className="flex gap-2 mt-1.5 items-center">
+                                                              <Badge variant="outline" className="text-xs h-5">
+                                                                {sq.questionType.replace('_', ' ')}
+                                                              </Badge>
+                                                              <div className="flex items-center gap-1">
+                                                                <span className="text-xs text-muted-foreground">Marks:</span>
+                                                                <FormField
+                                                                  control={form.control}
+                                                                  name={`${currentPath}.marksAllocated` as any}
+                                                                  render={({ field }) => (
+                                                                    <FormItem className="m-0">
+                                                                      <FormControl>
+                                                                        <Input 
+                                                                          type="number" 
+                                                                          min={0.5}
+                                                                          step={0.5}
+                                                                          className="h-6 w-16 text-xs px-2"
+                                                                          {...field}
+                                                                          value={field.value || sq.marks}
+                                                                          onChange={e => {
+                                                                            const value = parseFloat(e.target.value) || 0
+                                                                            field.onChange(value)
+                                                                            // Recalculate total marks after a short delay
+                                                                            setTimeout(() => {
+                                                                              const questionData = form.getValues(`questions.${questionIndex}` as any)
+                                                                              if (questionData.subQuestions && questionData.subQuestions.length > 0) {
+                                                                                const calculateSubMarks = (subs: any[]): number => {
+                                                                                  return subs.reduce((sum, s) => {
+                                                                                    const marks = s.marksAllocated || s.marks || 0
+                                                                                    const nestedMarks = s.subQuestions?.length ? calculateSubMarks(s.subQuestions) : 0
+                                                                                    return sum + marks + nestedMarks
+                                                                                  }, 0)
+                                                                                }
+                                                                                const totalMarks = calculateSubMarks(questionData.subQuestions)
+                                                                                form.setValue(`questions.${questionIndex}.marksAllocated` as any, totalMarks, { shouldValidate: false })
+                                                                              }
+                                                                            }, 0)
+                                                                          }}
+                                                                        />
+                                                                      </FormControl>
+                                                                    </FormItem>
+                                                                  )}
+                                                                />
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                        {sq.subQuestions && sq.subQuestions.length > 0 && (
+                                                          <div className="mt-2 space-y-2">
+                                                            {renderSubQuestions(sq.subQuestions, level + 1, fullLabel, currentPath)}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    )
+                                                  })
+                                                }
+                                                
+                                                return renderSubQuestions(questionDetails.subQuestions)
+                                              })()}
+                                            </div>
+                                          )}
                                           
                                           {questionDetails && (
                                             <div className="flex gap-2 flex-wrap mb-3">
@@ -896,26 +1008,49 @@ export const ExamPaperForm = ({ paper, onSubmit, onCancel, isLoading }: ExamPape
                                           )}
 
                                           <div className="flex items-end gap-4">
-                                            <FormField
-                                              control={form.control}
-                                              name={`questions.${questionIndex}.marksAllocated`}
-                                              render={({ field }) => (
-                                                <FormItem className="w-32">
-                                                  <FormLabel className="text-xs">Marks *</FormLabel>
-                                                  <FormControl>
-                                                    <Input 
-                                                      type="number" 
-                                                      min={0.5}
-                                                      step={0.5}
-                                                      className="h-9"
-                                                      {...field}
-                                                      onChange={e => field.onChange(parseFloat(e.target.value))}
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
+                                            {questionDetails?.hasSubQuestions && questionDetails?.subQuestions && questionDetails.subQuestions.length > 0 ? (
+                                              <FormField
+                                                control={form.control}
+                                                name={`questions.${questionIndex}.marksAllocated`}
+                                                render={({ field }) => (
+                                                  <FormItem className="w-40">
+                                                    <FormLabel className="text-xs">Total Marks (Auto-calculated) *</FormLabel>
+                                                    <FormControl>
+                                                      <Input 
+                                                        type="number" 
+                                                        className="h-9 bg-muted font-semibold"
+                                                        {...field}
+                                                        value={field.value}
+                                                        readOnly
+                                                        disabled
+                                                      />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                  </FormItem>
+                                                )}
+                                              />
+                                            ) : (
+                                              <FormField
+                                                control={form.control}
+                                                name={`questions.${questionIndex}.marksAllocated`}
+                                                render={({ field }) => (
+                                                  <FormItem className="w-32">
+                                                    <FormLabel className="text-xs">Marks *</FormLabel>
+                                                    <FormControl>
+                                                      <Input 
+                                                        type="number" 
+                                                        min={0.5}
+                                                        step={0.5}
+                                                        className="h-9"
+                                                        {...field}
+                                                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                                                      />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                  </FormItem>
+                                                )}
+                                              />
+                                            )}
 
                                             <FormField
                                               control={form.control}

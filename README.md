@@ -1052,6 +1052,4 @@ For support, questions, or feedback:
 
 ---
 
-**Built with ❤️ for modern education**
-
-*Last Updated: October 2025*
+ 
